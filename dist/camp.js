@@ -11,7 +11,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
   const vectors=[[0,-1],[1,0],[0,1],[-1,0]],cardinals=['СЕВЕР','ВОСТОК','ЮГ','ЗАПАД'];
   const view={x:8,y:23,w:188,h:136},bag={x:198,y:176,w:28,h:28};
   const trashSpots=[{id:'bottle',x:58,y:114,w:24,h:24},{id:'wrapper',x:119,y:126,w:22,h:18}];
-  let active=false,x=3,y=indoor?8:5,dir=0,intro=!indoor&&!village,won=false,drag=null,showMap=false,lastMessage='',chosen=null,failed=false;
+  let active=false,x=3,y=indoor?8:5,dir=0,intro=!indoor&&!village&&!bear,won=false,drag=null,showMap=false,lastMessage='',chosen=null,failed=false;
   const collected=new Set(),seen=new Set();let hits=[];
   function reveal(){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(grid[y+dy]?.[x+dx])seen.add((x+dx)+','+(y+dy));}reveal();
   const bearItems=[{id:'dagger',name:'Кинжал',asset:'bear_dagger'},{id:'food',name:'Еда',asset:'shop_tin'},{id:'repeller',name:'Отпугиватель',asset:'bear_repeller'}];
@@ -155,5 +155,5 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     if(e.key.toLowerCase()==='e'||e.key==='Enter')inspect();if(e.key.toLowerCase()==='t')install();
   });
   function restartBear(){x=3;y=5;dir=0;intro=false;won=false;failed=false;chosen=null;drag=null;showMap=false;seen.clear();reveal();describe()}
-  return {step,turn,inspect,install,snapshot:()=>({x,y,dir,won,failed,intro,grid:[...grid],seen:[...seen]}),start(){if(bear&&won)restartBear();if(!bear&&won){x=3;y=5;dir=0;intro=true;won=false;showMap=false;lastMessage='';collected.clear();seen.clear();reveal();}active=true;pointer=null;if(indoor)describe();else render();announce(indoor?'Исследуйте заброшенный дом.':bear?'Найдите поляну и поставьте отпугиватель медведя.':'Найдите место для установки лагеря.')},stop(){active=false;drag=null;pointer=null;inputSurface.style.cursor='default'},render};
+  return {step,turn,inspect,install,snapshot:()=>({x,y,dir,won,failed,intro,grid:[...grid],seen:[...seen]}),start(){if(bear&&won)restartBear();if(!bear&&won){x=3;y=5;dir=0;intro=true;won=false;showMap=false;lastMessage='';collected.clear();seen.clear();reveal();}active=true;pointer=null;if(indoor||bear)describe();else render();announce(indoor?'Исследуйте заброшенный дом.':bear?'Найдите поляну и поставьте отпугиватель медведя.':'Найдите место для установки лагеря.')},stop(){active=false;drag=null;pointer=null;inputSurface.style.cursor='default'},render};
 };
