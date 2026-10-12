@@ -34,6 +34,8 @@ const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scen
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
 function syncScenePanel(id){
  if(!sceneHost)return;
+ // An open question window takes over the panel with its size switch.
+ if(window.PeninsulaPopup?.visible&&screen!=='embedded'){sceneHost.hidden=false;if(scenePanelKey!=='popup'){buildPopupControls();scenePanelKey='popup'}return}
  const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
  sceneHost.hidden=!kind;if(!kind){scenePanelKey=null;return}
  if(panelKey===scenePanelKey)return;
@@ -55,8 +57,13 @@ if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
 // Toolbar buttons drop focus so Space and Enter keep advancing the screen instead of pressing the button again.
 document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('click',()=>b.blur()));
 // Entering an intro always replays it from its first frame.
+function buildPopupControls(){
+ sceneHost.innerHTML='<h2>Окно вопроса</h2><label class="number">Размер окна<select data-popup-size>'+Object.entries(PeninsulaPopup.sizes).map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('')+'</select></label>';
+ const select=sceneHost.querySelector('[data-popup-size]');select.value=PeninsulaPopup.settings.size;
+ sceneHost.oninput=e=>{if(e.target===select){PeninsulaPopup.update({...PeninsulaPopup.settings,size:select.value});render()}};
+}
 function fullIntroAnimate(now){
- const id=activeScene();sceneClock.select(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
+ const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
  if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
@@ -69,7 +76,7 @@ Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]
  fullIntroMotions=Object.fromEntries(motions.map((motion,i)=>['intro'+(i+1),motion]));setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
 }).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить слои заставок. Обновите страницу.</p>'}console.error(e)});
 const renderBeforeParallax=render;render=function(){
- renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
+ if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
  const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx)}
  fullIntroKey=id;
 };

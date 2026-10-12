@@ -35,7 +35,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   hovered=null;speak(item.name+' возвращён. Получи '+item.price+' рублей.');
  }
  function icon(id,x,y,size=24){const item=catalog.flatMap(c=>c.items).find(p=>p.id===id);ctx.drawImage(images['shop_'+(item?.icon||id)],Math.round(x),Math.round(y),size,size)}
- function render(){
+ function render(){PeninsulaPopup.visible=false;
   if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];currentUI.base(ctx,'shop3');
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?hovered.name+'\nЦена: '+hovered.price+' рублей.'+(money<hovered.price?'\nНе хватает денег.':''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
   rect(269,162,40,12,'#11171c');currentUI.resource(ctx,'Наличные',money.toLocaleString('ru-RU'));
