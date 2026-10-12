@@ -1,0 +1,18 @@
+// Exercise the real full-game bridge without a browser or animation delays.
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const nodes=new Map(),events={},raf=[];
+function node(id){if(!nodes.has(id))nodes.set(id,{hidden:id==='#level-frame',value:'',innerHTML:'',style:{width:'640px'},classList:{remove(){}},addEventListener(){},querySelector(){return this.input||(this.input={value:''})},replaceChildren(){},contentWindow:{postMessage(){},focus(){}}});return nodes.get(id)}
+const s={console,Event:class{constructor(type){this.type=type}},URLSearchParams,location:{search:'',origin:'http://test'},document:{hidden:false,querySelector:node,querySelectorAll:()=>[],addEventListener(){}},localStorage:{getItem(){return null},setItem(){}},requestAnimationFrame:fn=>raf.push(fn),clearInterval(){},setTimeout(){},performance:{now:()=>0},addEventListener:(n,f)=>(events[n]||=[]).push(f),dispatchEvent:e=>events[e.type]?.forEach(fn=>fn()),screen:'title',dialog:false,journeyNode:null,journeyStarted:false,journeyActive:false,loading:false,timer:null,hero:0,selected:0,visited:new Set(),rewards:{},travelItems:new Set(),chapterQuestions:['','','','',''],points:Array.from({length:5},(_,i)=>({full:'Place '+i})),journeyNodes:{},controls:node('#controls'),currentUI:{fonts:{cozette:{image:{}}},ready:Promise.resolve()},PeninsulaPopup:{},ctx:{},render(){},stopGames(){},applyDisplayScale(){},launchCampSearch(){},launchFogRace(){},setScreen(next){s.screen=next;s.render()},showNode(id){s.journeyNode=id;s.screen=/^intro|^\d+\./.test(id)?'story':id==='map'?'map':'embedded';s.render()},selectDestination(){},buildParallaxControls(host,motion){host.innerHTML='Intro '+motion.number},startJourney(){s.showNode('intro2')},advanceStory(){const id=s.journeyNode;if(/^intro[2-4]$/.test(id)){if(id==='intro4')s.setScreen('hero');else s.showNode('intro'+(Number(id.slice(5))+1))}else if(id==='intro5')s.showNode('map');else s.showNode('drive1')}};s.window=s;
+s.loadIntroParallax=async number=>({number,reset(){},tick(){},draw(){}});
+vm.createContext(s);vm.runInContext(fs.readFileSync('dist/scene-settings.js','utf8'),s);vm.runInContext(fs.readFileSync('dist/full-bridge.js','utf8'),s);
+const tick=now=>{assert.ok(raf.length);raf.shift()(now)};
+(async()=>{
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(node('#scene-settings').innerHTML,'Intro 1');tick(0);tick(4000);assert.equal(s.journeyNode,'intro2');assert.equal(node('#scene-settings').innerHTML,'Intro 2');
+ s.journey.select('intro3');s.PeninsulaScenes.updateIntro(3,{showSeconds:2,enabled:false});tick(5000);tick(7000);assert.equal(s.journeyNode,'intro4','disabled parallax must still auto-advance');
+ s.journey.select('1.1');s.PeninsulaScenes.updateStory({showSeconds:3});tick(8000);tick(10000);assert.equal(s.journeyNode,'1.1');
+ s.journey.select('1.2');assert.equal(vm.runInContext('sceneClock.snapshot().elapsed',s),0);tick(11000);assert.equal(s.journeyNode,'1.2','the previous story timer must not advance the new screen');tick(13000);assert.equal(s.journeyNode,'drive1');assert.equal(node('#scene-settings').hidden,true);
+ s.journey.select('hero0');tick(30000);assert.equal(s.screen,'hero');assert.equal(node('#scene-settings').hidden,true);
+ s.journey.select('intro5');assert.equal(node('#scene-settings').innerHTML,'Intro 5');s.PeninsulaScenes.updateIntro(5,{showSeconds:1});tick(31000);s.showNode('map');tick(35000);assert.equal(s.screen,'map','clicking away must cancel intro countdown');
+ console.log('PASS: active-screen panel switching, intro auto-advance, shared story duration, stopped old timers and no timed transitions in character/game screens.');
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -70,7 +70,7 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  if(['drive1','fog4','traffic5','platform5'].includes(key)){PeninsulaColors.outline(c,7,22,306,138);for(const [x,y,w,h]of [[1,22,6,217],[313,22,6,217],[7,160,306,1],[197,161,1,78],[7,234,306,5]])PeninsulaColors.fill(c,x,y,w,h);currentUI.box(c,7,161,190,72,'#11171c','dialogue');currentUI.resource(c,'','');currentUI.slots(c);}
  const rows=currentUI.rows[key]||[];
  const isStory=rows.some(r=>r.y>=150&&r.w>280)&&!['platform5','drive1','fog4','traffic5','map'].includes(key);
- if(isStory){PeninsulaColors.outline(c,1,1,318,153);currentUI.box(c,1,154,318,85,'#11171c','narrator');const body=rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n').replace(/\n\s*\n/g,'\n');currentUI.roleBlock(c,body,8,164,304,69,'narrator')}
+ if(isStory){PeninsulaColors.box(c,1,1,318,153,'storyImage');if(background)currentUI.clip(c,2,2,316,151,()=>c.drawImage(currentUI.backgrounds[key],0,0));currentUI.box(c,1,154,318,85,'#11171c','narrator');const body=rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n').replace(/\n\s*\n/g,'\n');currentUI.roleBlock(c,body,8,164,304,69,'narrator')}
  for(const r of rows){if(isStory&&r.y>=150&&r.w>280)continue;if(r.y<22&&r.w>200){currentUI.header(c,r.text);continue}const align=(r.align||'LEFT').toLowerCase();currentUI.roleBlock(c,currentUI.case(r.text),Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.max(13,Math.round(r.h)),r.x>=198&&r.y>=161&&r.y<176?'data':r.x>=198&&r.y>=40&&r.y<160?'situation':r.y>=160?'dialogue':'technical')}
  PeninsulaColors.outline(c,0,0,320,240);
 };

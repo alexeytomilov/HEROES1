@@ -28,10 +28,46 @@ document.querySelector('#fog-back').onclick=()=>{stopGames();showNode('map')};
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
 const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!=='1-1')currentUI.ready.then(()=>setTimeout(()=>reviewScreen(({'1-2':'camp1','2-1':'bear2','2-2':'house2','3-1':'village3','3-2':'shop3','4-1':'fog4','4-2':'exchange4','5-1':'platform5','5-2':'traffic5'})[direct]||direct),0));
-// Shared layered intros in both the complete journey and the focused preview.
-let fullIntroMotions={},fullIntroKey=null;
-function fullIntroAnimate(now){const active=screen==='story'&&!document.hidden?journeyNode:null;let completed=false;for(const [key,motion]of Object.entries(fullIntroMotions)){const ended=motion.tick(now,active===key);if(active==='intro2'&&key===active&&ended)completed=true}if(completed&&screen==='story'&&journeyNode==='intro2')advanceStory();else if(fullIntroMotions[active])render();requestAnimationFrame(fullIntroAnimate)}
-Promise.all([currentUI.ready,...[2,3,4].map(n=>window.loadIntroParallax(n))]).then(([,two,three,four])=>{fullIntroMotions={intro2:two,intro3:three,intro4:four};render();requestAnimationFrame(fullIntroAnimate)}).catch(console.error);
-const renderBeforeParallax=render;render=function(){renderBeforeParallax();const key=screen==='story'&&fullIntroMotions[journeyNode]?journeyNode:null;if(key){const motion=fullIntroMotions[key];if(fullIntroKey!==key){motion.reset()}motion.draw(ctx)}fullIntroKey=key};
+// The current screen owns its timer; changing screens cancels the old clock.
+let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
+const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');
+function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
+function syncScenePanel(id){
+ if(!sceneHost)return;
+ const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
+ sceneHost.hidden=!kind;if(!kind){scenePanelKey=null;return}
+ if(panelKey===scenePanelKey)return;
+ if(kind==='intro'){
+  const motion=fullIntroMotions[id];if(!motion){sceneHost.innerHTML='<h2>Заставка '+id.slice(5)+'</h2><p>Загрузка слоёв…</p>';return}
+  buildParallaxControls(sceneHost,motion,()=>render());
+ }else{
+  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>';
+  const input=sceneHost.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
+  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)})};
+ }
+ scenePanelKey=panelKey;
+}
+function fullIntroAnimate(now){
+ const id=activeScene();sceneClock.select(id);
+ const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
+ for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
+ if(sceneClock.tick(dt,visible)){if(id==='intro1')startJourney();else advanceStory()}
+ else if(fullIntroMotions[id])render();
+ requestAnimationFrame(fullIntroAnimate);
+}
+Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]).then(([, ...motions])=>{
+ fullIntroMotions=Object.fromEntries(motions.map((motion,i)=>['intro'+(i+1),motion]));scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
+}).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить слои заставок. Обновите страницу.</p>'}console.error(e)});
+const renderBeforeParallax=render;render=function(){
+ renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
+ const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx)}
+ fullIntroKey=id;
+};
+window.addEventListener('scene-settings-change',()=>{
+ const id=activeScene();sceneClock.restart();sceneLastTime=null;fullIntroMotions[id]?.reset();
+ if(PeninsulaScenes.kind(id)==='story'&&sceneHost?.querySelector('[data-story-seconds]'))sceneHost.querySelector('[data-story-seconds]').value=PeninsulaScenes.story.showSeconds;
+ if(currentUI.fonts.cozette?.image)render();
+});
+document.addEventListener('visibilitychange',()=>{sceneLastTime=null;for(const motion of Object.values(fullIntroMotions))motion.tick(performance.now(),false)});
 
 PeninsulaPopup.onchange=()=>{if(screen!=="embedded")render()};

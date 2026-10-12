@@ -15,3 +15,5 @@ events.storage({key:api.key,newValue:JSON.stringify({...state,heading:{backgroun
 console.log('PASS: category isolation, fallback, texture blending, transparent texture, pixel outlines and persisted colors.');
 
 assert.equal(api.role({name:'Описание героя',x:7,y:163,w:190,h:48}),'heroDescription');assert.notEqual(api.get('heroDescription').background,api.get('default').background);
+
+assert.equal(api.names.storyImage,'Экран');assert.equal(api.role({x:1,y:1,w:318,h:152,fills:[{type:'IMAGE'}]}),'storyImage');
