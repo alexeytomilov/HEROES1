@@ -113,7 +113,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     currentUI.base(ctx,indoor?'house2':village?'village3':bear?'bear2':'camp1');drawScene();
     const context=indoor?'Исследуйте залы.\nОсмотрите находки.':village?'Найдите лавку\nна севере.':tile()==='b'?'Открытая поляна.\nПоставьте отпугиватель.':'Слышен рёв медведя.\nИщите поляну.';
     currentUI.roleBlock(ctx,context,199,44,113,49,'situation');drawMinimap();
-    ['knight','wanderer','mage'].forEach((name,i)=>{const bx=7+i*37;currentUI.box(ctx,bx,161,36,43);ctx.drawImage(images[name],bx+1,162,34,42)});
+    ['knight','wanderer','mage'].forEach((name,i)=>{const bx=7+i*37;currentUI.box(ctx,bx,161,36,43);ctx.drawImage(currentUI.rpgPortraits[name],bx+1,162,34,42)});
     hit('Влево',118,161,26,21,()=>turn(-1));hit('Вперёд',145,161,26,21,()=>step(1));hit('Вправо',172,161,25,21,()=>turn(1));
     hit('Меч',118,183,26,21,()=>{if(bear)install();else inspect()});hit('Назад',145,183,26,21,()=>step(-1));hit('Осмотр',172,183,25,21,inspect);
     const bagItems=bear?bearItems.map(o=>won&&o.id==='repeller'?null:o.asset):indoor||village?[]:['camp_tent',...Array.from(collected).map(id=>'camp_'+id)];currentUI.bag(ctx,bagItems,images);
