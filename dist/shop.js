@@ -1,13 +1,13 @@
 // Teriberka merchant: catalog purchases are atomic when dropped into the inventory.
 window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawText,announce,onExit,budget=2300,completeLabel="НА КАРТУ"}){
  const ctx=canvas.getContext('2d');
- const welcome='Здравствуй! Система зависла, карты не принимаем. Сегодня только наличные.';
- const goods=(rows)=>rows.map(([id,name,price])=>({id,name,price,line:name+' — хороший выбор. Забирай.'}));
+ const welcome=LT('shop3.welcome');
+ const goods=(rows)=>rows.map(([id,name,price])=>({id,name,price,line:LT('shop3.goodChoice',{item:name})}));
  const catalog=[
-  {name:'ЕДА',items:goods([['bread','Белый хлеб',120],['blackbread','Чёрный хлеб',100],['chips_red','Чипсы с паприкой',160],['chips_green','Чипсы со сметаной',160],['tin','Рыбные консервы',240],['sprats','Шпроты',210],['stew','Тушёнка',290],['potatoes','Картошка',140],['candy','Конфеты',180]])},
-  {name:'АЛКОГОЛЬ',items:goods([['wine','Красное вино',450],['beer','Пиво в банке',180],['spirits','Настойка',750],['beer_red','Тёмное пиво в банке',220],['vodka_blue','Водка Классическая',480],['vodka_red','Водка Ржаная',560],['vodka_black','Водка Северная',680],['cognac','Коньяк',890],['cocktail','Коктейль с водкой',250]])},
-  {name:'РЫБАЛКА',items:goods([['rod','Удочка',950],['hooks','Крючки',160],['lure','Блесна',320],['reel','Катушка',650],['line','Леска',180],['float','Поплавок',90],['net','Сачок',480],['wobbler','Воблер',390],['sinkers','Грузила',120]])},
-  {name:'СУВЕНИРЫ',items:[{id:'magnet',name:'Магнит Териберка',price:150,line:'Магнит на холодильник. Чтобы не забыть море.'},{id:'mug',name:'Морская кружка',price:280,line:'Кружка крепкая. Чай не убежит.'},{id:'leviathan',name:'Сахарный Левиафан',price:600,line:'Сахарный Левиафан? Хороший выбор. Такого больше нигде нет.'},...goods([['magnet_lighthouse','Магнит Маяк',170],['mug_wave','Кружка Волна',300],['magnet_coast','Магнит Берег',190],['mug_sea','Кружка Море',320],['magnet_north','Магнит Север',200],['mug_teriberka','Кружка Териберка',350]]).map(p=>({...p,icon:p.id.startsWith('magnet')?'magnet':'mug'}))]}
+  {name:LT('shop3.catFood'),items:goods([['bread',LT('shop3.item_bread'),120],['blackbread',LT('shop3.item_blackbread'),100],['chips_red',LT('shop3.item_chips_red'),160],['chips_green',LT('shop3.item_chips_green'),160],['tin',LT('shop3.item_tin'),240],['sprats',LT('shop3.item_sprats'),210],['stew',LT('shop3.item_stew'),290],['potatoes',LT('shop3.item_potatoes'),140],['candy',LT('shop3.item_candy'),180]])},
+  {name:LT('shop3.catAlcohol'),items:goods([['wine',LT('shop3.item_wine'),450],['beer',LT('shop3.item_beer'),180],['spirits',LT('shop3.item_spirits'),750],['beer_red',LT('shop3.item_beer_red'),220],['vodka_blue',LT('shop3.item_vodka_blue'),480],['vodka_red',LT('shop3.item_vodka_red'),560],['vodka_black',LT('shop3.item_vodka_black'),680],['cognac',LT('shop3.item_cognac'),890],['cocktail',LT('shop3.item_cocktail'),250]])},
+  {name:LT('shop3.catFishing'),items:goods([['rod',LT('shop3.item_rod'),950],['hooks',LT('shop3.item_hooks'),160],['lure',LT('shop3.item_lure'),320],['reel',LT('shop3.item_reel'),650],['line',LT('shop3.item_line'),180],['float',LT('shop3.item_float'),90],['net',LT('shop3.item_net'),480],['wobbler',LT('shop3.item_wobbler'),390],['sinkers',LT('shop3.item_sinkers'),120]])},
+  {name:LT('shop3.catSouvenirs'),items:[{id:'magnet',name:LT('shop3.item_magnet'),price:150,line:LT('shop3.line_magnet')},{id:'mug',name:LT('shop3.item_mug'),price:280,line:LT('shop3.line_mug')},{id:'leviathan',name:LT('shop3.item_leviathan'),price:600,line:LT('shop3.line_leviathan')},...goods([['magnet_lighthouse',LT('shop3.item_magnet_lighthouse'),170],['mug_wave',LT('shop3.item_mug_wave'),300],['magnet_coast',LT('shop3.item_magnet_coast'),190],['mug_sea',LT('shop3.item_mug_sea'),320],['magnet_north',LT('shop3.item_magnet_north'),200],['mug_teriberka',LT('shop3.item_mug_teriberka'),350]]).map(p=>({...p,icon:p.id.startsWith('magnet')?'magnet':'mug'}))]}
  ];
  const bag={x:198,y:176,w:115,h:57};
  let active=false,category=0,money=budget,inventory=[],selected=null,hovered=null,drag=null,won=false,hits=[],comment=welcome;
@@ -18,31 +18,31 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  function hit(label,x,y,w,h,fn){hits.push({label,x,y,w,h,fn})}
  function button(label,x,y,w,h,fn,chosen=false){drawPanel(x,y,w,h,'ui_button');if(chosen)rect(x+4,y+4,w-8,h-8,'#2b4059');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hit(label,x,y,w,h,fn)}
  function reset(){money=budget;inventory=[];won=false;drag=null;category=0;selected=null;hovered=null;speak(welcome)}
- function changeCategory(i){category=i;selected=null;hovered=null;drag=null;const lines=['Еда на дорогу. Здесь всё, что на полке справа.','Пиво, три вида водки, коньяк и коктейль. Выбирай.','Всё для рыбалки: от крючков до сачка. Выбирай.','Сувенир из Териберки? Глянь на Сахарного Левиафана.'];speak(lines[i])}
+ function changeCategory(i){category=i;selected=null;hovered=null;drag=null;const lines=[LT('shop3.aboutFood'),LT('shop3.aboutAlcohol'),LT('shop3.aboutFishing'),LT('shop3.aboutSouvenirs')];speak(lines[i])}
  function buy(product){
   hovered=null;if(won)return false;
-  if(money<product.price){speak('Слишком дорого. У тебя не хватает денег. Товар остаётся у меня.');return false}
+  if(money<product.price){speak(LT('shop3.tooExpensive'));return false}
   const stack=inventory.find(item=>item.id===product.id);
-  if(!stack&&inventory.length>=8){speak('Инвентарь полон. Верни товар по клику, чтобы освободить место.');return false}
+  if(!stack&&inventory.length>=8){speak(LT('shop3.bagFull'));return false}
   money-=product.price;if(stack)stack.count++;else inventory.push({...product,count:1});
-  if(product.id==='leviathan'){won=true;speak('Сахарный Левиафан твой! Вот за этим ты и приехал. Удачной дороги.');return true}
+  if(product.id==='leviathan'){won=true;speak(LT('shop3.won'));return true}
   speak(product.line);return true;
  }
  function refund(item){
   const index=inventory.indexOf(item);if(index<0)return;
   money+=item.price;item.count--;if(item.count===0)inventory.splice(index,1);
   if(item.id==='leviathan')won=false;
-  hovered=null;speak(item.name+' возвращён. Получи '+item.price+' рублей.');
+  hovered=null;speak(LT('shop3.refund',{item:item.name,price:item.price}));
  }
  function icon(id,x,y,size=24){const item=catalog.flatMap(c=>c.items).find(p=>p.id===id);ctx.drawImage(images['shop_'+(item?.icon||id)],Math.round(x),Math.round(y),size,size)}
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];currentUI.base(ctx,'shop3');
-  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?hovered.name+'\nЦена: '+hovered.price+' рублей.'+(money<hovered.price?'\nНе хватает денег.':''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
-  rect(269,162,40,12,'#11171c');currentUI.resource(ctx,'Наличные',money.toLocaleString('ru-RU'));
+  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?LT('shop3.price',{item:hovered.name,price:hovered.price})+(money<hovered.price?'\n'+LT('shop3.priceShort'):''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
+  rect(269,162,40,12,'#11171c');currentUI.resource(ctx,LT('shop3.cash'),money.toLocaleString('ru-RU'));
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
   for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)PeninsulaText.line(ctx,String(item.count),x+25,y+16,'data',currentUI.fonts,'right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
-  if(won){const b=currentUI.modal(ctx,'ПОКУПКА СОВЕРШЕНА','Сахарный Левиафан ваш! Можно продолжать путешествие.');hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
+  if(won){const b=currentUI.modal(ctx,LT('shop3.popupTitle'),LT('shop3.popupBody'));hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
  }
  const contains=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;
  function point(e){const b=inputSurface.getBoundingClientRect();return{x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*240/b.height}}
@@ -53,7 +53,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  inputSurface.addEventListener('pointermove',e=>{if(!active)return;const p=point(e);if(drag){if(drag.id!==e.pointerId)return;drag.x=p.x;drag.y=p.y;render();return}const product=won?null:hits.find(h=>h.product&&contains(p,h))?.product||null;if(product?.id!==hovered?.id){hovered=product;render();}});
  inputSurface.addEventListener('pointerleave',()=>{if(active&&!drag&&hovered){hovered=null;render();}});
  inputSurface.addEventListener('pointerup',e=>{
-  if(!active||!drag||drag.id!==e.pointerId)return;e.preventDefault();const p=point(e),product=drag.product;drag=null;hovered=null;if(inputSurface.hasPointerCapture(e.pointerId))inputSurface.releasePointerCapture(e.pointerId);if(contains(p,bag))buy(product);else speak(product.name+'\nЦена: '+product.price+' рублей.');render();
+  if(!active||!drag||drag.id!==e.pointerId)return;e.preventDefault();const p=point(e),product=drag.product;drag=null;hovered=null;if(inputSurface.hasPointerCapture(e.pointerId))inputSurface.releasePointerCapture(e.pointerId);if(contains(p,bag))buy(product);else speak(LT('shop3.price',{item:product.name,price:product.price}));render();
  });
  inputSurface.addEventListener('pointercancel',()=>{if(active){drag=null;render()}});
  window.addEventListener('keydown',e=>{
