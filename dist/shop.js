@@ -42,7 +42,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
   for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)text(''+item.count,x+25,y+16,'#f1d39a','right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
-  if(won){currentUI.modal(ctx,'ПОКУПКА СОВЕРШЕНА','Сахарный Левиафан ваш! Можно продолжать путешествие.');hits=[];hit('Продолжить',50,70,220,100,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
+  if(won){const b=currentUI.modal(ctx,'ПОКУПКА СОВЕРШЕНА','Сахарный Левиафан ваш! Можно продолжать путешествие.');hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
  }
  const contains=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;
  function point(e){const b=inputSurface.getBoundingClientRect();return{x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*240/b.height}}

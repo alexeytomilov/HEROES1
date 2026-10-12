@@ -52,9 +52,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   });
   currentUI.box(ctx,7,161,190,72,'#11171c');currentUI.block(ctx,p.hang?'Вы держитесь за уступ.\nНажмите вверх, чтобы подняться.':currentUI.case(rooms[room].name)+'\nСтрелки — идти.\nПробел — прыжок.',8,166,188,66);currentUI.resource(ctx,'Запас сил','80%');currentUI.slots(ctx);
   if(state==='question'){
-   currentUI.box(ctx,50,70,220,100,'#11171c');currentUI.text(ctx,'Поехать домой?',160,84,'center');
-   button('Да',90,142,60,18,home,choice===0);button('Нет',170,142,60,18,keepWalking,choice===1);
-  }else if(state!=='play'){currentUI.modal(ctx,state==='fallen'?'Вы сорвались':'Пора домой',state==='fallen'?'Повторите этот участок.':'Путешествие завершено.');hits.push({x:50,y:70,w:220,h:100,fn:()=>press('enter')})}drawGameBorder(ctx);
+   PeninsulaPopup.draw(ctx,{body:'Поехать домой?',labels:['Да','Нет'],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
+  }else if(state!=='play'){const b=currentUI.modal(ctx,state==='fallen'?'Вы сорвались':'Пора домой',state==='fallen'?'Повторите этот участок.':'Путешествие завершено.');hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);
  }
  function tick(now){if(!active)return;const dt=last?Math.min(.1,(now-last)/1000):0;last=now;acc+=dt;while(acc>=1/60&&active){update(1/60);acc-=1/60;}render();if(active)frame=requestAnimationFrame(tick);}
  function press(k){if(state==='question'){if(k==='left'||k==='right'){choice=1-choice;render()}if(k==='jump'||k==='enter'){choice===0?home():keepWalking()}return;}if(state==='fallen'){if(k==='jump'||k==='enter')retry();return;}if(state==='home'){if(k==='enter'||k==='jump')onExit();return;}if(k==='enter'&&room===3&&p.ground)ask();else if(k==='jump')jump();}

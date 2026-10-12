@@ -118,7 +118,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     hit('Меч',118,183,26,21,()=>{if(bear)install();else inspect()});hit('Назад',145,183,26,21,()=>step(-1));hit('Осмотр',172,183,25,21,inspect);
     const bagItems=bear?bearItems.map(o=>won&&o.id==='repeller'?null:o.asset):indoor||village?[]:['camp_tent',...Array.from(collected).map(id=>'camp_'+id)];currentUI.bag(ctx,bagItems,images);
     currentUI.block(ctx,lastMessage||'Осмотрите место и выберите предмет.',8,206,188,26);
-    if(intro||won||failed){currentUI.modal(ctx,failed?'Вы погибли':won?village?'Лавка найдена':indoor?'Старая Нива найдена':'Медведь отпугнут':'Медведь',failed?'Кинжал не помог. Выберите другой предмет.':won?lastMessage:'Найдите поляну и поставьте отпугиватель.');hits=[];hit('Продолжить',50,70,220,100,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
+    if(intro||won||failed){const popupButton=currentUI.modal(ctx,failed?'Вы погибли':won?village?'Лавка найдена':indoor?'Старая Нива найдена':'Медведь отпугнут':'Медведь',failed?'Кинжал не помог. Выберите другой предмет.':won?lastMessage:'Найдите поляну и поставьте отпугиватель.');hits=[];hit(popupButton.label,popupButton.x,popupButton.y,popupButton.w,popupButton.h,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
     drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);drawGameBorder(ctx);
   }
   let pointer=null;
