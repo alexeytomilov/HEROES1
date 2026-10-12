@@ -1,10 +1,10 @@
 // Shared bitmap text presets for the journey and embedded levels.
 (()=>{
  const key='peninsula-text-presets-v1';
- const names={large:'Большой текст',small:'Малый текст',technical:'Технический текст',heading:'Заголовок'};
+ const names={large:'Большой текст',small:'Малый текст',technical:'Технический текст',heading:'Заголовок',dialog:'Диалог'};
  const roles={narrator:'Текст рассказчика',dialogue:'Диалог',situation:'Ситуация',mapFooter:'Текст внизу карты',question:'Текст вопроса',firstScreen:'Текст на первом экране'};
- const defaults={assignments:{narrator:'large',dialogue:'large',situation:'small',mapFooter:'small',question:'large',firstScreen:'large'},presets:{}};
- for(const [id,size]of Object.entries({large:13,small:10,technical:8,heading:16}))defaults.presets[id]={size,align:id==='heading'?'center':'left',padding:5,offset:0,uppercase:false,color:'#bec4c9'};
+ const defaults={assignments:{narrator:'large',dialogue:'dialog',situation:'small',mapFooter:'small',question:'large',firstScreen:'large'},presets:{}};
+ for(const [id,size]of Object.entries({large:13,small:10,technical:8,heading:16,dialog:13}))defaults.presets[id]={size,align:id==='heading'?'center':'left',padding:5,offset:0,uppercase:false,color:'#bec4c9'};
  const clamp=(v,a,b,d)=>Number.isFinite(Number(v))?Math.round(Math.max(a,Math.min(b,Number(v)))):d;
  function normalize(value={}){const out=JSON.parse(JSON.stringify(defaults));for(const id of Object.keys(roles))if(names[value.assignments?.[id]])out.assignments[id]=value.assignments[id];for(const id of Object.keys(names)){const v=value.presets?.[id]||{},d=out.presets[id];Object.assign(d,{size:clamp(v.size,5,32,d.size),align:v.align==='center'?'center':v.align==='left'?'left':d.align,padding:clamp(v.padding,0,40,d.padding),offset:clamp(v.offset,-60,60,d.offset),uppercase:v.uppercase===true,color:/^#[0-9a-f]{6}$/i.test(v.color)?v.color:d.color})}return out}
  let state=normalize();try{state=normalize(JSON.parse(localStorage.getItem(key)||'{}'))}catch{}
