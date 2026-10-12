@@ -1,16 +1,16 @@
 // One native-pixel renderer and geometry for every journey question/message.
 (()=>{
  const defaults={width:260,height:150,padding:10,fontSize:13,lineStep:15,buttonWidth:100,buttonHeight:24,gap:8};
- const bounds={width:[180,308],height:[110,228],padding:[4,24],lineStep:[13,24],buttonWidth:[50,140],buttonHeight:[18,40],gap:[4,20]};
- // Question window size: large keeps the configured geometry, small is a compact window.
- const sizes={large:'Большое',small:'Маленькое'},small={width:200,height:110};
- const normalize=v=>{const out={...defaults};out.size=v?.size==='small'?'small':'large';for(const [k,[a,b]]of Object.entries(bounds))out[k]=Math.round(Math.max(a,Math.min(b,Number(v?.[k])||defaults[k])));out.fontSize=Number(v?.fontSize)===16?16:13;return out;};
+ const bounds={width:[120,318],height:[60,228],padding:[4,24],lineStep:[13,24],buttonWidth:[50,140],buttonHeight:[18,40],gap:[4,20]};
+ // Width and height are set in game pixels; height grows when the text needs more room.
+ // A window saved with the former "small" size keeps its 200×110 look.
+ const normalize=v=>{const out={...defaults};if(v?.size==='small')v={...v,width:200,height:110,size:undefined};for(const [k,[a,b]]of Object.entries(bounds))out[k]=Math.round(Math.max(a,Math.min(b,Number(v?.[k])||defaults[k])));out.fontSize=Number(v?.fontSize)===16?16:13;return out;};
  let settings=normalize(window.PENINSULA_PROJECT_CONFIG?.popup);try{const saved=localStorage.getItem('peninsula-popup-settings');if(saved)settings=normalize(JSON.parse(saved))}catch{}
- const api=window.PeninsulaPopup={settings,defaults,bounds,normalize,sizes,visible:false};
+ const api=window.PeninsulaPopup={settings,defaults,bounds,normalize,visible:false};
  api.update=v=>{Object.assign(settings,normalize(v));try{localStorage.setItem('peninsula-popup-settings',JSON.stringify(settings))}catch{}api.onchange?.()};
  window.addEventListener('storage',e=>{if(e.key==='peninsula-popup-settings'){try{Object.assign(settings,normalize(JSON.parse(e.newValue||'{}')));api.onchange?.()}catch{}}});
  api.draw=(c,{title='',body='',labels=['Продолжить'],choice=0}={})=>{
-  window.PeninsulaPopup.visible=true;const s=settings.size==='small'?{...settings,...small}:settings,role='question',api=PeninsulaText,fonts=currentUI.fonts,style=api.get(role),buttonStyle=api.get('buttons'),step=style.size+style.lineSpacing;
+  window.PeninsulaPopup.visible=true;const s=settings,role='question',api=PeninsulaText,fonts=currentUI.fonts,style=api.get(role),buttonStyle=api.get('buttons'),step=style.size+style.lineSpacing;
   if(!fonts.cozette?.image)return [];
   const w=s.width,p=Math.max(s.padding,style.padding),bw=Math.min(s.buttonWidth,Math.floor((w-2*p-(labels.length-1)*s.gap)/Math.max(1,labels.length))),bh=Math.max(20,buttonStyle.size+6,s.buttonHeight);
   title=currentUI.case(title);body=currentUI.case(body);if(title.trim()===body.trim())title='';

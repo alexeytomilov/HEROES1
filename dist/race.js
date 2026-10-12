@@ -64,12 +64,14 @@ function drawRace(){
  PeninsulaColors.fill(ctx,7,22,306,212);
  clipped(8,23,304,136,()=>ctx.drawImage(raceScene,8,23));border(7,22,306,138);
  cockpitPanel(d);
- if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),14,85,44,85);
+ // The phone is drawn at its native 54×104 pixels so the altitude text stays sharp.
+ if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),12,64);
  PeninsulaColors.box(ctx,198,161,115,14,'power');
  resourceText({text:'Топливо',align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
- for(let row=0;row<2;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
- PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
- block(raceDialog(d),8,206,188,26,{role:'dialogue'});
+ // One row of supplies; the radio messages run along the bottom to the frame edge.
+ for(let row=0;row<1;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
+ PeninsulaColors.box(ctx,7,205,306,28,'dialogue');
+ block(raceDialog(d),8,206,304,26,{role:'dialogue'});
  cockpitRadio(d);
  if(draggedItem)inventoryIcon(draggedItem.index,draggedItem.x-14,draggedItem.y-14);
  heading(params.get('mode')==='fog'?'Перевал Геологов':params.get('mode')==='home'?'Дорога домой':'Полуостров средний');
@@ -90,7 +92,7 @@ function startRace(){
    onRender:d=>{raceData=d;if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?'Поехали':d.state==='over'?'Ещё раз':'В пути';$('#race-start').disabled=d.state==='drive'||raceFinished;},
    onComplete:()=>{if(raceFinished)return;raceFinished=true;raceEngine.stop();render();$('#status').textContent='Вы добрались до места ночлега.';$('#race-start').disabled=true;}
   });raceEngine.start();window.trip=raceEngine;
- };bg.onload=loaded;near.onload=loaded;bg.onerror=near.onerror=()=>{$('#status').textContent='Не удалось загрузить графику гонки.'};bg.src='assets/mountains-far.png';near.src='assets/mountains-near.png';
+ };bg.onload=loaded;near.onload=loaded;bg.onerror=near.onerror=()=>{$('#status').textContent='Не удалось загрузить графику гонки.'};bg.src='assets/mountains-far.png';near.src='assets/mountains-near-loop.png';
  $('#race-start').addEventListener('click',()=>raceEngine?.press());
  $('#race-restart').addEventListener('click',()=>{if(!raceEngine)return;raceFinished=false;draggedItem=null;const resume=racePaused||raceData.state==='clear';racePaused=false;$('#race-pause').textContent='Пауза';raceEngine.restart();if(resume)raceEngine.start();});
  const pause=()=>{if(!raceEngine||raceFinished)return;racePaused=!racePaused;if(racePaused)raceEngine.stop();else raceEngine.start();$('#race-pause').textContent=racePaused?'Продолжить':'Пауза';render()};

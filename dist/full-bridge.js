@@ -2,7 +2,11 @@
 const levelFrame=document.querySelector('#level-frame'),levelNext=document.querySelector('#level-next'),chapterSelect=document.querySelector('#chapter-select');
 let embeddedMode=null,embeddedComplete=false;
 const legacyStopGames=stopGames;stopGames=function(){legacyStopGames();if(!levelFrame.hidden){levelFrame.hidden=true;levelFrame.src='about:blank'}embeddedMode=null;embeddedComplete=false;levelNext.hidden=true;document.querySelector('#level-tools').hidden=true};
-function launchAccepted(mode,variant='sredny'){stopGames();screen='embedded';embeddedMode=mode;embeddedComplete=false;controls.replaceChildren();document.querySelector('#fog-back').hidden=false;for(const id of ['#fog-pad','#fog-sound','#platform-pad'])document.querySelector(id).hidden=true;levelFrame.hidden=false;levelFrame.src=(mode==='race'?'race.html':'rpg.html')+'?embed=1&scale=1&mode='+variant;document.querySelector('#level-tools').hidden=mode!=='race';document.querySelector('#hint').textContent=mode==='race'?'↑ / W — газ · ↓ / S — тормоз · ← → / A D — руль. Предметы перетаскивайте на дорогу.':'↑ ↓ — шаг · ← → — поворот · E — осмотр · G — поднять мусор. Палатку перетащите на площадку.';syncEmbeddedScale();chapterSelect.value=journeyNode;}
+// While an embedded level loads, the game canvas shows a loading screen instead of half-built frames.
+let levelRevealTimer=null;
+function revealLevel(){clearTimeout(levelRevealTimer);levelFrame.style.visibility=''}
+function drawLevelLoading(){PeninsulaColors.fill(ctx,0,0,320,240);PeninsulaColors.outline(ctx,0,0,320,240);PeninsulaText.line(ctx,'Загрузка...',160,113,'narrator',currentUI.fonts,'center')}
+function launchAccepted(mode,variant='sredny'){stopGames();screen='embedded';embeddedMode=mode;embeddedComplete=false;controls.replaceChildren();document.querySelector('#fog-back').hidden=false;for(const id of ['#fog-pad','#fog-sound','#platform-pad'])document.querySelector(id).hidden=true;levelFrame.hidden=false;levelFrame.style.visibility='hidden';clearTimeout(levelRevealTimer);levelRevealTimer=setTimeout(revealLevel,10000);drawLevelLoading();levelFrame.src=(mode==='race'?'race.html':'rpg.html')+'?embed=1&scale=1&mode='+variant;document.querySelector('#level-tools').hidden=mode!=='race';document.querySelector('#hint').textContent=mode==='race'?'↑ / W — газ · ↓ / S — тормоз · ← → / A D — руль. Предметы перетаскивайте на дорогу.':'↑ ↓ — шаг · ← → — поворот · E — осмотр · G — поднять мусор. Палатку перетащите на площадку.';syncEmbeddedScale();chapterSelect.value=journeyNode;}
 const legacyCamp=launchCampSearch;launchCampSearch=function(mode='coast'){if(mode==='coast')launchAccepted('rpg');else legacyCamp(mode)};
 const legacyDrive=launchFogRace;launchFogRace=function(mode='fog'){launchAccepted('race',mode)};
 const legacySetScreen=setScreen;setScreen=function(s){if(screen==='embedded')stopGames();legacySetScreen(s)};
@@ -10,7 +14,7 @@ function syncEmbeddedScale(){levelFrame.style.transform='scale('+parseFloat(docu
 const priorScale=applyDisplayScale;applyDisplayScale=function(){priorScale();syncEmbeddedScale()};
 window.addEventListener('resize',()=>{applyDisplayScale();syncEmbeddedScale()});document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{displayScale=Number(b.dataset.scale);applyDisplayScale()});
 levelFrame.addEventListener('load',()=>{if(!levelFrame.hidden){levelFrame.contentWindow.postMessage({type:'appearance',settings:currentUI.settings},location.origin);levelFrame.contentWindow.postMessage({type:'text-presets',settings:PeninsulaText.state},location.origin);levelFrame.contentWindow.postMessage({type:'color-presets',settings:PeninsulaColors.state},location.origin);levelFrame.contentWindow.focus()}});
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-complete'){embeddedComplete=true;levelNext.hidden=false;document.querySelector('#hint').textContent=embeddedMode==='race'?'Вы добрались до места ночлега. Можно продолжать.':'Лагерь установлен. Можно продолжать.'}});
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-complete'){embeddedComplete=true;levelNext.hidden=false;document.querySelector('#hint').textContent=embeddedMode==='race'?'Вы добрались до места ночлега. Можно продолжать.':'Лагерь установлен. Можно продолжать.'}});
 levelNext.onclick=()=>{if(!embeddedComplete)return;if(journeyActive)gameCompleted();else showNode('map')};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
 const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['map','Карта']];
@@ -58,9 +62,10 @@ if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
 document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('click',()=>b.blur()));
 // Entering an intro always replays it from its first frame.
 function buildPopupControls(){
- sceneHost.innerHTML='<h2>Окно вопроса</h2><label class="number">Размер окна<select data-popup-size>'+Object.entries(PeninsulaPopup.sizes).map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('')+'</select></label>';
- const select=sceneHost.querySelector('[data-popup-size]');select.value=PeninsulaPopup.settings.size;
- sceneHost.oninput=e=>{if(e.target===select){PeninsulaPopup.update({...PeninsulaPopup.settings,size:select.value});render()}};
+ const b=PeninsulaPopup.bounds,field=(key,label)=>'<label class="number">'+label+'<input data-popup-field="'+key+'" type="number" min="'+b[key][0]+'" max="'+b[key][1]+'" step="1"></label>';
+ sceneHost.innerHTML='<h2>Окно вопроса</h2>'+field('width','Ширина, px')+field('height','Высота, px');
+ for(const e of sceneHost.querySelectorAll('[data-popup-field]'))e.value=PeninsulaPopup.settings[e.dataset.popupField];
+ sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
  const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
@@ -77,7 +82,7 @@ Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]
 }).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить слои заставок. Обновите страницу.</p>'}console.error(e)});
 const renderBeforeParallax=render;render=function(){
  if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
- const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx)}
+ const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx,1,1,151)}
  fullIntroKey=id;
 };
 window.addEventListener('scene-settings-change',()=>{
