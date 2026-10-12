@@ -43,4 +43,4 @@ rows.forEach(([title,items],ri)=>{
  out.push(`<g id="${fid}" transform="translate(${X0},${y})" data-frame="${esc(title)}"><rect data-type="frame" x="0" y="0" width="${fw*K}" height="${fh*K}" fill="#ffffff" data-title="${esc(title)}" /><text x="${pad*K}" y="${(pad+44)*K}" font-size="${44*K}" font-weight="bold" font-family="noto_sans" fill="#1a1a1a">${esc(title)}</text>${conn.join('')}${body.join('')}</g>`);
  y+=fh*K+160*K;});
 fs.writeFileSync(process.argv[2]||'story-miro.svg','<svg xmlns="http://www.w3.org/2000/svg">\n'+out.join('\n')+'\n</svg>');
-console.log(rows.map(r=>r[0]+': '+r[1].join(' ')).join('\n'));console.log('bytes',fs.statSync(__dirname+'/miro.svg').size);
+console.log(rows.map(r=>r[0]+': '+r[1].join(' ')).join('\n'));console.log('bytes',fs.statSync(process.argv[2]||'story-miro.svg').size);
