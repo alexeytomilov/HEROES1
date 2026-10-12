@@ -21,6 +21,11 @@ jobs:
       - name: Name this publication artifact
         id: artifact-name
         run: echo 'name=github-pages-${{ github.run_id }}-${{ github.run_attempt }}' >> "$GITHUB_OUTPUT"
+      - name: Stamp this build into file and level URLs so browsers never mix cached versions
+        run: |
+          build="${GITHUB_SHA::8}"
+          sed -i -E "s/\.(js|css)\?v=[A-Za-z0-9._-]+/.\1?v=$build/g; s/\.(js|css)\"/.\1?v=$build\"/g" dist/*.html
+          sed -i "s/__BUILD__/$build/g" dist/full-bridge.js
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
