@@ -30,3 +30,11 @@ for(const role of [...Object.keys(api.roles),...Object.keys(api.names)])assert.e
 assert.ok(storage.size);console.log('PASS: eight roles, seven shared presets, casing, validation, wrapping and integer bitmap drawing.');
 
 const added=api.normalize({assignments:{buttons:'small',data:'technical'},presets:{buttons:{uppercase:true},data:{color:'#ff00ff'}}});assert.equal(added.assignments.buttons,'small');assert.equal(added.assignments.data,'technical');assert.equal(added.presets.buttons.uppercase,true);assert.equal(added.presets.data.color,'#ff00ff');
+
+// Spacing affects both width/wrapping and the bitmap glyph positions.
+state=JSON.parse(JSON.stringify(api.defaults));state.presets.dialog.letterSpacing=3;state.presets.dialog.lineSpacing=7;api.update(state);
+assert.equal(api.measure('abc','dialogue',fonts),24);assert.equal(api.metrics('dialogue',fonts).step,20);
+draws.length=0;api.block(context(),'ab\nc',0,0,100,100,'dialogue',fonts);assert.equal(draws[1][5]-draws[0][5],9);assert.equal(draws[2][6]-draws[0][6],20);
+const spaced=api.lines('abc abc',30,'dialogue',fonts);assert.equal(spaced.length,2);assert.ok(spaced.every(s=>api.measure(s,'dialogue',fonts)<=30));
+assert.equal(api.normalize({presets:{dialog:{letterSpacing:99,lineSpacing:99}}}).presets.dialog.letterSpacing,12);
+console.log('PASS: letter and line spacing, wrapping and whole-pixel glyph positions.');

@@ -50,7 +50,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    ctx.drawImage(im,Math.round((304-iw)/2),Math.round((136-ih)/2),iw,ih);
    for(const l of rooms[room].ledges){currentUI.clip(ctx,l.x,l.y,l.w,136-l.y,()=>{for(let sy=l.y+6;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y,64,32)});}drawHero();ctx.restore();
   });
-  currentUI.box(ctx,7,161,190,72,'#11171c');currentUI.block(ctx,p.hang?'Вы держитесь за уступ.\nНажмите вверх, чтобы подняться.':currentUI.case(rooms[room].name)+'\nСтрелки — идти.\nПробел — прыжок.',8,166,188,66);currentUI.resource(ctx,'Запас сил','80%');currentUI.slots(ctx);
+  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.block(ctx,p.hang?'Вы держитесь за уступ.\nНажмите вверх, чтобы подняться.':currentUI.case(rooms[room].name)+'\nСтрелки — идти.\nПробел — прыжок.',8,166,188,66);currentUI.resource(ctx,'Запас сил','80%');currentUI.slots(ctx);
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:'Поехать домой?',labels:['Да','Нет'],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
   }else if(state!=='play'){const b=currentUI.modal(ctx,state==='fallen'?'Вы сорвались':'Пора домой',state==='fallen'?'Повторите этот участок.':'Путешествие завершено.');hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);

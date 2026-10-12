@@ -60,8 +60,8 @@ async function startRPG(){
   ctx.fillStyle=settings.textColor;rows.forEach((row,y)=>[...row].forEach((v,x)=>{if(v==='1')ctx.fillRect(left+x*size,top+y*size,size,size)}));
  }
  function draw(){
-  rect(7,22,306,212,'#11171c');
-  border(7,22,190,138);border(198,22,115,138);border(198,161,115,14);
+  PeninsulaColors.fill(ctx,7,22,306,212);
+  border(7,22,190,138);PeninsulaColors.box(ctx,198,22,115,138,'situation');PeninsulaColors.box(ctx,198,161,115,14);
   clipped(view.x,view.y,view.w,view.h,()=>{
    const objects=[...tourists.map(t=>({x:t.x+.5,y:t.y+.3,asset:'shore_tourists',height:.75,ratio:1.7})),
     ...piles.flatMap(p=>trash.filter(o=>!(p.x===x&&p.y===y)&&!collected.has(trashId(p.x,p.y,o.id))).map((o,i)=>({x:p.x+.25+i*.5,y:p.y+.1,asset:'camp_'+o.id,height:.12}))),
@@ -71,17 +71,17 @@ async function startRPG(){
 
   });
   // Repaint only the new situation field and inventory interiors.
-  rect(199,23,113,136,'#293640');text('Ситуация',255.5,27,'center');
+  PeninsulaColors.box(ctx,198,22,115,138,'situation');text('Ситуация',255.5,27,'center');
   const context=won?'Лагерь установлен.':cell()==='r'?'Мусор на земле.':site()?site().name+'.':'Прибрежная тропа.\nИщите место\nдля лагеря.';
   block(context,199,44,113,49);
   drawMap();
   resourceText({text:'Запас сил',align:'LEFT'});resourceText({text:'80%',align:'RIGHT'});
   const bag=[won?null:'camp_tent',count('bottle')?'camp_bottle':null,count('wrapper')?'camp_wrapper':null];
-  for(let row=0;row<2;row++)for(let col=0;col<4;col++){const bx=198+col*29,by=176+row*29;rect(bx+1,by+1,26,26,'#18242b');border(bx,by,28,28);if(row===0&&bag[col]&&!(drag&&col===0)){icon(bag[col],bx+2,by+2);const n=col===1?count('bottle'):col===2?count('wrapper'):0;if(n>1){rect(bx+14,by+14,12,12,'#18242b');PeninsulaText.line(ctx,String(n),bx+26,by+13,'data',fonts,'right');}}}
+  for(let row=0;row<2;row++)for(let col=0;col<4;col++){const bx=198+col*29,by=176+row*29;PeninsulaColors.box(ctx,bx,by,28,28);if(row===0&&bag[col]&&!(drag&&col===0)){icon(bag[col],bx+2,by+2);const n=col===1?count('bottle'):col===2?count('wrapper'):0;if(n>1){rect(bx+14,by+14,12,12,'#18242b');PeninsulaText.line(ctx,String(n),bx+26,by+13,'data',fonts,'right');}}}
   ['833b3edee700c533c4a9dc2fadfddbf6fd7e872a','f40317e182ff959dc9bab1e1d3a9483eb7022a4e','2ecc0ecbf583a11c025a80661324094dc8572ecc'].forEach((hash,i)=>{const bx=7+i*37;rect(bx+1,162,34,42,'#293640');ctx.drawImage(images[hash],bx+1,162,34,42);border(bx,161,36,43);});
   const icons=[['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]];
-  for(const [kind,bx,by]of icons){const w=bx===172?25:26;rect(bx,by,w,21,['sword','eye'].includes(kind)?'#655848':'#293640');border(bx,by,w,21);controlIcon(kind,bx,by);}
-  rect(7,205,190,28,'#11171c');border(7,205,190,28);block(message,8,206,188,26);
+  for(const [kind,bx,by]of icons){const w=bx===172?25:26;PeninsulaColors.box(ctx,bx,by,w,21,'buttons');controlIcon(kind,bx,by);}
+  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');block(message,8,206,188,26,{role:'dialogue'});
   heading('Полуостров средний');
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
  }

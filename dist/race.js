@@ -61,15 +61,15 @@ function cockpitRadio(d){
 function drawRace(){
  const d=raceData;ctx.imageSmoothingEnabled=false;
  // Keep the shared six-pixel gutters inside the one-pixel outer frame.
- ctx.fillStyle='#11171c';ctx.fillRect(7,22,306,212);
+ PeninsulaColors.fill(ctx,7,22,306,212);
  clipped(8,23,304,136,()=>ctx.drawImage(raceScene,8,23));border(7,22,306,138);
  cockpitPanel(d);
  if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),14,85,44,85);
- ctx.fillStyle='#11171c';ctx.fillRect(198,161,115,14);border(198,161,115,14);
+ PeninsulaColors.box(ctx,198,161,115,14);
  resourceText({text:'Топливо',align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
- for(let row=0;row<2;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;ctx.fillStyle='#18242b';ctx.fillRect(x,y,28,28);border(x,y,28,28);if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
- ctx.fillStyle='#11171c';ctx.fillRect(7,205,190,28);border(7,205,190,28);
- block(raceDialog(d),8,206,188,26);
+ for(let row=0;row<2;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28);if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
+ PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
+ block(raceDialog(d),8,206,188,26,{role:'dialogue'});
  cockpitRadio(d);
  if(draggedItem)inventoryIcon(draggedItem.index,draggedItem.x-14,draggedItem.y-14);
  heading(params.get('mode')==='fog'?'Перевал Геологов':params.get('mode')==='home'?'Дорога домой':'Полуостров средний');
