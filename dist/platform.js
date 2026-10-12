@@ -43,7 +43,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  }
  const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
  function drawHero(){let index=0;if(p.hang)index=6;else if(!p.ground)index=5;else if(Math.abs(p.vx)>1)index=1+Math.floor(time*9)%4;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
- function render(){
+ function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,'Хибины');
   currentUI.clip(ctx,8,23,304,136,()=>{ctx.save();ctx.translate(8,23);
    const im=images['platform_bg'+(room+1)],scale=Math.max(304/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);

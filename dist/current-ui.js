@@ -22,8 +22,8 @@ currentUI.block=(c,s,x,y,w,h,align='left',offset=0)=>{const pad=align==='center'
 currentUI.wrap=(c,s,x,y,w,max=6)=>currentUI.block(c,currentUI.case(s),x,y,w,max*currentUI.settings.lineStep);
 currentUI.box=(c,x,y,w,h,fill='#293640',role='default')=>PeninsulaColors.box(c,x,y,w,h,role);
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.text(c,currentUI.case(title),160,2,'center',null,'unifont')};
-currentUI.resource=(c,label,value)=>{currentUI.box(c,198,161,115,14,'#11171c');currentUI.roleBlock(c,label+' '+value,199,161,113,13,'data')};
-currentUI.slots=c=>{for(let i=0;i<8;i++)currentUI.box(c,198+i%4*29,176+Math.floor(i/4)*29,28,28,'#18242b')};
+currentUI.resource=(c,label,value)=>{currentUI.box(c,198,161,115,14,'#11171c','power');currentUI.roleBlock(c,label+' '+value,199,161,113,13,'data')};
+currentUI.slots=c=>{for(let i=0;i<8;i++)currentUI.box(c,198+i%4*29,176+Math.floor(i/4)*29,28,28,'#18242b','inventory')};
 currentUI.patterns={left:['00100','01100','11111','01100','00100'],up:['00100','01110','11111','00100','00100'],right:['00100','00110','11111','00110','00100'],down:['00100','00100','11111','01110','00100'],sword:['000001','000011','000110','001100','111000','010000'],eye:['0011100','0100010','1001001','0100010','0011100']};
 currentUI.controls=c=>{for(const [kind,x,y]of [['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]]){currentUI.box(c,x,y,x===172?25:26,21,['eye','sword'].includes(kind)?'#655848':'#293640','buttons');const rows=currentUI.patterns[kind],left=Math.round(x+(26-rows[0].length*2)/2),top=Math.round(y+(21-rows.length*2)/2);c.fillStyle=currentUI.settings.textColor;rows.forEach((r,yy)=>[...r].forEach((v,xx)=>{if(v==='1')c.fillRect(left+xx*2,top+yy*2,2,2)}))}};
 currentUI.paint=(c,im,p,n)=>{if(p.mode==='FIT'){const ratio=Math.min(n.w/im.width,n.h/im.height),w=Math.round(im.width*ratio),h=Math.round(im.height*ratio);c.drawImage(im,Math.round(n.x+(n.w-w)/2),Math.round(n.y+(n.h-h)/2),w,h)}else c.drawImage(im,Math.round(n.x),Math.round(n.y),Math.round(n.w),Math.round(n.h))};
@@ -45,18 +45,19 @@ currentUI.hero=(c,key)=>{
  currentUI.layout(c,key);
  const texts=currentUI.layouts.find(s=>s.key===key).items.filter(n=>n.type==='TEXT'&&n.text),get=s=>texts.find(n=>n.id.endsWith(s));
  const name=get(';67:1564'),labels=get(';75:1617'),values=get(';75:1629'),ability=get(';107:1673'),description=get(';79:1631');
- const s={...currentUI.settings,lineStep:currentUI.settings.lineStep+PeninsulaText.get('technical').lineSpacing-2};
+ // Character stats use their own text type; padding, size, color and line spacing come from its preset.
+ const st=PeninsulaText.metrics('stats',currentUI.fonts),pad=st.s.padding,step=st.step,top=st.s.offset,line=(t,x,y,align='left')=>PeninsulaText.line(c,t,x,y,'stats',currentUI.fonts,align);
  currentUI.header(c,'Создание персонажа');
- currentUI.box(c,7,22,190,140);
+ currentUI.box(c,7,22,190,140,'#293640','stats');
  currentUI.clip(c,8,23,188,138,()=>{
-  currentUI.text(c,currentUI.case(name.text),102,24,'center');
+  line(name.text,102,24+top,'center');
   const ls=labels.text.split('\n').filter(Boolean),vs=values.text.split('\n').filter(Boolean);
-  ls.forEach((l,i)=>{currentUI.text(c,currentUI.case(l).replace(/:$/,'')+':',7+s.padding,43+i*s.lineStep);currentUI.text(c,vs[i]||'',197-s.padding,43+i*s.lineStep,'right')});
-  const y=43+ls.length*s.lineStep+3,a=ability.text.split('\n');
-  currentUI.text(c,'Каста:',7+s.padding,y);currentUI.text(c,currentUI.case(a[0]),120+s.padding-5,y);
-  currentUI.text(c,'Способность:',7+s.padding,y+s.lineStep);currentUI.text(c,currentUI.case(a[1]),120+s.padding-5,y+s.lineStep);
+  ls.forEach((l,i)=>{line(l.replace(/:$/,'')+':',7+pad,43+top+i*step);line(vs[i]||'',197-pad,43+top+i*step,'right')});
+  const y=43+top+ls.length*step+3,a=ability.text.split('\n');
+  line('Каста:',7+pad,y);line(a[0],120+pad-5,y);
+  line('Способность:',7+pad,y+step);line(a[1],120+pad-5,y+step);
  });
- currentUI.box(c,7,163,190,48,'#293640','heroDescription');
+ currentUI.box(c,7,163,190,48,'#293640','narrator');
  currentUI.roleBlock(c,description.text.replace(/\s+/g,' '),8,164,188,46,'heroDescription');
  for(const n of texts.filter(n=>n.id.endsWith(';3:23')))currentUI.roleBlock(c,n.text==='←'?'<':n.text==='→'?'>':currentUI.case(n.text),n.x,214,n.w,20,'buttons');
 };
@@ -64,7 +65,7 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  if(key==='intro5'){c.drawImage(currentUI.intro5Full,0,0);return}
  if(key==='title'){currentUI.layout(c,'title');currentUI.roleBlock(c,'Ролевая игра-путешествие\nСерия 1',8,138,304,45,'firstScreen');return}
  if(/^hero[012]$/.test(key)){currentUI.hero(c,['hero-wanderer','hero-mage','hero-knight'][Number(key.at(-1))]);return}
- if(['shop3','exchange4'].includes(key)){currentUI.layout(c,key==='shop3'?'merchant':'wanderer');currentUI.header(c,key==='shop3'?'Териберка':'Перевал Геологов');currentUI.slots(c);const cats=key==='shop3'?['Еда','Алкоголь','Рыбалка','Сувениры']:['Обмен','Вещи','Еда','Снаряж.'];cats.forEach((label,i)=>{const x=198+i%2*58,y=40+Math.floor(i/2)*17;currentUI.box(c,x,y,57,16,'#655848','buttons');currentUI.roleBlock(c,label,x,y,57,16,'buttons')});return}
+ if(['shop3','exchange4'].includes(key)){currentUI.layout(c,key==='shop3'?'merchant':'wanderer');currentUI.header(c,key==='shop3'?'Териберка':'Перевал Геологов');currentUI.slots(c);const cats=key==='shop3'?['Еда','Алкоголь','Рыбалка','Сувениры']:['Обмен','Вещи','Еда','Снаряж.'];cats.forEach((label,i)=>{const x=198+i%2*58,y=40+Math.floor(i/2)*17;currentUI.box(c,x,y,57,16,'#655848','tabs');currentUI.roleBlock(c,label,x,y,57,16,'tabs')});return}
  const background=currentUI.images[key];if(background){if(!currentUI.backgrounds[key]){const out=document.createElement('canvas');out.width=320;out.height=240;const g=out.getContext('2d');g.drawImage(background,0,0);const data=g.getImageData(0,0,320,240),color=currentUI.settings.lineColor.match(/\w\w/g).map(v=>parseInt(v,16));for(let i=0;i<data.data.length;i+=4)if(data.data[i]===145&&data.data[i+1]===161&&data.data[i+2]===173){for(let j=0;j<3;j++)data.data[i+j]=color[j]}g.putImageData(data,0,0);currentUI.backgrounds[key]=out;}c.drawImage(currentUI.backgrounds[key],0,0);}
  if(['camp1','bear2','house2','village3'].includes(key)){PeninsulaColors.fill(c,1,22,318,217);PeninsulaColors.fill(c,7,22,306,212);currentUI.box(c,7,22,190,138);currentUI.box(c,198,22,115,138,'#293640','situation');currentUI.text(c,'Ситуация',255.5,27,'center');currentUI.controls(c);currentUI.box(c,7,205,190,28,'#11171c','dialogue');currentUI.resource(c,'Запас сил','80%');currentUI.slots(c);currentUI.header(c,key==='camp1'?'Полуостров Средний':key==='village3'?'Териберка':'Дальние Зеленцы');return}
  if(['drive1','fog4','traffic5','platform5'].includes(key)){PeninsulaColors.outline(c,7,22,306,138);for(const [x,y,w,h]of [[1,22,6,217],[313,22,6,217],[7,160,306,1],[197,161,1,78],[7,234,306,5]])PeninsulaColors.fill(c,x,y,w,h);currentUI.box(c,7,161,190,72,'#11171c','dialogue');currentUI.resource(c,'','');currentUI.slots(c);}
@@ -74,7 +75,7 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  for(const r of rows){if(isStory&&r.y>=150&&r.w>280)continue;if(r.y<22&&r.w>200){currentUI.header(c,r.text);continue}const align=(r.align||'LEFT').toLowerCase();currentUI.roleBlock(c,currentUI.case(r.text),Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.max(13,Math.round(r.h)),r.x>=198&&r.y>=161&&r.y<176?'data':r.x>=198&&r.y>=40&&r.y<160?'situation':r.y>=160?'dialogue':'technical')}
  PeninsulaColors.outline(c,0,0,320,240);
 };
-currentUI.modal=(c,title,body)=>{currentUI.box(c,50,70,220,100,'#11171c');currentUI.text(c,currentUI.case(title),160,76,'center');currentUI.block(c,currentUI.case(body),56,93,208,47);currentUI.box(c,105,144,110,19,'#655848');currentUI.text(c,'Продолжить',160,146,'center')};
+currentUI.modal=(c,title,body)=>{currentUI.box(c,50,70,220,100,'#11171c','question');currentUI.text(c,currentUI.case(title),160,76,'center');currentUI.block(c,currentUI.case(body),56,93,208,47);currentUI.box(c,105,144,110,19,'#655848','buttons');currentUI.text(c,'Продолжить',160,146,'center')};
 currentUI.bag=(c,items,images)=>items.slice(0,8).forEach((id,i)=>{if(images[id])c.drawImage(images[id],200+i%4*29,178+Math.floor(i/4)*29,24,24)});
 
 // Semantic blocks share the four user-editable text presets.

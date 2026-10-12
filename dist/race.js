@@ -65,9 +65,9 @@ function drawRace(){
  clipped(8,23,304,136,()=>ctx.drawImage(raceScene,8,23));border(7,22,306,138);
  cockpitPanel(d);
  if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),14,85,44,85);
- PeninsulaColors.box(ctx,198,161,115,14);
+ PeninsulaColors.box(ctx,198,161,115,14,'power');
  resourceText({text:'Топливо',align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
- for(let row=0;row<2;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28);if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
+ for(let row=0;row<2;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
  block(raceDialog(d),8,206,188,26,{role:'dialogue'});
  cockpitRadio(d);

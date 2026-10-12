@@ -108,7 +108,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
       rect(251+dx*8,122+dy*8,7,7,c==='#'?'#535967':c==='~'?'#426988':c==='b'||village&&gx===5&&gy===1?'#d2ad73':'#657651');
     }rect(252,123,6,6,currentUI.settings.textColor);rect(254+vectors[dir][0]*2,125+vectors[dir][1]*2,2,2,'#11171c');});
   }
-  function render(){
+  function render(){PeninsulaPopup.visible=false;
     if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];
     currentUI.base(ctx,indoor?'house2':village?'village3':bear?'bear2':'camp1');drawScene();
     const context=indoor?'Исследуйте залы.\nОсмотрите находки.':village?'Найдите лавку\nна севере.':tile()==='b'?'Открытая поляна.\nПоставьте отпугиватель.':'Слышен рёв медведя.\nИщите поляну.';
