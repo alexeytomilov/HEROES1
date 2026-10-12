@@ -25,18 +25,22 @@ async function startRPG(){
  function reveal(){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(grid[y+dy]?.[x+dx])seen.add((x+dx)+','+(y+dy));}
  reveal();
  const trashId=(gx,gy,id)=>gx+','+gy+':'+id;
- const picked=id=>collected.has(trashId(x,y,id));
+ // Trash and tourists block their cells: trash is picked up from the neighbouring cell while facing it.
+ const ahead=()=>{const [dx,dy]=vectors[dir];return{x:x+dx,y:y+dy,c:grid[y+dy]?.[x+dx]}};
+ const clean=(gx,gy)=>trash.every(o=>collected.has(trashId(gx,gy,o.id)));
+ const facingTrash=()=>{const a=ahead();return a.c==='r'&&!clean(a.x,a.y)};
+ const picked=id=>{const a=ahead();return collected.has(trashId(a.x,a.y,id))};
  const count=id=>[...collected].filter(key=>key.endsWith(':'+id)).length;
  const cell=()=>grid[y][x],site=()=>sites[cell()];
  const inside=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;
  const rect=(a,b,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(a,b,w,h)};
  const say=s=>{message=s;render()};
  function reason(){const s=site();if(!s)return 'Здесь лагерь не поставить.\nНайдите площадку.';if(!s.dry)return 'Здесь сыро. Палатка промокнет.';if(!s.quiet)return 'Рядом туристы.\nНайдите тихое место.';if(collected.size<2)return 'Сначала уберите мусор.\nОн отмечен красным на карте.';return '';}
- function describe(){if(cell()==='r'){say(trash.every(o=>picked(o.id))?'Мусор здесь уже убран.':'Здесь лежит мусор.\nПодберите его.');return;}say(site()?site().name+'.\nОсмотрите площадку.':'Ищите тихую площадку у моря.');}
- function step(amount=1){if(won||drag)return;const [dx,dy]=vectors[dir],nx=x+dx*amount,ny=y+dy*amount,target=grid[ny]?.[nx];if(!target||target==='#'||target==='~'){say(target==='~'?'Здесь море. Идите вдоль берега.':'Здесь скалы. Прохода нет.');return;}x=nx;y=ny;reveal();describe();}
- function turn(amount){if(won||drag)return;dir=(dir+amount+4)%4;say('Вы смотрите на '+directions[dir].toLowerCase()+'.');}
- function inspect(){if(won)return;if(cell()==='r'){describe();return;}say(reason()||'Сухо, тихо и чисто.\nПеретащите палатку сюда.');}
- function collect(id){if(cell()!=='r'||picked(id)||won)return;collected.add(trashId(x,y,id));say(trash.every(o=>picked(o.id))?'Мусор убран. Ищите\nзолотую площадку на карте.':'Подберите и оставшийся мусор.');}
+ function describe(){if(facingTrash()){say('Впереди мусор.\nПодберите его.');return;}if(cell()==='r'){say('Мусор здесь уже убран.');return;}say(site()?site().name+'.\nОсмотрите площадку.':'Ищите тихую площадку у моря.');}
+ function step(amount=1){if(won||drag)return;const [dx,dy]=vectors[dir],nx=x+dx*amount,ny=y+dy*amount,target=grid[ny]?.[nx];if(!target||target==='#'||target==='~'){say(target==='~'?'Здесь море. Идите вдоль берега.':'Здесь скалы. Прохода нет.');return;}if(target==='t'){say('Здесь стоят туристы.\nОбойдите их.');return;}if(target==='r'&&!clean(nx,ny)){say('Впереди мусор.\nСначала подберите его.');return;}x=nx;y=ny;reveal();describe();}
+ function turn(amount){if(won||drag)return;dir=(dir+amount+4)%4;if(facingTrash())describe();else say('Вы смотрите на '+directions[dir].toLowerCase()+'.');}
+ function inspect(){if(won)return;if(facingTrash()){describe();return;}say(reason()||'Сухо, тихо и чисто.\nПеретащите палатку сюда.');}
+ function collect(id){if(!facingTrash()||picked(id)||won)return;const a=ahead();collected.add(trashId(a.x,a.y,id));say(clean(a.x,a.y)?'Мусор убран. Ищите\nзолотую площадку на карте.':'Подберите и оставшийся мусор.');}
  function install(){const why=reason();if(why){say(why);return false;}won=true;tentPosition={x:x+.5,y:y+.2};say('Лагерь установлен у моря.\nМусор заберём с собой.');return true;}
  function icon(key,a,b,w=24,h=24){ctx.drawImage(art[key],Math.round(a),Math.round(b),w,h);}
  function drawMap(){
@@ -64,15 +68,15 @@ async function startRPG(){
   border(7,22,190,138);PeninsulaColors.box(ctx,198,22,115,138,'situation');PeninsulaColors.box(ctx,198,161,115,14,'power');
   clipped(view.x,view.y,view.w,view.h,()=>{
    const objects=[...tourists.map(t=>({x:t.x+.5,y:t.y+.3,asset:'shore_tourists',height:.75,ratio:1.7})),
-    ...piles.flatMap(p=>trash.filter(o=>!(p.x===x&&p.y===y)&&!collected.has(trashId(p.x,p.y,o.id))).map((o,i)=>({x:p.x+.25+i*.5,y:p.y+.1,asset:'camp_'+o.id,height:.12}))),
+    ...piles.flatMap(p=>trash.filter(o=>!(facingTrash()&&p.x===ahead().x&&p.y===ahead().y)&&!collected.has(trashId(p.x,p.y,o.id))).map((o,i)=>({x:p.x+.25+i*.5,y:p.y+.1,asset:'camp_'+o.id,height:.12}))),
     ...(won?[{...tentPosition,asset:'camp_tent',height:.6}]:[])];
    renderer.render(ctx,view,grid,x,y,dir,objects);
-   if(cell()==='r'&&!won)for(const o of trash)if(!picked(o.id))icon('camp_'+o.id,o.x,o.y,o.w,o.h);
+   if(facingTrash()&&!won)for(const o of trash)if(!picked(o.id))icon('camp_'+o.id,o.x,o.y,o.w,o.h);
 
   });
   // Repaint only the new situation field and inventory interiors.
   PeninsulaColors.box(ctx,198,22,115,138,'situation');text('Ситуация',255.5,27,'center');
-  const context=won?'Лагерь установлен.':cell()==='r'?'Мусор на земле.':site()?site().name+'.':'Прибрежная тропа.\nИщите место\nдля лагеря.';
+  const context=won?'Лагерь установлен.':facingTrash()?'Впереди мусор.':site()?site().name+'.':'Прибрежная тропа.\nИщите место\nдля лагеря.';
   block(context,199,44,113,49);
   drawMap();
   resourceText({text:'Запас сил',align:'LEFT'});resourceText({text:'80%',align:'RIGHT'});
@@ -84,7 +88,13 @@ async function startRPG(){
   PeninsulaColors.box(ctx,7,205,190,28,'dialogue');block(message,8,206,188,26,{role:'dialogue'});
   heading('Полуостров средний');
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
+  drawMouseArrow();
  }
+ // Inside the view the cursor is a pixel arrow for the move a click makes; over trash it becomes a hand.
+ const buttonsArea=[{x:118,y:161,w:80,h:43},{x:198,y:176,w:28,h:28}];
+ const overTrash=p=>p&&facingTrash()&&!won&&trash.some(o=>!picked(o.id)&&inside(p,o));
+ function mouseAction(p){if(!p||won||drag||!inside(p,view)||overTrash(p))return null;const u=(p.x-view.x)/view.w;return u<.28?'left':u>.72?'right':'forward';}
+ function drawMouseArrow(){const action=mouseAction(pointer);canvas.style.cursor=action?'none':overTrash(pointer)||pointer&&buttonsArea.some(r=>inside(pointer,r))?'pointer':'default';if(!action)return;const ax=Math.round(pointer.x),ay=Math.round(pointer.y);ctx.save();ctx.beginPath();ctx.rect(view.x,view.y,view.w,view.h);ctx.clip();const mask=['00100','01110','11111','00100','00100','00100','00100'];for(let pass=0;pass<2;pass++)for(let yy=0;yy<7;yy++)for(let xx=0;xx<5;xx++)if(mask[yy][xx]==='1'){const ux=(xx-2)*2,uy=(yy-3)*2,dx=action==='left'?uy:action==='right'?-uy:ux,dy=action==='forward'?uy:ux;rect(ax+dx-(pass?0:1),ay+dy-(pass?0:1),pass?2:4,pass?2:4,pass?'#f1d39a':'#07101a');}ctx.restore();}
  const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*320/r.width,y:(e.clientY-r.top)*240/r.height}};
  function click(p){
   if(inside(p,{x:118,y:161,w:26,h:21}))return turn(-1);
@@ -93,17 +103,18 @@ async function startRPG(){
   if(inside(p,{x:145,y:183,w:26,h:21}))return step(-1);
   if(inside(p,{x:118,y:183,w:26,h:21})||inside(p,{x:172,y:183,w:26,h:21}))return inspect();
   if(!inside(p,view)||won)return;
-  if(cell()==='r'){const o=trash.find(o=>!picked(o.id)&&inside(p,o));if(o)return collect(o.id);}
+  if(facingTrash()){const o=trash.find(o=>!picked(o.id)&&inside(p,o));if(o)return collect(o.id);}
   const u=(p.x-view.x)/view.w;if(u<.28)turn(-1);else if(u>.72)turn(1);else step();
  }
  canvas.style.touchAction='none';
  canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();const p=point(e);if(!won&&inside(p,{x:198,y:176,w:28,h:28})){drag={...p,id:e.pointerId};canvas.setPointerCapture(e.pointerId);render();return;}click(p);});
- canvas.addEventListener('pointermove',e=>{pointer=point(e);if(drag&&drag.id===e.pointerId){Object.assign(drag,pointer);render();}});
+ canvas.addEventListener('pointermove',e=>{pointer=point(e);if(drag&&drag.id===e.pointerId)Object.assign(drag,pointer);render();});
+ canvas.addEventListener('pointerleave',()=>{pointer=null;render();});
  canvas.addEventListener('pointerup',e=>{if(!drag||drag.id!==e.pointerId)return;const p=point(e);drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(inside(p,view))install();else render();});
  canvas.addEventListener('pointercancel',()=>{drag=null;render();});
- window.addEventListener('keydown',e=>{if(e.target?.matches?.('input,select,textarea')||e.repeat)return;const k=({KeyW:'arrowup',KeyS:'arrowdown',KeyA:'arrowleft',KeyD:'arrowright'})[e.code]||e.key.toLowerCase();if(!['arrowup','arrowdown','arrowleft','arrowright','e','g','t','enter'].includes(k))return;e.preventDefault();if(k==='arrowup')step();if(k==='arrowdown')step(-1);if(k==='arrowleft')turn(-1);if(k==='arrowright')turn(1);if(k==='e'||k==='enter')inspect();if(k==='t'&&!won)install();if(k==='g'&&cell()==='r')collect(picked('bottle')?'wrapper':'bottle');});
+ window.addEventListener('keydown',e=>{if(e.target?.matches?.('input,select,textarea')||e.repeat)return;const k=({KeyW:'arrowup',KeyS:'arrowdown',KeyA:'arrowleft',KeyD:'arrowright'})[e.code]||e.key.toLowerCase();if(!['arrowup','arrowdown','arrowleft','arrowright','e','g','t','enter'].includes(k))return;e.preventDefault();if(k==='arrowup')step();if(k==='arrowdown')step(-1);if(k==='arrowleft')turn(-1);if(k==='arrowright')turn(1);if(k==='e'||k==='enter')inspect();if(k==='t'&&!won)install();if(k==='g'&&facingTrash())collect(picked('bottle')?'wrapper':'bottle');});
  rpgGame={draw,step,turn,inspect,collect,install,snapshot:()=>({x,y,dir,won,items:[...collected],message,seen:[...seen],grid:[...grid],tourists:tourists.map(t=>({...t})),tentPosition})};
  window.rpg=rpgGame;render();
- status.hidden=false;status.textContent='↑ ↓ — шаг · ← → — поворот · E — осмотр · G — поднять мусор. Палатку перетащите из инвентаря.';
+ status.hidden=false;status.textContent='↑ ↓ / W S — шаг · ← → / A D — поворот · E — осмотр · G — поднять мусор. Палатку перетащите из инвентаря.';
 }
 function drawRPG(){rpgGame.draw();}
