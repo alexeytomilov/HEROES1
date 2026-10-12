@@ -2,15 +2,15 @@
 let raceEngine=null,raceScene=null,raceData=null,raceFinished=false,racePaused=false;
 let draggedItem=null;
 function raceDialog(d){
- if(raceFinished||d.state==='clear'){const next=params.get('embed')==='1'?'\nКлик или Enter — дальше.':'';return (params.get('mode')==='home'?'Приехали! Мы дома.':params.get('mode')==='fog'?'Перевал позади. Остановимся здесь.':'Приехали! Здесь остановимся на ночлег.')+next;}
- if(d.state==='title')return params.get('mode')==='fog'?'Туман густой. Держись дороги.':params.get('mode')==='home'?'Держи дистанцию.\nВпереди пробка.':'Двигайся за мной.';
- if(d.state==='repair'||d.state==='over')return (d.msg?.t1||'Дальше не поедем.')+'\n'+(d.msg?.t2||'');
- if(racePaused)return 'Давай немного передохнём.';
- if(params.get('mode')==='fog'&&d.state==='drive')return d.warning?'Осторожно, край обрыва!':'Туман густой.\nДержись дороги.';
- if(d.msg&&!d.msg.dim&&d.msg.t1!=='ЕДЬ ЗА ДЖИПОМ')return d.msg.t1+'\n'+(d.msg.t2||'');
- if(d.detour)return d.detour.type==='hole'?'Впереди яма.\nОбъезжай за мной.':'Впереди камни.\nОбъезжай за мной.';
- if(d.warning)return 'Осторожно, край дороги! Сбавь скорость.';
- return 'Двигайся за мной.';
+ if(raceFinished||d.state==='clear'){const next=params.get('embed')==='1'?LT('race.next'):'';return (params.get('mode')==='home'?LT('race.arrivedHome'):params.get('mode')==='fog'?LT('race.arrivedFog'):LT('race.arrivedSredny'))+next;}
+ if(d.state==='title')return params.get('mode')==='fog'?LT('race.startFog'):params.get('mode')==='home'?LT('race.startHome'):LT('race.followMe');
+ if(d.state==='repair'||d.state==='over')return (d.msg?.t1||LT('race.stopped'))+'\n'+(d.msg?.t2||'');
+ if(racePaused)return LT('race.paused');
+ if(params.get('mode')==='fog'&&d.state==='drive')return d.warning?LT('race.cliffEdge'):LT('race.fogDrive');
+ if(d.msg&&!d.msg.dim&&!d.msg.start)return d.msg.t1+'\n'+(d.msg.t2||'');
+ if(d.detour)return d.detour.type==='hole'?LT('race.holeAhead'):LT('race.rocksAhead');
+ if(d.warning)return LT('race.roadEdge');
+ return LT('race.followMe');
 }
 function inventoryIcon(index,x,y){
  const r=(a,b,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+a,y+b,w,h)};
@@ -67,14 +67,14 @@ function drawRace(){
  // The phone is drawn at its native 54×104 pixels so the altitude text stays sharp.
  if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),12,64);
  PeninsulaColors.box(ctx,198,161,115,14,'power');
- resourceText({text:'Топливо',align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
+ resourceText({text:LT('race.power'),align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
  // One row of supplies; the radio messages run along the bottom to the frame edge.
  for(let row=0;row<1;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
  PeninsulaColors.box(ctx,7,205,306,28,'dialogue');
  block(raceDialog(d),8,206,304,26,{role:'dialogue'});
  cockpitRadio(d);
  if(draggedItem)inventoryIcon(draggedItem.index,draggedItem.x-14,draggedItem.y-14);
- heading(params.get('mode')==='fog'?'Перевал Геологов':params.get('mode')==='home'?'Дорога домой':'Полуостров средний');
+ heading(params.get('mode')==='fog'?LT('race.headingFog'):params.get('mode')==='home'?LT('race.headingHome'):LT('race.headingSredny'));
 }
 function startRace(){
  canvas.style.touchAction='none';
@@ -89,13 +89,13 @@ function startRace(){
  canvas.addEventListener('pointerup',e=>drop(e));canvas.addEventListener('pointercancel',e=>drop(e,true));
  const bg=new Image(),near=new Image();let pending=2;const loaded=()=>{if(--pending)return;
   raceEngine=window.createFogRace({canvas:raceScene,inputSurface:canvas,drawPanel:()=>{},mode:['fog','home'].includes(params.get('mode'))?params.get('mode'):'sredny',background:bg,nearBackground:near,compactUI:true,viewportWidth:304,viewportHeight:136,demoFinish:true,
-   onRender:d=>{raceData=d;if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?'Поехали':d.state==='over'?'Ещё раз':'В пути';$('#race-start').disabled=d.state==='drive'||raceFinished;},
-   onComplete:()=>{if(raceFinished)return;raceFinished=true;raceEngine.stop();render();$('#status').textContent='Вы добрались до места ночлега.';$('#race-start').disabled=true;}
+   onRender:d=>{raceData=d;if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?LT('race.btnStart'):d.state==='over'?LT('race.btnRetry'):LT('race.btnOnWay');$('#race-start').disabled=d.state==='drive'||raceFinished;},
+   onComplete:()=>{if(raceFinished)return;raceFinished=true;raceEngine.stop();render();$('#status').textContent=LT('race.statusArrived');$('#race-start').disabled=true;}
   });raceEngine.start();window.trip=raceEngine;
- };bg.onload=loaded;near.onload=loaded;bg.onerror=near.onerror=()=>{$('#status').textContent='Не удалось загрузить графику гонки.'};bg.src='assets/mountains-far.png';near.src='assets/mountains-near-loop.png';
+ };bg.onload=loaded;near.onload=loaded;bg.onerror=near.onerror=()=>{$('#status').textContent=LT('race.loadError')};bg.src='assets/mountains-far.png';near.src='assets/mountains-near-loop.png';
  $('#race-start').addEventListener('click',()=>raceEngine?.press());
- $('#race-restart').addEventListener('click',()=>{if(!raceEngine)return;raceFinished=false;draggedItem=null;const resume=racePaused||raceData.state==='clear';racePaused=false;$('#race-pause').textContent='Пауза';raceEngine.restart();if(resume)raceEngine.start();});
- const pause=()=>{if(!raceEngine||raceFinished)return;racePaused=!racePaused;if(racePaused)raceEngine.stop();else raceEngine.start();$('#race-pause').textContent=racePaused?'Продолжить':'Пауза';render()};
+ $('#race-restart').addEventListener('click',()=>{if(!raceEngine)return;raceFinished=false;draggedItem=null;const resume=racePaused||raceData.state==='clear';racePaused=false;$('#race-pause').textContent=LT('race.btnPause');raceEngine.restart();if(resume)raceEngine.start();});
+ const pause=()=>{if(!raceEngine||raceFinished)return;racePaused=!racePaused;if(racePaused)raceEngine.stop();else raceEngine.start();$('#race-pause').textContent=racePaused?LT('race.btnResume'):LT('race.btnPause');render()};
  $('#race-pause').addEventListener('click',pause);
  window.addEventListener('keydown',e=>{if(e.code==='KeyP'&&!e.repeat&&!e.target.matches('input,select,textarea')){e.preventDefault();pause()}});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&!racePaused&&!raceFinished)pause()});

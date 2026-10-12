@@ -520,7 +520,7 @@ const keys = {left:false, right:false, up:false, down:false};
 let msg = {t1:'ТУМАННАЯ\nГОНКА', t2:'ДОБЕРИСЬ ДО ЛЕСНОЙ ЛУЖАЙКИ.\nЕДЬ СЛЕД В СЛЕД ЗА ПРОВОДНИКОМ:\nОН ВИДИТ КАМНИ И ЯМЫ. НЕ ОБГОНЯЙ.\n\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ', dim:true, big:2};
 if(coastal)msg = {t1:'СРЕДНИЙ',t2:'ДОБЕРИСЬ ДО МЕСТА,\nНЕ РАЗБИВ МАШИНУ\nНА НЕПРОСТОЙ ДОРОГЕ.\n\nЕДЬ ЗА СЕРЫМ ДЖИПОМ.\nГАЗ - ВВЕРХ, ТОРМОЗ - ВНИЗ.\n\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ',dim:true,big:2};
 if(homeward)msg={t1:'ДОРОГА ДОМОЙ',t2:'ВЫ ЕДЕТЕ В МОСКВУ.\nВПЕРЕДИ ПРОБКА.\nДЖИП ТО ЕДЕТ, ТО ОСТАНАВЛИВАЕТСЯ.\nДЕРЖИТЕ ДИСТАНЦИЮ.\n\nВВЕРХ - ГАЗ, ВНИЗ - ТОРМОЗ.\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ',dim:true,big:2};
-function showMsg(t1, t2 = '', dim = true, big = 2){ msg = t1 ? {t1, t2, dim, big} : null; }
+function showMsg(t1, t2 = '', dim = true, big = 2, start = false){ msg = t1 ? {t1, t2, dim, big, start} : null; }
 
 function startStage(){
   supplies=[true,true,true,true];fuel=80;neededItem=null;rescueImmunity=0;
@@ -530,7 +530,7 @@ function startStage(){
   timeLeft = Math.round((finishIndex*SEG)/(MAXSPEED*.24) + 25);
   totalTime = timeLeft;
   state = 'drive'; startMsgT = 1.4;
-  showMsg(coastal ? 'ЕДЬ ЗА ДЖИПОМ' : `ПЕРЕВАЛ ${stage}`, coastal ? 'ДЕРЖИ ДИСТАНЦИЮ' : 'ПОЕХАЛИ!', false, coastal ? 1 : 2);
+  showMsg(coastal ? 'ЕДЬ ЗА ДЖИПОМ' : `ПЕРЕВАЛ ${stage}`, coastal ? 'ДЕРЖИ ДИСТАНЦИЮ' : 'ПОЕХАЛИ!', false, coastal ? 1 : 2, coastal);
 }
 function press(){
   audioOn();
@@ -549,10 +549,10 @@ function roadsideStop(kind){
  if(state!=='drive')return;
  speed=0;steer=0;
  const available=kind==='wheel'?(supplies[1]||supplies[2]):supplies[kind==='chains'?3:0];
- const speech=kind==='wheel'?'Надо менять колесо.':kind==='chains'?'Ты забуксовал.':'Что, кончился бензин?';
- if(!available){state='over';neededItem=null;showMsg(speech,'Запасов больше нет. Дальше не поедем.',false,1);return;}
+ const speech=kind==='wheel'?LT('race.needWheel'):kind==='chains'?LT('race.stuck'):LT('race.noFuel');
+ if(!available){state='over';neededItem=null;showMsg(speech,LT('race.noSupplies'),false,1);return;}
  state='repair';neededItem=kind;
- showMsg(speech,kind==='wheel'?'Используй запаску.':kind==='chains'?'Используй цепи.':'Используй канистру.',false,1);
+ showMsg(speech,kind==='wheel'?LT('race.useSpare'):kind==='chains'?LT('race.useChains'):LT('race.useCanister'),false,1);
 }
 function useItem(index){
  const kind=index===0?'fuel':index===3?'chains':'wheel';
@@ -561,7 +561,7 @@ function useItem(index){
  if(kind==='fuel')fuel=Math.min(100,fuel+60);
  else if(kind==='chains')playerX=pathAt(position+PLAYERZ);
  damage=0;rescueImmunity=5;neededItem=null;state='drive';startMsgT=2;
- showMsg(kind==='wheel'?'Колесо поменяли.':kind==='chains'?'Выбрались!':'Заправились.','Двигайся за мной.',false,1);
+ showMsg(kind==='wheel'?LT('race.wheelDone'):kind==='chains'?LT('race.outDone'):LT('race.fueled'),LT('race.followMe'),false,1);
  return true;
 }
 
@@ -797,7 +797,7 @@ function update(dt){
         if (out > 1 + JW*.35){
           state = 'fall'; fallT = 0; fallDir = side;
           noiseBurst(1.2, .12);
-          pendingMsg = ['ОБРЫВ', 'МАШИНА СОРВАЛАСЬ В ПРОПАСТЬ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ'];
+          pendingMsg = [LT('race.cliffTitle'), LT('race.cliffText')];
           return;
         }
       } else if (out > 1 - JW*.15){
@@ -816,7 +816,7 @@ function update(dt){
     // overtaking the guide: blind in the fog, we hit the first stone
     const g = ents.find(e => e.kind === 'guide');
     if (g && pz > g.z + SEG*.3 && !overlap(playerX, JW, g.x, g.w/ROADW, .9)){
-      fail('УДАР', 'ВЫ ОБОГНАЛИ ПРОВОДНИКА\nИ НАЛЕТЕЛИ НА КАМЕНЬ В ТУМАНЕ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ'); return;
+      fail(LT('race.hitTitle'), LT('race.overtook')); return;
     }
     // collisions
     for (const e of ents){
@@ -834,15 +834,15 @@ function update(dt){
       }
       if (e.kind === 'buddy' && dz < 0) continue;
       if (e.kind === 'rock'){
-        fail('УДАР', 'ВЫ НАЛЕТЕЛИ НА КАМЕНЬ.\nЕДЬТЕ СЛЕД В СЛЕД ЗА ПРОВОДНИКОМ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ'); return;
+        fail(LT('race.hitTitle'), LT('race.rock')); return;
       } else if (e.kind === 'hole'){
-        fail('ЯМА', 'КОЛЕСО ПРОВАЛИЛОСЬ В ЯМУ.\nЕДЬТЕ СЛЕД В СЛЕД ЗА ПРОВОДНИКОМ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ'); return;
+        fail(LT('race.holeTitle'), LT('race.hole')); return;
       } else if (closing > BUMP_SPEED){
-        if (e.kind === 'guide') fail('АВАРИЯ', 'ВЫ СБИЛИ ПРОВОДНИКА.\nДЕРЖИТЕ ДИСТАНЦИЮ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ');
-        else if (e.kind === 'hiker') fail('АВАРИЯ', 'ВЫ СБИЛИ ТУРИСТА.\nВ ТУМАНЕ НАДО ЕХАТЬ МЕДЛЕННЕЕ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ');
-        else if (e.kind === 'goat') fail('АВАРИЯ', 'ВЫ СБИЛИ КОЗУ.\nОНИ ВНЕЗАПНО ВЫХОДЯТ ИЗ ТУМАНА.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ');
-        else if (e.kind === 'buddy') fail('АВАРИЯ', 'ВЫ ВРЕЗАЛИСЬ В СЕРЫЙ ДЖИП.\nДЕРЖИТЕ ДИСТАНЦИЮ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ');
-        else fail('АВАРИЯ', 'ЛОБОВОЕ СТОЛКНОВЕНИЕ.\nДЕРЖИТЕСЬ СВОЕЙ ПОЛОСЫ.\n\nПРОБЕЛ ИЛИ ТАП - ЕЩЁ РАЗ');
+        if (e.kind === 'guide') fail(LT('race.crashTitle'), LT('race.hitGuide'));
+        else if (e.kind === 'hiker') fail(LT('race.crashTitle'), LT('race.hitTourist'));
+        else if (e.kind === 'goat') fail(LT('race.crashTitle'), LT('race.hitGoat'));
+        else if (e.kind === 'buddy') fail(LT('race.crashTitle'), LT('race.hitJeep'));
+        else fail(LT('race.crashTitle'), LT('race.headOn'));
         return;
       } else {
         speed = e.kind === 'buddy' ? Math.min(speed, e.vz) : 0; position = e.z - len - PLAYERZ - 10;
