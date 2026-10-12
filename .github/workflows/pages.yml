@@ -11,17 +11,29 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.artifact-name.outputs.name }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Name this publication artifact
+        id: artifact-name
+        run: echo 'name=github-pages-${{ github.run_id }}-${{ github.run_attempt }}' >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+          name: ${{ steps.artifact-name.outputs.name }}
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist
       - name: Deploy game
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact_name }}
