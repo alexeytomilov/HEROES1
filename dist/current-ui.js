@@ -41,8 +41,25 @@ currentUI.layout=(c,key)=>{const layout=currentUI.layouts.find(s=>s.key===key);i
   if(n.stroke)PeninsulaColors.outline(c,n.x,n.y,n.w,n.h,role);
  }
 };
-currentUI.hero=(c,key)=>{currentUI.layout(c,key);const texts=currentUI.layouts.find(s=>s.key===key).items.filter(n=>n.type==='TEXT'&&n.text),get=s=>texts.find(n=>n.id.endsWith(s));const name=get(';67:1564'),labels=get(';75:1617'),values=get(';75:1629'),ability=get(';107:1673'),description=get(';79:1631'),s={...currentUI.settings,lineStep:currentUI.settings.lineStep+PeninsulaText.get('technical').lineSpacing-2};
- currentUI.header(c,'Создание персонажа');currentUI.box(c,7,22,190,188,'#11171c');currentUI.text(c,currentUI.case(name.text),102,24,'center');const ls=labels.text.split('\n').filter(Boolean),vs=values.text.split('\n').filter(Boolean);currentUI.clip(c,8,23,188,186,()=>{ls.forEach((l,i)=>{currentUI.text(c,currentUI.case(l).replace(/:$/,'')+':',7+s.padding,43+i*s.lineStep);currentUI.text(c,vs[i]||'',197-s.padding,43+i*s.lineStep,'right')});const y=43+ls.length*s.lineStep+3,a=ability.text.split('\n');currentUI.text(c,'Каста:',7+s.padding,y);currentUI.text(c,currentUI.case(a[0]),120+s.padding-5,y);currentUI.text(c,'Способность:',7+s.padding,y+s.lineStep);currentUI.text(c,currentUI.case(a[1]),120+s.padding-5,y+s.lineStep);const dy=y+2*s.lineStep+6;currentUI.block(c,description.text.replace(/\s+/g,' '),7,dy,190,210-dy)});for(const n of texts.filter(n=>n.id.endsWith(';3:23')))currentUI.roleBlock(c,n.text==='←'?'<':n.text==='→'?'>':currentUI.case(n.text),n.x,214,n.w,20,'buttons')};
+currentUI.hero=(c,key)=>{
+ currentUI.layout(c,key);
+ const texts=currentUI.layouts.find(s=>s.key===key).items.filter(n=>n.type==='TEXT'&&n.text),get=s=>texts.find(n=>n.id.endsWith(s));
+ const name=get(';67:1564'),labels=get(';75:1617'),values=get(';75:1629'),ability=get(';107:1673'),description=get(';79:1631');
+ const s={...currentUI.settings,lineStep:currentUI.settings.lineStep+PeninsulaText.get('technical').lineSpacing-2};
+ currentUI.header(c,'Создание персонажа');
+ currentUI.box(c,7,22,190,140);
+ currentUI.clip(c,8,23,188,138,()=>{
+  currentUI.text(c,currentUI.case(name.text),102,24,'center');
+  const ls=labels.text.split('\n').filter(Boolean),vs=values.text.split('\n').filter(Boolean);
+  ls.forEach((l,i)=>{currentUI.text(c,currentUI.case(l).replace(/:$/,'')+':',7+s.padding,43+i*s.lineStep);currentUI.text(c,vs[i]||'',197-s.padding,43+i*s.lineStep,'right')});
+  const y=43+ls.length*s.lineStep+3,a=ability.text.split('\n');
+  currentUI.text(c,'Каста:',7+s.padding,y);currentUI.text(c,currentUI.case(a[0]),120+s.padding-5,y);
+  currentUI.text(c,'Способность:',7+s.padding,y+s.lineStep);currentUI.text(c,currentUI.case(a[1]),120+s.padding-5,y+s.lineStep);
+ });
+ currentUI.box(c,7,163,190,48,'#293640','heroDescription');
+ currentUI.roleBlock(c,description.text.replace(/\s+/g,' '),8,164,188,46,'heroDescription');
+ for(const n of texts.filter(n=>n.id.endsWith(';3:23')))currentUI.roleBlock(c,n.text==='←'?'<':n.text==='→'?'>':currentUI.case(n.text),n.x,214,n.w,20,'buttons');
+};
 currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);PeninsulaColors.fill(c,0,0,320,240);
  if(key==='intro5'){c.drawImage(currentUI.intro5Full,0,0);return}
  if(key==='title'){currentUI.layout(c,'title');currentUI.roleBlock(c,'Ролевая игра-путешествие\nСерия 1',8,138,304,45,'firstScreen');return}

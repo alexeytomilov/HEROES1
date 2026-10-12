@@ -13,3 +13,5 @@ assert.equal(api.normalize({situation:{textureOpacity:500,border:'bad'}}).situat
 assert.equal(api.role({x:198,y:22,w:115,h:138}),'situation');assert.equal(api.role({x:0,y:0,w:320,h:22}),'heading');assert.equal(api.role({name:'Общее / Кнопка',x:198,y:40,w:57,h:16}),'buttons');assert.equal(api.role({x:7,y:205,w:190,h:28}),'dialogue');assert.equal(api.role({x:1,y:154,w:318,h:85}),'narrator');assert.equal(api.role({x:198,y:176,w:28,h:28}),'default');
 events.storage({key:api.key,newValue:JSON.stringify({...state,heading:{background:'#112233'}})});assert.equal(api.get('heading').background,'#112233');
 console.log('PASS: category isolation, fallback, texture blending, transparent texture, pixel outlines and persisted colors.');
+
+assert.equal(api.role({name:'Описание героя',x:7,y:163,w:190,h:48}),'heroDescription');assert.notEqual(api.get('heroDescription').background,api.get('default').background);
