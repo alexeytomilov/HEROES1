@@ -54,6 +54,10 @@ function syncScenePanel(id){
  scenePanelKey=panelKey;
 }
 let sceneShown=null,scenePaused=false;
+// "Назад" walks back through the screens shown in this session, one at a time.
+const screenHistory=[],sceneBack=document.querySelector('#scene-back');
+function trackScreen(){const id=chapterSelect.value;if(id&&screenHistory.at(-1)!==id){screenHistory.push(id);if(screenHistory.length>200)screenHistory.shift()}if(sceneBack)sceneBack.disabled=screenHistory.length<2}
+if(sceneBack)sceneBack.onclick=()=>{if(screenHistory.length<2)return;screenHistory.pop();reviewScreen(screenHistory.at(-1));trackScreen()};
 // Pause freezes the automatic show timer and parallax; click, Enter and Space still advance manually.
 const scenePause=document.querySelector('#scene-pause');
 function setScenePaused(value){scenePaused=!!value;for(const motion of Object.values(fullIntroMotions))motion.setPaused?.(scenePaused);if(scenePause){scenePause.textContent=scenePaused?'Продолжить показ':'Пауза';scenePause.setAttribute('aria-pressed',String(scenePaused))}}
@@ -68,7 +72,7 @@ function buildPopupControls(){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
+ trackScreen();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
  if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
