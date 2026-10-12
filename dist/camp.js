@@ -139,8 +139,11 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
   });
   inputSurface.addEventListener('pointercancel',()=>{if(active){drag=null;if(bear)chosen=null;render()}});
   // Keyboard alternative for the same actions; dragging remains the primary interaction.
+  // WASD moves like the arrows; e.code keeps it working in the Russian layout too.
+  const wasd={KeyW:'ArrowUp',KeyS:'ArrowDown',KeyA:'ArrowLeft',KeyD:'ArrowRight'};
   window.addEventListener('keydown',e=>{
     if(!active)return;
+    if(wasd[e.code]&&!e.target?.matches?.('input,select,textarea')){const original=e;e={key:wasd[e.code],preventDefault:()=>original.preventDefault()}}
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' ','m','M','e','E','t','T','g','G','1','2','3'].includes(e.key))e.preventDefault();else return;
     if(failed){if(e.key==='Enter'||e.key===' ')restartBear();return}
     if(intro||won){if(e.key==='Enter'||e.key===' '){if(won)onExit();else{intro=false;describe()}}return}
