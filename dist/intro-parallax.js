@@ -20,7 +20,8 @@ window.loadIntroParallax=async function(number=2){
  }
  function tick(now,visible=true){const complete=last!==null&&visible?advance((now-last)/1000):false;last=now;return complete}
  function drawLayer(ctx,layer,distance,direction){if(!layer)return;const [dx,dy]=vectors[direction];ctx.drawImage(assets[layer.src],layer.x+dx*Math.round(distance),layer.y+dy*Math.round(distance),layer.w,layer.h)}
- function draw(ctx,x=1,y=1){const s=settings();ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(x,y);ctx.beginPath();ctx.rect(0,0,manifest.width,manifest.height);ctx.clip();
+ // maxHeight keeps the shared divider under the image visible in the full game.
+ function draw(ctx,x=1,y=1,maxHeight=manifest.height){const s=settings();ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(x,y);ctx.beginPath();ctx.rect(0,0,manifest.width,Math.min(manifest.height,maxHeight));ctx.clip();
   PeninsulaColors.fill(ctx,0,0,manifest.width,manifest.height);
   if(manifest.background)drawLayer(ctx,manifest.background,0,'left');
   manifest.frames.forEach((f,i)=>{if(elapsed+1e-9<(number===2?i*s.interval:0))return;ctx.save();ctx.beginPath();ctx.rect(f.frame.x,f.frame.y,f.frame.w,f.frame.h);ctx.clip();for(const layer of ['c','b','a'])drawLayer(ctx,f[layer],s.enabled?offsets[i][layer]:0,s.frames[i].direction);ctx.restore()});ctx.restore();

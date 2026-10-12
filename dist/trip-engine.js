@@ -619,6 +619,8 @@ function updateEnts(dt){
   const pz = position + PLAYERZ;
   for (const e of ents){
     const d = (e.z - pz)/SEG;
+    // The guide waits at the start until the race begins.
+    if(state === 'title' && e.kind === 'buddy') continue;
     if(coastal && e.kind === 'buddy'){
       const stopZ = (finishIndex+3)*SEG, lead = e.z-pz;
       let target = Math.min(1050,Math.sqrt(Math.max(0,2*650*(stopZ-e.z))));
@@ -1112,7 +1114,8 @@ function render(now){
   ctx.fillStyle = FOG; ctx.fillRect(-4, HZ, W + 8, H - HZ + 4);
   if(coastal && background){
     const bs=W/background.width,by=Math.round(HZ-62*bs);
-    function layer(image,factor){if(!image)return;const shift=Math.round(-bgOffset*factor),iw=W,ih=Math.round(image.height*W/image.width),start=((shift%iw)+iw)%iw-iw;for(let x=start;x<W;x+=iw)ctx.drawImage(image,x,by,iw,ih)}
+    // Layers keep the far image's scale; the near strip is a seamless loop of its own width.
+    function layer(image,factor){if(!image)return;const shift=Math.round(-bgOffset*factor),iw=Math.round(image.width*bs),ih=Math.round(image.height*bs),start=((shift%iw)+iw)%iw-iw;for(let x=start;x<W;x+=iw)ctx.drawImage(image,x,by,iw,ih)}
     layer(background,.22);layer(nearBackground,.85);
   }
 
@@ -1321,7 +1324,8 @@ function drawPhone(PH_X=6,PH_Y=168,scene=true){
   for (const by of [56]){ disc2(p, PH_W - 10, by, 4, 'rgba(250,250,247,.92)'); p.fillStyle = '#5a5e66'; p.fillRect(PH_W - 11, by - 1, 3, 3); }
   disc2(p, PH_W - 10, 68, 4, '#d8303a'); p.fillStyle = '#ffffff'; p.fillRect(PH_W - 11, 67, 3, 3);
   p.drawImage(PH_FRAME, 0, 0);
-  if(scene){ctx.drawImage(PH_CV, PH_X, PH_Y);drawText('↑' + altitude() + ' М', PH_X + PH_W/2, PH_Y + 13, {color:NAVY}, 'center')}else if(window.PeninsulaText&&typeof fonts!=='undefined'&&fonts.cozette?.image){PeninsulaText.line(p,'↑'+altitude()+' М',27,13,'data',fonts,'center')}else{const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);}
+  if(scene){ctx.drawImage(PH_CV, PH_X, PH_Y);drawText('↑' + altitude() + ' М', PH_X + PH_W/2, PH_Y + 13, {color:NAVY}, 'center')}else{// Dark built-in pixel font: readable on the light pill and has the ↑ glyph.
+const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);}
 }
 function drawHUD(now){
   if(compactUI)return;
@@ -1385,6 +1389,8 @@ $('snd').addEventListener('click', e => { if(!active)return; toggleSound(); e.cu
 
 // ---------- loop ----------
 buildTrack(1);
+// The waiting screen shows the exact starting pose, so the first click does not jump the car.
+if(coastal)playerX=0;
 visBase = 15;
 timeLeft = Math.round((finishIndex*SEG)/(MAXSPEED*.24) + 25);
 let lastT = performance.now(), acc = 0;
