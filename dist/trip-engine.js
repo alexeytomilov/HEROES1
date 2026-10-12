@@ -1,11 +1,10 @@
 // Shared driving engine adapted from the latest user-supplied fog-race.html.
 // The original fog level and the introductory coastal level use separate track rules.
 
-window.createFogRace = function({canvas, inputSurface, drawPanel, mode = "fog", background = null, nearBackground = null, onComplete = () => {}, demoFinish = false, onRender = null, compactUI = false, viewportWidth = 320, viewportHeight = 240}) {
+window.createFogRace = function({canvas, inputSurface, mode = "fog", background = null, nearBackground = null, onComplete = () => {}, onRender = null, viewportWidth = 320, viewportHeight = 240}) {
 const homeward = mode === "home";
 const coastal = mode === "sredny" || homeward;
 let active=false, frameHandle=0;
-const $ = id => document.getElementById(id === 'snd' ? 'fog-sound' : id);
 const W = viewportWidth, H = viewportHeight;
 const cv = canvas; cv.width = W; cv.height = H;
 const ctx = cv.getContext('2d', {willReadFrequently:true});
@@ -14,7 +13,7 @@ ctx.imageSmoothingEnabled = false;
 // ---------- constants ----------
 const STEP = 1/60;
 const HZ = Math.round(H*88/240), PROJECTION_Y = W*120/320;
-const SEG = 200, ROADW = 850, DRAW = 80, CAMH = compactUI ? (H-8-HZ)*1350/PROJECTION_Y : 1260, FOV = 100;
+const SEG = 200, ROADW = 850, DRAW = 80, CAMH = (H-8-HZ)*1350/PROJECTION_Y, FOV = 100;
 const DEPTH = 1/Math.tan((FOV/2)*Math.PI/180);
 const PLAYERZ = 1000*DEPTH*1.35;
 const MAXSPEED = 6000, KMH = 90;
@@ -315,16 +314,6 @@ function getText(str, o){
   textCache.set(key, t);
   return t;
 }
-function textW(str, scale = 1){ return getText(str, {color:'#ffffff', scale}).img.width; }
-function drawText(str, x, y, o, align = 'left'){
-  const t = getText(str, o);
-  const w = t.img.width - t.pad*2;
-  if (align === 'center') x -= Math.floor(w/2);
-  else if (align === 'right') x -= w;
-  ctx.drawImage(t.img, Math.round(x) - t.pad, Math.round(y) - t.pad);
-}
-
-
 
 // ---------- pixel primitives ----------
 function pxDisc(cx, cy, r, col){
@@ -334,30 +323,6 @@ function pxDisc(cx, cy, r, col){
     ctx.fillRect(cx - hw, cy + dy, hw*2 + 1, 1);
   }
 }
-function circlePts(r){
-  const pts = []; let x = r, y = 0, e = 1 - r;
-  while (x >= y){
-    for (const [a, b] of [[x,y],[y,x],[-y,x],[-x,y],[-x,-y],[-y,-x],[y,-x],[x,-y]]) pts.push([a, b]);
-    y++;
-    if (e < 0) e += 2*y + 1; else { x--; e += 2*(y - x) + 1; }
-  }
-  return pts;
-}
-function pxLine(x0, y0, x1, y1, col){
-  ctx.fillStyle = col;
-  const dx = Math.abs(x1-x0), dy = -Math.abs(y1-y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-  let err = dx + dy;
-  for (;;){
-    ctx.fillRect(x0, y0, 1, 1);
-    if (x0 === x1 && y0 === y1) break;
-    const e2 = 2*err;
-    if (e2 >= dy){ err += dy; x0 += sx; }
-    if (e2 <= dx){ err += dx; y0 += sy; }
-  }
-}
-const A0 = Math.PI*.75, SPAN = Math.PI*1.5;
-const inArc = (px, py, from, to) => { let a = Math.atan2(py, px); while (a < A0) a += Math.PI*2; return a >= A0 + SPAN*from && a <= A0 + SPAN*to; };
-
 
 // ---------- track ----------
 let segments = [], finishIndex = 0, ents = [], guidePath = [], detours = [];
@@ -513,13 +478,11 @@ function buildTrack(stage){
 }
 
 // ---------- state ----------
-let stage = 1, position = 0, playerX = .45, speed = 0, damage = 0, timeLeft = 0, totalTime = 0;
+let stage = 1, position = 0, playerX = .45, speed = 0, damage = 0;
 let state = 'title', shake = 0, steer = 0, fallT = 0, fallDir = 0, warnT = 0, hornT = 0, endT = 0, startMsgT = 0;
 let vis = 15, visM = 15, visBase = 15, clock = 0, bgOffset = 0;
 const keys = {left:false, right:false, up:false, down:false};
-let msg = {t1:'ТУМАННАЯ\nГОНКА', t2:'ДОБЕРИСЬ ДО ЛЕСНОЙ ЛУЖАЙКИ.\nЕДЬ СЛЕД В СЛЕД ЗА ПРОВОДНИКОМ:\nОН ВИДИТ КАМНИ И ЯМЫ. НЕ ОБГОНЯЙ.\n\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ', dim:true, big:2};
-if(coastal)msg = {t1:'СРЕДНИЙ',t2:'ДОБЕРИСЬ ДО МЕСТА,\nНЕ РАЗБИВ МАШИНУ\nНА НЕПРОСТОЙ ДОРОГЕ.\n\nЕДЬ ЗА СЕРЫМ ДЖИПОМ.\nГАЗ - ВВЕРХ, ТОРМОЗ - ВНИЗ.\n\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ',dim:true,big:2};
-if(homeward)msg={t1:'ДОРОГА ДОМОЙ',t2:'ВЫ ЕДЕТЕ В МОСКВУ.\nВПЕРЕДИ ПРОБКА.\nДЖИП ТО ЕДЕТ, ТО ОСТАНАВЛИВАЕТСЯ.\nДЕРЖИТЕ ДИСТАНЦИЮ.\n\nВВЕРХ - ГАЗ, ВНИЗ - ТОРМОЗ.\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ',dim:true,big:2};
+let msg = null;
 function showMsg(t1, t2 = '', dim = true, big = 2, start = false){ msg = t1 ? {t1, t2, dim, big, start} : null; }
 
 function startStage(){
@@ -527,15 +490,13 @@ function startStage(){
   buildTrack(stage);
   position = 0; playerX = coastal ? 0 : .45; speed = 0; damage = 0; fallT = 0; shake = 0; bgOffset=0;warnT=0;endT=0;
   visBase = Math.max(7, 17 - stage*2);
-  timeLeft = Math.round((finishIndex*SEG)/(MAXSPEED*.24) + 25);
-  totalTime = timeLeft;
   state = 'drive'; startMsgT = 1.4;
-  showMsg(coastal ? 'ЕДЬ ЗА ДЖИПОМ' : `ПЕРЕВАЛ ${stage}`, coastal ? 'ДЕРЖИ ДИСТАНЦИЮ' : 'ПОЕХАЛИ!', false, coastal ? 1 : 2, coastal);
+  showMsg(null);
 }
 function press(){
   audioOn();
   if (state === 'title' || state === 'over') startStage();
-  else if (state === 'clear'){ if(demoFinish){onComplete();return;}if(coastal){onComplete();return;}stage++; startStage(); }
+  else if (state === 'clear') onComplete();
 }
 function fail(t1, t2){
   if (state !== 'drive') return;
@@ -753,7 +714,7 @@ function update(dt){
     }
     if(position+PLAYERZ >= finishIndex*SEG && buddy.z >= (finishIndex+2.8)*SEG){
       position=finishIndex*SEG-PLAYERZ;speed=0;state='clear';
-      showMsg('ПРИЕХАЛИ!',homeward?'ПРОБКА ПОЗАДИ. ВЫ ДОЕХАЛИ ДОМОЙ.\n\nПРОБЕЛ ИЛИ ТАП - ДАЛЕЕ':'ОСТАНОВКА У МОРЯ.\nВЫ ДОЕХАЛИ ВМЕСТЕ С ДЖИПОМ.\nНАЙДИТЕ МЕСТО ДЛЯ ЛАГЕРЯ.\n\nПРОБЕЛ ИЛИ ТАП - ИСКАТЬ');
+      showMsg(null);
       beep(523,659,.35,'square',.05);
     }
     if(engGain){eng.frequency.setTargetAtTime(38+sp*150,actx.currentTime,.05);engGain.gain.setTargetAtTime(soundOn ? .035 : 0,actx.currentTime,.1);}
@@ -852,7 +813,7 @@ function update(dt){
     if (pz >= finishIndex*SEG){
       state = 'clear';
       beep(392, 392, .2, 'square', .05); setTimeout(() => beep(523, 523, .4, 'square', .05), 200);
-      showMsg('ПРИЕХАЛИ!', `ЛЕСНАЯ ЛУЖАЙКА У ОЗЕРА.\nВЫСОТА ${altitude()} М\n\nПРОБЕЛ ИЛИ ТАП - ${demoFinish?'ДАЛЕЕ':'СЛЕДУЮЩИЙ ПЕРЕВАЛ'}`, false);
+      showMsg(null);
     }
   } else if (gravGain) gravGain.gain.setTargetAtTime(0, actx.currentTime, .05);
 
@@ -1030,52 +991,6 @@ const MOUNTAINS = (() => {
   return c;
 })();
 let mtnA = 0;
-// ---- dash radio, bottom right ----
-const RAD_X = 246, RAD_Y = 104;
-const RADIO = (() => {
-  const c = mk(74, 140), x = c.getContext('2d');
-  const R = (x0, y0, x1, y1, col) => { x.fillStyle = col; x.fillRect(x0, y0, x1 - x0, y1 - y0); };
-  // antenna, tapering
-  for (let i = 0; i <= 60; i++){
-    const t = i/60, ax = Math.round(lerp(47, 68, t)), ay = Math.round(lerp(50, 0, t)), wd = t < .5 ? 3 : 2;
-    R(ax - 1, ay, ax - 1 + wd, ay + 1, '#141518'); if (t < .8) R(ax - 1, ay, ax, ay + 1, '#3a3c42');
-  }
-  R(44, 46, 51, 52, '#232428');
-  // mount arm and ball
-  R(30, 34, 38, 52, '#1c1d20'); R(30, 34, 31, 52, '#34363b');
-  x.fillStyle = '#2a2b2f'; for (let dy = -4; dy <= 4; dy++){ const hw = Math.floor(Math.sqrt(20 - dy*dy)); x.fillRect(34 - hw, 32 + dy, hw*2 + 1, 1); }
-  R(32, 29, 35, 31, '#55585e');
-  R(22, 24, 44, 29, '#1c1d20'); R(22, 24, 44, 25, '#3a3c42');
-  // holder & body
-  R(26, 66, 66, 118, '#0c0d0f');
-  R(30, 52, 62, 140, '#18191c'); R(30, 52, 31, 140, '#34363b'); R(61, 52, 62, 140, '#0e0f11');
-  R(33, 47, 39, 52, '#232428'); R(53, 45, 59, 52, '#232428'); R(54, 45, 58, 46, '#45474d');
-  // screen frame
-  R(32, 60, 60, 77, '#0b0c0e');
-  // keypad
-  for (let rr = 0; rr < 4; rr++) for (let cc = 0; cc < 3; cc++){
-    const kx = 34 + cc*8, ky = 82 + rr*6, col = rr === 3 && cc === 2 ? '#a82a2a' : '#34363b';
-    R(kx, ky, kx + 6, ky + 4, col); R(kx, ky, kx + 6, ky + 1, rr === 3 && cc === 2 ? '#d04a40' : '#55585e');
-  }
-  R(36, 108, 56, 112, '#232428');
-  // hand mic with its grille
-  R(4, 58, 22, 104, '#151619'); R(5, 56, 21, 58, '#151619'); R(4, 58, 5, 104, '#2e3035');
-  for (let gy = 62; gy < 84; gy += 2) R(7, gy, 19, gy + 1, '#26282c');
-  R(22, 70, 24, 82, '#232428');
-  // coiled cords
-  for (let cy = 104; cy < 140; cy += 3){ R(9, cy, 17, cy + 1, '#0d0e10'); R(9, cy + 1, 17, cy + 2, '#2c2e33'); }
-  for (let i = 0; i < 14; i++){ const t = i/13, cx = Math.round(lerp(14, 34, t)), cy = Math.round(56 - Math.sin(t*Math.PI)*12); R(cx, cy, cx + 2, cy + 1, '#2c2e33'); }
-  return c;
-})();
-let radT = 0;
-function drawRadio(now,RAD_X=246,RAD_Y=104){
-  ctx.drawImage(RADIO, RAD_X, RAD_Y);
-  // backlit screen, flares up when the guide's group calls in
-  const rx = (now/1000) % 11 < 1.6;
-  ctx.fillStyle = rx ? '#a8dcf8' : '#7aaed2'; ctx.fillRect(RAD_X + 33, RAD_Y + 61, 26, 15);
-  ctx.fillStyle = rx ? '#d03a2a' : (Math.floor(now/700) % 2 ? '#3ac84a' : '#1a4a22'); ctx.fillRect(RAD_X + 40, RAD_Y + 54, 2, 2);
-  drawText('145', RAD_X + 46, RAD_Y + 65, {color:'#1a2a3a'}, 'center');
-}
 const SKY = ['#d8dadb','#d4d6d7','#d0d3d4','#cdd0d1','#cacdcf','#c8cbcd'];
 
 const BAYER = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v => (v + .5)/16 - .5);
@@ -1158,11 +1073,9 @@ function render(now){
     else def = e.big ? BOULDER : ROCK;
     list.push({z:e.z, seg, pct:(e.z % SEG)/SEG, x:e.x, def, o, w:e.w, guide: e.kind === 'guide', glow: e.kind === 'car' ? 'car' : e.kind === 'buddy' ? (e.brake ? 'brake' : 'tail') : null});
   }
-  list.push({z: pz, player:true});
   list.sort((a, b) => b.z - a.z);
   const glows = [];
   for (const it of list){
-    if (it.player){ if(!compactUI)drawPlayer(now); continue; }
     const s = it.seg;
     const sc = lerp(s.p1.screen.scale, s.p2.screen.scale, it.pct);
     const sx = lerp(s.p1.screen.x, s.p2.screen.x, it.pct) + sc*it.x*ROADW*W/2;
@@ -1212,57 +1125,19 @@ function render(now){
     ctx.drawImage(w.img, Math.round(xx), w.y);
   }
   ctx.globalAlpha = 1;
-  if(!compactUI)drawRadio(now);
   ctx.restore();
 
   if(!coastal)ditherFrame();
-  drawHUD(now);
-  if(!compactUI)drawGameBorder(ctx);
 }
-function drawPlayer(now){
-  const dw = Math.round(JEEPW*(DEPTH/PLAYERZ)*W/2*1.2);
-  const img = getSprite(JEEP, dw, {brake: keys.down && state === 'drive'});
-  let ox = 0, oy = 0;
-  if (state === 'fall'){
-    const t = fallT;
-    ox = fallDir*Math.round(t*t*90); oy = Math.round(t*t*140);
-  } else if (speed > 30 && Math.floor(now/90) % 2 && Math.random() < .5) oy = -1;
-  ctx.drawImage(img, Math.round(W/2 - dw/2) + ox + steer*1, Math.round(HZ + DEPTH*CAMH/PLAYERZ*PROJECTION_Y) - 2 - img.height + oy);
-}
-
 // ---------- HUD ----------
-const fmtTime = t => { t = Math.max(0, Math.ceil(t)); return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`; };
 const NAVY = '#0c1420';
-function labelBox(str, x, y, bg, fg, border){
-  const w = textW(str) + 6;
-  ctx.fillStyle = border; ctx.fillRect(x, y, w, 11);
-  ctx.fillStyle = bg; ctx.fillRect(x+1, y+1, w-2, 9);
-  drawText(str, x+3, y+2, {color:fg});
-  return w;
-}
-function drawGauge(cx, cy, r, frac){
-  pxDisc(cx, cy, r + 2, '#14171b');
-  pxDisc(cx, cy, r, '#2c3036');
-  ctx.fillStyle = '#d8202a';
-  for (const [px, py] of circlePts(r - 2)) if (inArc(px, py, .34, 1)) ctx.fillRect(cx + px, cy + py, 1, 1);
-  ctx.fillStyle = '#7ac86a';
-  for (const [px, py] of circlePts(r - 2)) if (inArc(px, py, 0, .33)) ctx.fillRect(cx + px, cy + py, 1, 1);
-  ctx.fillStyle = '#e8eaf2';
-  for (let i = 0; i <= 9; i++){
-    const a = A0 + SPAN*i/9;
-    ctx.fillRect(Math.round(cx + Math.cos(a)*(r - 4)), Math.round(cy + Math.sin(a)*(r - 4)), 1, 1);
-  }
-  const a = A0 + SPAN*clamp(frac, 0, 1);
-  pxLine(cx, cy, Math.round(cx + Math.cos(a)*(r - 3)), Math.round(cy + Math.sin(a)*(r - 3)), '#ff3a2a');
-  ctx.fillStyle = '#e8eaf2'; ctx.fillRect(cx, cy, 1, 1);
-}
 function altitude(){
   const pz = position + PLAYERZ, sg = segAt(pz);
   const y = lerp(sg.p1.world.y, sg.p2.world.y, (pz % SEG)/SEG);
   return Math.round((coastal ? 42 : 1850 + stage*250) + y/50);
 }
 // ---- phone ----
-const PH_W = 54, PH_H = 104, PH_X = 6, PH_Y = 168;
+const PH_W = 54, PH_H = 104;
 function rrect(c2, x0, y0, w, h, r, col){
   c2.fillStyle = col;
   for (let dy = 0; dy < h; dy++){
@@ -1302,7 +1177,7 @@ const PH_FRAME = (() => {
 })();
 const PH_MASK = (() => { const c = mk(PH_W, PH_H); rrect(c.getContext('2d'), 3, 3, PH_W - 6, PH_H - 6, 6, '#fff'); return c; })();
 const PH_CV = mk(PH_W, PH_H);
-function drawPhone(PH_X=6,PH_Y=168,scene=true){
+function drawPhone(){
   const p = PH_CV.getContext('2d');
   p.globalCompositeOperation = 'source-over';
   p.clearRect(0, 0, PH_W, PH_H);
@@ -1324,75 +1199,27 @@ function drawPhone(PH_X=6,PH_Y=168,scene=true){
   for (const by of [56]){ disc2(p, PH_W - 10, by, 4, 'rgba(250,250,247,.92)'); p.fillStyle = '#5a5e66'; p.fillRect(PH_W - 11, by - 1, 3, 3); }
   disc2(p, PH_W - 10, 68, 4, '#d8303a'); p.fillStyle = '#ffffff'; p.fillRect(PH_W - 11, 67, 3, 3);
   p.drawImage(PH_FRAME, 0, 0);
-  if(scene){ctx.drawImage(PH_CV, PH_X, PH_Y);drawText('↑' + altitude() + ' М', PH_X + PH_W/2, PH_Y + 13, {color:NAVY}, 'center')}else{// Dark built-in pixel font: readable on the light pill and has the ↑ glyph.
-const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);}
+  // Dark built-in pixel font: readable on the light pill and has the ↑ glyph.
+  const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);
 }
-function drawHUD(now){
-  if(compactUI)return;
-  // visibility
-  if(!coastal)drawText(`ВИДИМОСТЬ ${Math.round(visM)} М`, 6, 6, {color:'#ffffff', outline:NAVY});
-  if(coastal && state==='drive'){
-    const buddy = ents.find(e=>e.kind==='buddy'), gap = (buddy.z-position-PLAYERZ)/SEG*4;
-    if(gap<10)drawText('ТОРМОЗИ! ДЖИП БЛИЗКО',W/2,23,{color:gap < 10 ? '#ff8a7a' : '#e4e6e8',outline:NAVY},'center');
-  }
-  // distance left
-  const left = Math.max(0, (finishIndex*SEG - position - PLAYERZ)/SEG*4/1000);
-  if (state !== 'clear') drawText(`ЕХАТЬ ЕЩЁ ПРИМЕРНО ${left.toFixed(1)} КМ`, 314, 6, {color:'#ffffff', outline:NAVY}, 'right');
-  // phone with altitude, speed as text
-  drawPhone();
-  drawText(Math.round(kmh()) + ' КМ/Ч', PH_X + PH_W + 6, 226, {color: kmh() > 35 ? '#ff8a7a' : '#fff4a0', outline:NAVY});
-  // edge warning
-  if (warnT > 0 && Math.floor(now/180) % 2 === 0)
-    drawText('КРАЙ ОБРЫВА!', W/2, 150, {color:'#ff8a7a', outline:NAVY}, 'center');
-  // messages
-  if (msg){
-    if (msg.dim){ ctx.fillStyle = 'rgba(30,34,40,.55)'; ctx.fillRect(0, 0, W, H); }
-    const l1 = msg.t1.split('\n'), l2 = msg.t2 ? msg.t2.split('\n') : [];
-    const bh = 7*msg.big + 4, sh = 10;
-    const total = l1.length*bh + (l2.length ? 8 + l2.length*sh : 0);
-    let y = Math.round(H/2 - total/2) - (msg.dim ? 0 : 30);
-    if(msg.dim)drawPanel(8,Math.max(5,y-12),304,Math.min(H-10,total+28));
-    for (const l of l1){ drawText(l, W/2, y, {scale:msg.big, color:'#fff4a0', color2:'#ffc83a', outline:NAVY}, 'center'); y += bh; }
-    y += 8;
-    for (const l of l2){ if (l) drawText(l, W/2, y, {color:'#ffffff', outline:NAVY}, 'center'); y += sh; }
-  }
-}
-
 // ---------- input ----------
 const KEYMAP = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down'};
 addEventListener('keydown', e => {
   if(!active||e.target?.matches?.('input,select,textarea'))return;
   if (e.code === 'Space' || e.code === 'Enter'){ e.preventDefault(); if (!e.repeat) press(); return; }
   if (e.code === 'KeyH'){ audioOn(); horn(); return; }
-  if (e.code === 'KeyM'){ toggleSound(); return; }
+  if (e.code === 'KeyM'){ soundOn = !soundOn; return; }
   const k = KEYMAP[e.code]; if (k){ e.preventDefault(); keys[k] = true; audioOn(); }
 });
 addEventListener('keyup', e => { if(!active)return; const k = KEYMAP[e.code]; if (k) keys[k] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 inputSurface.addEventListener('pointerdown', e => { if(!active)return; e.preventDefault(); press(); });
-document.querySelectorAll('#fog-pad button').forEach(b => {
-  const k = b.dataset.k;
-  const on = e => {
-    if(!active)return;
-    e.preventDefault(); b.classList.add('on'); audioOn();
-    if (k === 'horn'){ if (state === 'drive') horn(); else press(); return; }
-    keys[k] = true;
-    if (state !== 'drive' && state !== 'fall' && state !== 'crash') press();
-  };
-  const off = () => { if (k !== 'horn') keys[k] = false; b.classList.remove('on'); };
-  b.addEventListener('pointerdown', on);
-  b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
-  b.addEventListener('contextmenu', e => e.preventDefault());
-});
-function toggleSound(){ soundOn = !soundOn; $('snd').textContent = 'Звук: ' + (soundOn ? 'вкл' : 'выкл'); }
-$('snd').addEventListener('click', e => { if(!active)return; toggleSound(); e.currentTarget.blur(); });
 
 // ---------- loop ----------
 buildTrack(1);
 // The waiting screen shows the exact starting pose, so the first click does not jump the car.
 if(coastal)playerX=0;
 visBase = 15;
-timeLeft = Math.round((finishIndex*SEG)/(MAXSPEED*.24) + 25);
 let lastT = performance.now(), acc = 0;
 function pzForHUD(){return (position+PLAYERZ)/SEG}
 function frame(now){
@@ -1405,17 +1232,11 @@ function frame(now){
   frameHandle=requestAnimationFrame(frame);
 }
 return {
- artwork:{radio:RADIO},
- phoneImage(){drawPhone(0,0,false);return PH_CV;},
- drawInstruments(target,offsetX,offsetY){
-  const radioX=W-74,radioY=H-140,phoneX=6,phoneY=H-104;
-  drawRadio(performance.now(),radioX,radioY);drawPhone(phoneX,phoneY);drawText(Math.round(kmh())+' КМ/Ч',64,H-12,{color:'#fff4a0',outline:NAVY});
-  target.drawImage(cv,offsetX,offsetY);
- },
- start(){if(coastal && state==='clear'){state='title';msg={t1:'СРЕДНИЙ',t2:'ДОБЕРИСЬ ДО МЕСТА,\nНЕ РАЗБИВ МАШИНУ\nНА НЕПРОСТОЙ ДОРОГЕ.\n\nПРОБЕЛ ИЛИ ТАП - ПОЕХАЛИ',dim:true,big:2};buildTrack(1);position=0;speed=0;playerX=0;}active=true;$('snd').textContent='Звук: '+(soundOn?'вкл':'выкл');lastT=performance.now();acc=0;render(lastT);if(onRender)onRender({state,msg,inventory:[...supplies],fuel:Math.ceil(fuel),neededItem,speed:Math.round(kmh()),altitude:altitude(),progress:clamp((position+PLAYERZ)/(finishIndex*SEG),0,1),steer,warning:false});if(actx&&actx.state==='suspended')actx.resume();frameHandle=requestAnimationFrame(frame)},
+ phoneImage(){drawPhone();return PH_CV;},
+ start(){if(coastal && state==='clear'){state='title';msg=null;buildTrack(1);position=0;speed=0;playerX=0;}active=true;lastT=performance.now();acc=0;render(lastT);if(onRender)onRender({state,msg,inventory:[...supplies],fuel:Math.ceil(fuel),neededItem,speed:Math.round(kmh()),altitude:altitude(),progress:clamp((position+PLAYERZ)/(finishIndex*SEG),0,1),steer,warning:false});if(actx&&actx.state==='suspended')actx.resume();frameHandle=requestAnimationFrame(frame)},
  stop(){active=false;cancelAnimationFrame(frameHandle);for(const k in keys)keys[k]=false;if(actx)actx.suspend()},
  restart(){startStage()},
- press, horn, toggleSound, useItem,
+ press, horn, useItem,
  setControl(k,value){if(k in keys)keys[k]=value}
 };
 };

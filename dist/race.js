@@ -80,7 +80,7 @@ function startRace(){
  canvas.style.touchAction='none';
  // Snapshot the current device's selected appearance rather than resetting it.
  try{localStorage.setItem('peninsula-race-settings',JSON.stringify(settings))}catch{}
- $('#race-tools').hidden=false;$('#fog-pad').hidden=false;$('#race-help').hidden=false;$('#status').hidden=false;
+ $('#race-tools').hidden=false;$('#status').hidden=false;
  raceScene=document.createElement('canvas');raceScene.width=320;raceScene.height=240;
  const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*320/r.width,y:(e.clientY-r.top)*240/r.height}};
  canvas.addEventListener('pointerdown',e=>{const p=point(e),i=Math.floor((p.x-198)/29);if(raceData?.state==='repair'&&p.y>=176&&p.y<204&&i>=0&&i<4&&p.x<198+i*29+28&&raceData.inventory[i]){draggedItem={index:i,...p};canvas.setPointerCapture(e.pointerId);render()}});
@@ -88,7 +88,7 @@ function startRace(){
  const drop=(e,cancel=false)=>{if(!draggedItem)return;const p=point(e),i=draggedItem.index;draggedItem=null;if(!cancel&&p.x>=8&&p.x<312&&p.y>=23&&p.y<159)raceEngine.useItem(i);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);render()};
  canvas.addEventListener('pointerup',e=>drop(e));canvas.addEventListener('pointercancel',e=>drop(e,true));
  const bg=new Image(),near=new Image();let pending=2;const loaded=()=>{if(--pending)return;
-  raceEngine=window.createFogRace({canvas:raceScene,inputSurface:canvas,drawPanel:()=>{},mode:['fog','home'].includes(params.get('mode'))?params.get('mode'):'sredny',background:bg,nearBackground:near,compactUI:true,viewportWidth:304,viewportHeight:136,demoFinish:true,
+  raceEngine=window.createFogRace({canvas:raceScene,inputSurface:canvas,mode:['fog','home'].includes(params.get('mode'))?params.get('mode'):'sredny',background:bg,nearBackground:near,viewportWidth:304,viewportHeight:136,
    onRender:d=>{raceData=d;if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?LT('race.btnStart'):d.state==='over'?LT('race.btnRetry'):LT('race.btnOnWay');$('#race-start').disabled=d.state==='drive'||raceFinished;},
    onComplete:()=>{if(raceFinished)return;raceFinished=true;raceEngine.stop();render();$('#status').textContent=LT('race.statusArrived');$('#race-start').disabled=true;}
   });raceEngine.start();window.trip=raceEngine;
