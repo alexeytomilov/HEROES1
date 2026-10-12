@@ -1,0 +1,42 @@
+{
+  "width": 318,
+  "height": 152,
+  "sourceCanvas": [
+    432,
+    152
+  ],
+  "source": "Заставка 4.psd",
+  "sourceModified": "2026-10-09T20:32:35.396Z",
+  "sourceSha256": "c950f0d11bcf781ba8f38ca66a15b30828c6e7c0046e1f97129b65c9cda02319",
+  "frames": [
+    {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 318,
+        "h": 152
+      },
+      "a": {
+        "src": "assets/intro4/a.png",
+        "x": 16,
+        "y": 75,
+        "w": 250,
+        "h": 77
+      },
+      "b": {
+        "src": "assets/intro4/b.png",
+        "x": -37,
+        "y": 64,
+        "w": 303,
+        "h": 88
+      }
+    }
+  ],
+  "background": {
+    "src": "assets/intro4/c.png",
+    "x": -57,
+    "y": 0,
+    "w": 432,
+    "h": 152
+  }
+}

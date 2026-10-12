@@ -1,0 +1,89 @@
+{
+  "width": 318,
+  "height": 152,
+  "sourceCanvas": [
+    318,
+    230
+  ],
+  "source": "Заставка 2.psd",
+  "sourceModified": "2026-10-09T20:36:11.927Z",
+  "sourceSha256": "b55d802dd31cb809f408e7291e7fe0d9f5c22d404b9face316db37a0a8a5c760",
+  "frames": [
+    {
+      "frame": {
+        "src": "assets/intro2/1frame.png",
+        "x": 1,
+        "y": 1,
+        "w": 103,
+        "h": 150
+      },
+      "a": {
+        "src": "assets/intro2/1a.png",
+        "x": 0,
+        "y": -2,
+        "w": 224,
+        "h": 193
+      },
+      "b": {
+        "src": "assets/intro2/1b.png",
+        "x": 1,
+        "y": 1,
+        "w": 103,
+        "h": 150
+      }
+    },
+    {
+      "frame": {
+        "src": "assets/intro2/2frame.png",
+        "x": 107,
+        "y": 1,
+        "w": 104,
+        "h": 150
+      },
+      "a": {
+        "src": "assets/intro2/2a.png",
+        "x": 101,
+        "y": 12,
+        "w": 121,
+        "h": 154
+      },
+      "b": {
+        "src": "assets/intro2/2b.png",
+        "x": 107,
+        "y": 1,
+        "w": 104,
+        "h": 150
+      }
+    },
+    {
+      "frame": {
+        "src": "assets/intro2/3frame.png",
+        "x": 213,
+        "y": 1,
+        "w": 103,
+        "h": 150
+      },
+      "a": {
+        "src": "assets/intro2/3a.png",
+        "x": 145,
+        "y": -8,
+        "w": 173,
+        "h": 195
+      },
+      "b": {
+        "src": "assets/intro2/3b.png",
+        "x": 213,
+        "y": 1,
+        "w": 103,
+        "h": 150
+      }
+    }
+  ],
+  "background": {
+    "src": "assets/intro2/back.png",
+    "x": -60,
+    "y": -69,
+    "w": 471,
+    "h": 329
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "width": 318,
+  "height": 152,
+  "sourceCanvas": [
+    318,
+    152
+  ],
+  "source": "Заставка 3.psd",
+  "sourceModified": "2026-10-09T20:30:43.507Z",
+  "sourceSha256": "4ddddeb174104bfc676d6cd7dbae54b8fd29ef15dc5fef7fe70334c630b5030f",
+  "frames": [
+    {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 318,
+        "h": 152
+      },
+      "a": {
+        "src": "assets/intro3/a.png",
+        "x": 66,
+        "y": 56,
+        "w": 193,
+        "h": 86
+      },
+      "b": {
+        "src": "assets/intro3/b.png",
+        "x": 66,
+        "y": 56,
+        "w": 193,
+        "h": 86
+      }
+    }
+  ],
+  "background": {
+    "src": "assets/intro3/back.png",
+    "x": -99,
+    "y": -39,
+    "w": 496,
+    "h": 320
+  }
+}
