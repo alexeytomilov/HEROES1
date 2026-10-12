@@ -17,7 +17,7 @@ const legacySetScreen=setScreen;setScreen=function(s){if(screen==='embedded')sto
 function syncEmbeddedScale(){levelFrame.style.transform='scale('+parseFloat(document.querySelector('#frame').style.width)/320+')'}
 const priorScale=applyDisplayScale;applyDisplayScale=function(){priorScale();syncEmbeddedScale()};
 window.addEventListener('resize',()=>{applyDisplayScale();syncEmbeddedScale()});document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{displayScale=Number(b.dataset.scale);applyDisplayScale()});
-levelFrame.addEventListener('load',()=>{if(!levelFrame.hidden){levelFrame.contentWindow.postMessage({type:'appearance',settings:currentUI.settings},location.origin);levelFrame.contentWindow.postMessage({type:'text-presets',settings:PeninsulaText.state},location.origin);levelFrame.contentWindow.postMessage({type:'color-presets',settings:PeninsulaColors.state},location.origin);levelFrame.contentWindow.focus()}});
+levelFrame.addEventListener('load',()=>{if(!levelFrame.hidden){levelFrame.contentWindow.postMessage({type:'text-edit',on:!!window.PeninsulaTextEdit?.on},location.origin);levelFrame.contentWindow.postMessage({type:'appearance',settings:currentUI.settings},location.origin);levelFrame.contentWindow.postMessage({type:'text-presets',settings:PeninsulaText.state},location.origin);levelFrame.contentWindow.postMessage({type:'color-presets',settings:PeninsulaColors.state},location.origin);levelFrame.contentWindow.focus()}});
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-continue'&&embeddedComplete){levelNext.onclick();return}if(e.data?.type==='level-complete'){embeddedComplete=true;levelNext.hidden=false;document.querySelector('#hint').textContent=embeddedMode==='race'?'Вы добрались до места ночлега. Можно продолжать.':'Лагерь установлен. Можно продолжать.'}});
 levelNext.onclick=()=>{if(!embeddedComplete)return;if(journeyActive)gameCompleted();else showNode('map')};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
@@ -42,6 +42,7 @@ const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scen
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
 function syncScenePanel(id){
  if(!sceneHost)return;
+ if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const key='text-edit:'+Object.keys(PeninsulaText.overrides).length;if(scenePanelKey!==key){buildTextEditPanel();scenePanelKey=key}return}
  // An open question window takes over the panel with its size switch.
  if(window.PeninsulaPopup?.visible&&screen!=='embedded'){sceneHost.hidden=false;if(scenePanelKey!=='popup'){buildPopupControls();scenePanelKey='popup'}return}
  const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
@@ -66,6 +67,13 @@ if(sceneBack)sceneBack.onclick=()=>{if(screenHistory.length<2)return;screenHisto
 const scenePause=document.querySelector('#scene-pause');
 function setScenePaused(value){scenePaused=!!value;for(const motion of Object.values(fullIntroMotions))motion.setPaused?.(scenePaused);if(scenePause){scenePause.textContent=scenePaused?'Продолжить показ':'Пауза';scenePause.setAttribute('aria-pressed',String(scenePaused))}}
 if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
+// Text edit mode pauses the show, reaches the embedded level and lists the edits in the panel below.
+const textEditButton=document.querySelector('#text-edit');
+function syncTextEdit(){const on=!!window.PeninsulaTextEdit?.on;if(textEditButton){textEditButton.setAttribute('aria-pressed',String(on));textEditButton.textContent=on?'Готово':'Текст'}if(!levelFrame.hidden)levelFrame.contentWindow?.postMessage({type:'text-edit',on},location.origin);scenePanelKey=null}
+if(textEditButton)textEditButton.onclick=()=>{const on=!window.PeninsulaTextEdit.on;if(on)setScenePaused(true);window.PeninsulaTextEdit.set(on)};
+window.addEventListener('text-edit-change',syncTextEdit);
+function buildTextEditPanel(){const n=Object.keys(PeninsulaText.overrides).length;sceneHost.innerHTML='<h2>Редактирование текста</h2><p>Наведите мышь на текст в игре и кликните, чтобы поменять слова. Изменено текстов: '+n+'.</p><div class="text-edit-actions"><button type="button" data-text-act="copy">Скопировать правки</button> <button type="button" data-text-act="clear"'+(n?'':' disabled')+'>Вернуть все исходные</button></div>';
+ sceneHost.onclick=async e=>{const act=e.target.dataset?.textAct;if(act==='copy'){const json=JSON.stringify(PeninsulaText.overrides,null,2);try{await navigator.clipboard.writeText(json);e.target.textContent='Скопировано'}catch{prompt('Скопируйте правки:',json)}}if(act==='clear'&&confirm('Вернуть исходный текст во всех местах?')){PeninsulaText.setOverrides({});scenePanelKey=null}};sceneHost.oninput=null}
 // Toolbar buttons drop focus so Space and Enter keep advancing the screen instead of pressing the button again.
 document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('click',()=>b.blur()));
 // Entering an intro always replays it from its first frame.
