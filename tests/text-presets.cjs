@@ -5,7 +5,7 @@ const sandbox={window:{addEventListener:(name,fn)=>events[name]=fn,dispatchEvent
 vm.runInNewContext(fs.readFileSync('dist/text-presets.js','utf8'),sandbox);
 const api=sandbox.window.PeninsulaText;
 const glyphs=Object.fromEntries([...'? abcdefABCDEFПриветПРИВЕТ'].map(ch=>[ch,{x:0,y:0,w:6}]));const fonts={cozette:{height:13,glyphs,image:{width:100,height:13}},unifont:{height:16,glyphs,image:{width:100,height:16}}};
-assert.equal(Object.keys(api.roles).length,6);assert.equal(Object.keys(api.names).length,5);
+assert.equal(Object.keys(api.roles).length,8);assert.equal(Object.keys(api.names).length,7);
 let state=JSON.parse(JSON.stringify(api.state));state.assignments.dialogue='large';state.presets.large.size=17;state.presets.large.offset=-3;state.presets.large.padding=0;state.presets.large.uppercase=true;state.presets.large.color='#ff0000';api.update(state);
 assert.equal(api.get('dialogue').size,17);assert.equal(api.get('narrator').size,17);assert.equal(api.format('Привет','dialogue'),'ПРИВЕТ');
 api.block(context(),'abcdef abcdef',1.5,2.5,40,100,'dialogue',fonts);assert.ok(draws.length);for(const a of draws){if(a.length===9)for(const n of a.slice(5))assert.ok(Number.isInteger(n),'bitmap destinations must use whole pixels')}
@@ -27,4 +27,6 @@ assert(prepared.length>1);assert(prepared.every(row=>row.prepared===true));asser
 for(const preset of Object.keys(api.names))state.presets[preset].uppercase=true;
 api.update(state);
 for(const role of [...Object.keys(api.roles),...Object.keys(api.names)])assert.equal(api.format('Привет. Как дела?',role),'ПРИВЕТ. КАК ДЕЛА?');
-assert.ok(storage.size);console.log('PASS: six roles, five shared presets, casing, validation, wrapping and integer bitmap drawing.');
+assert.ok(storage.size);console.log('PASS: eight roles, seven shared presets, casing, validation, wrapping and integer bitmap drawing.');
+
+const added=api.normalize({assignments:{buttons:'small',data:'technical'},presets:{buttons:{uppercase:true},data:{color:'#ff00ff'}}});assert.equal(added.assignments.buttons,'small');assert.equal(added.assignments.data,'technical');assert.equal(added.presets.buttons.uppercase,true);assert.equal(added.presets.data.color,'#ff00ff');

@@ -1321,7 +1321,7 @@ function drawPhone(PH_X=6,PH_Y=168,scene=true){
   for (const by of [56]){ disc2(p, PH_W - 10, by, 4, 'rgba(250,250,247,.92)'); p.fillStyle = '#5a5e66'; p.fillRect(PH_W - 11, by - 1, 3, 3); }
   disc2(p, PH_W - 10, 68, 4, '#d8303a'); p.fillStyle = '#ffffff'; p.fillRect(PH_W - 11, 67, 3, 3);
   p.drawImage(PH_FRAME, 0, 0);
-  if(scene){ctx.drawImage(PH_CV, PH_X, PH_Y);drawText('↑' + altitude() + ' М', PH_X + PH_W/2, PH_Y + 13, {color:NAVY}, 'center')}else if(window.PeninsulaText&&typeof fonts!=='undefined'&&fonts.cozette?.image){PeninsulaText.line(p,'↑'+altitude()+' М',27,13,'technical',fonts,'center')}else{const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);}
+  if(scene){ctx.drawImage(PH_CV, PH_X, PH_Y);drawText('↑' + altitude() + ' М', PH_X + PH_W/2, PH_Y + 13, {color:NAVY}, 'center')}else if(window.PeninsulaText&&typeof fonts!=='undefined'&&fonts.cozette?.image){PeninsulaText.line(p,'↑'+altitude()+' М',27,13,'data',fonts,'center')}else{const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);}
 }
 function drawHUD(now){
   if(compactUI)return;

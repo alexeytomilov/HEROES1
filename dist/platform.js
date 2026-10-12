@@ -12,7 +12,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const speed=82,gravity=450,jumpSpeed=210,radius=5,height=24;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
  function text(s,x,y,c='#dce5ed',align='left'){drawText(s,x,y,8,c,align)}
- function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');text(label,x+w/2,y+6,selected?'#f1d39a':'#dce5ed','center');hits.push({x,y,w,h,fn});}
+ function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hits.push({x,y,w,h,fn});}
  function clearInput(){keys.clear();jumpBuffer=0;}
  function spawn(index=room){room=index;const s=rooms[room].start;p={x:s.x,y:s.y,vx:0,vy:0,face:1,ground:true,hang:null};state='play';finalAsked=false;choice=0;grabCooldown=0;clearInput();announce(rooms[room].name);}
  function retry(){spawn(room);render()}

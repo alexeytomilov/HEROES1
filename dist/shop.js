@@ -16,7 +16,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  function wrap(s,x,y,w,max=4,color='#cbd6df',gap=10){let lines=[];for(const paragraph of s.toUpperCase().split('\n')){let line='';for(const word of paragraph.split(/\s+/)){if(line&&pixelMeasure(line+' '+word)>w){lines.push(line);line=word}else line+=(line?' ':'')+word;}lines.push(line);}lines.slice(0,max).forEach((l,i)=>text(l,x,y+i*gap,color));}
  function speak(s){comment=s;announce(s);render()}
  function hit(label,x,y,w,h,fn){hits.push({label,x,y,w,h,fn})}
- function button(label,x,y,w,h,fn,chosen=false){drawPanel(x,y,w,h,'ui_button');if(chosen)rect(x+4,y+4,w-8,h-8,'#2b4059');text(label,x+w/2,y+(h-7)/2,chosen?'#e5c695':'#cad7e4','center');hit(label,x,y,w,h,fn)}
+ function button(label,x,y,w,h,fn,chosen=false){drawPanel(x,y,w,h,'ui_button');if(chosen)rect(x+4,y+4,w-8,h-8,'#2b4059');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hit(label,x,y,w,h,fn)}
  function reset(){money=budget;inventory=[];won=false;drag=null;category=0;selected=null;hovered=null;speak(welcome)}
  function changeCategory(i){category=i;selected=null;hovered=null;drag=null;const lines=['Еда на дорогу. Здесь всё, что на полке справа.','Пиво, три вида водки, коньяк и коктейль. Выбирай.','Всё для рыбалки: от крючков до сачка. Выбирай.','Сувенир из Териберки? Глянь на Сахарного Левиафана.'];speak(lines[i])}
  function buy(product){
@@ -41,7 +41,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   rect(269,162,40,12,'#11171c');currentUI.resource(ctx,'Наличные',money.toLocaleString('ru-RU'));
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
-  for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)text(''+item.count,x+25,y+16,'#f1d39a','right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
+  for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)PeninsulaText.line(ctx,String(item.count),x+25,y+16,'data',currentUI.fonts,'right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
   if(won){const b=currentUI.modal(ctx,'ПОКУПКА СОВЕРШЕНА','Сахарный Левиафан ваш! Можно продолжать путешествие.');hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
  }
  const contains=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;

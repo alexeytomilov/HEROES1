@@ -56,7 +56,7 @@ function cockpitRadio(d){
  for(let y=137;y<160;y++){const x=247+Math.round(Math.sin((y-137)*.12)*2);r(x,y,2,1,'#111719')}
  for(let x=249;x<274;x++){const y=161+Math.round(Math.sin((x-249)/25*Math.PI)*5);r(x,y,1,2,'#111719')}
  for(let y=146;y<162;y+=3){r(290,y,7,1,'#13191a');r(291,y+1,5,1,'#303a3b')}
- clipped(266,119,19,11,()=>text('145',275.5,118,'center'));
+ clipped(266,119,19,11,()=>PeninsulaText.line(ctx,'145',275.5,118,'data',fonts,'center'));
 }
 function drawRace(){
  const d=raceData;ctx.imageSmoothingEnabled=false;

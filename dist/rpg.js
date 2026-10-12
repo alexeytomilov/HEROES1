@@ -77,7 +77,7 @@ async function startRPG(){
   drawMap();
   resourceText({text:'Запас сил',align:'LEFT'});resourceText({text:'80%',align:'RIGHT'});
   const bag=[won?null:'camp_tent',count('bottle')?'camp_bottle':null,count('wrapper')?'camp_wrapper':null];
-  for(let row=0;row<2;row++)for(let col=0;col<4;col++){const bx=198+col*29,by=176+row*29;rect(bx+1,by+1,26,26,'#18242b');border(bx,by,28,28);if(row===0&&bag[col]&&!(drag&&col===0)){icon(bag[col],bx+2,by+2);const n=col===1?count('bottle'):col===2?count('wrapper'):0;if(n>1){rect(bx+14,by+14,12,12,'#18242b');text(String(n),bx+26,by+13,'right');}}}
+  for(let row=0;row<2;row++)for(let col=0;col<4;col++){const bx=198+col*29,by=176+row*29;rect(bx+1,by+1,26,26,'#18242b');border(bx,by,28,28);if(row===0&&bag[col]&&!(drag&&col===0)){icon(bag[col],bx+2,by+2);const n=col===1?count('bottle'):col===2?count('wrapper'):0;if(n>1){rect(bx+14,by+14,12,12,'#18242b');PeninsulaText.line(ctx,String(n),bx+26,by+13,'data',fonts,'right');}}}
   ['833b3edee700c533c4a9dc2fadfddbf6fd7e872a','f40317e182ff959dc9bab1e1d3a9483eb7022a4e','2ecc0ecbf583a11c025a80661324094dc8572ecc'].forEach((hash,i)=>{const bx=7+i*37;rect(bx+1,162,34,42,'#293640');ctx.drawImage(images[hash],bx+1,162,34,42);border(bx,161,36,43);});
   const icons=[['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]];
   for(const [kind,bx,by]of icons){const w=bx===172?25:26;rect(bx,by,w,21,['sword','eye'].includes(kind)?'#655848':'#293640');border(bx,by,w,21);controlIcon(kind,bx,by);}
