@@ -2,7 +2,7 @@
 let raceEngine=null,raceScene=null,raceData=null,raceFinished=false,racePaused=false;
 let draggedItem=null;
 function raceDialog(d){
- if(raceFinished||d.state==='clear')return params.get('mode')==='home'?'Приехали! Мы дома.':params.get('mode')==='fog'?'Перевал позади.\nОстановимся здесь.':'Приехали!\nЗдесь остановимся на ночлег.';
+ if(raceFinished||d.state==='clear'){const next=params.get('embed')==='1'?'\nКлик или Enter — дальше.':'';return (params.get('mode')==='home'?'Приехали! Мы дома.':params.get('mode')==='fog'?'Перевал позади. Остановимся здесь.':'Приехали! Здесь остановимся на ночлег.')+next;}
  if(d.state==='title')return params.get('mode')==='fog'?'Туман густой. Держись дороги.':params.get('mode')==='home'?'Держи дистанцию.\nВпереди пробка.':'Двигайся за мной.';
  if(d.state==='repair'||d.state==='over')return (d.msg?.t1||'Дальше не поедем.')+'\n'+(d.msg?.t2||'');
  if(racePaused)return 'Давай немного передохнём.';
