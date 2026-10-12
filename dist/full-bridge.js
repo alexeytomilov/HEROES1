@@ -47,20 +47,26 @@ function syncScenePanel(id){
  }
  scenePanelKey=panelKey;
 }
-let sceneShown=null;
+let sceneShown=null,scenePaused=false;
+// Pause freezes the automatic show timer and parallax; click, Enter and Space still advance manually.
+const scenePause=document.querySelector('#scene-pause');
+function setScenePaused(value){scenePaused=!!value;for(const motion of Object.values(fullIntroMotions))motion.setPaused?.(scenePaused);if(scenePause){scenePause.textContent=scenePaused?'Продолжить показ':'Пауза';scenePause.setAttribute('aria-pressed',String(scenePaused))}}
+if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
+// Toolbar buttons drop focus so Space and Enter keep advancing the screen instead of pressing the button again.
+document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('click',()=>b.blur()));
 // Entering an intro always replays it from its first frame.
 function fullIntroAnimate(now){
  const id=activeScene();sceneClock.select(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
- if(sceneClock.tick(dt,visible)){if(id==='intro1')startJourney();else advanceStory()}
+ if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
  else if(fullIntroMotions[id])render();
  requestAnimationFrame(fullIntroAnimate);
 }
 // "С начала" resets progress and returns to the first intro, even when it is already shown.
 document.querySelector('#demo-start').onclick=()=>{startJourney();showNode('title');sceneShown=null;sceneClock.restart();render()};
 Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]).then(([, ...motions])=>{
- fullIntroMotions=Object.fromEntries(motions.map((motion,i)=>['intro'+(i+1),motion]));scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
+ fullIntroMotions=Object.fromEntries(motions.map((motion,i)=>['intro'+(i+1),motion]));setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
 }).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить слои заставок. Обновите страницу.</p>'}console.error(e)});
 const renderBeforeParallax=render;render=function(){
  renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
