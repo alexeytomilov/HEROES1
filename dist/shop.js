@@ -37,7 +37,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  function icon(id,x,y,size=24){const item=catalog.flatMap(c=>c.items).find(p=>p.id===id);ctx.drawImage(images['shop_'+(item?.icon||id)],Math.round(x),Math.round(y),size,size)}
  function render(){
   if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];currentUI.base(ctx,'shop3');
-  rect(12,166,178,62,'#11171c');currentUI.block(ctx,hovered?hovered.name+'\nЦена: '+hovered.price+' рублей.'+(money<hovered.price?'\nНе хватает денег.':''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66);
+  rect(12,166,178,62,'#11171c');currentUI.roleBlock(ctx,hovered?hovered.name+'\nЦена: '+hovered.price+' рублей.'+(money<hovered.price?'\nНе хватает денег.':''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
   rect(269,162,40,12,'#11171c');currentUI.resource(ctx,'Наличные',money.toLocaleString('ru-RU'));
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});

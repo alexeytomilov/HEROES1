@@ -52,3 +52,9 @@ if(params.get('embed')==='1'){
  window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin)return;if(e.data?.type==='appearance'){Object.assign(settings,e.data.settings);syncInputs();if(ready){Object.values(fonts).forEach(tintFont);render()}}if(e.data?.type==='race-action'){const id={start:'#race-start',pause:'#race-pause',restart:'#race-restart'}[e.data.action];if(id){if(e.data.action==='restart')notified=false;$(id).click()}}});
  window.addEventListener('keydown',e=>{if(e.key==='Enter'&&(playRPG&&rpgGame?.snapshot().won||playRace&&raceFinished))window.parent.postMessage({type:'level-complete'},location.origin)});
 }
+
+const legacyTextBlock=block;
+block=function(s,x,y,w,h,options={}){if(!window.PeninsulaText||!ready)return legacyTextBlock(s,x,y,w,h,options);return PeninsulaText.block(ctx,s,x,y,w,h,options.role||(x>=198&&y<160?'situation':'narrator'),fonts)};
+heading=function(s){PeninsulaText.block(ctx,titleCase(s),1,2,318,20,'heading',fonts)};
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='text-presets')PeninsulaText.update(e.data.settings)});
+window.addEventListener('text-presets-change',()=>{if(ready)render()});
