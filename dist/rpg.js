@@ -41,7 +41,7 @@ async function startRPG(){
  function turn(amount){if(won||drag)return;dir=(dir+amount+4)%4;if(facingTrash())describe();else say('Вы смотрите на '+directions[dir].toLowerCase()+'.');}
  function inspect(){if(won)return;if(facingTrash()){describe();return;}say(reason()||'Сухо, тихо и чисто.\nПеретащите палатку сюда.');}
  function collect(id){if(!facingTrash()||picked(id)||won)return;const a=ahead();collected.add(trashId(a.x,a.y,id));say(clean(a.x,a.y)?'Мусор убран. Ищите\nзолотую площадку на карте.':'Подберите и оставшийся мусор.');}
- function install(){const why=reason();if(why){say(why);return false;}won=true;tentPosition={x:x+.5,y:y+.2};say('Лагерь установлен у моря.\nМусор заберём с собой.');return true;}
+ function install(){const why=reason();if(why){say(why);return false;}won=true;tentPosition={x:x+.5,y:y+.2};say('Лагерь установлен у моря.\nКлик или Enter — дальше.');return true;}
  function icon(key,a,b,w=24,h=24){ctx.drawImage(art[key],Math.round(a),Math.round(b),w,h);}
  function drawMap(){
   const size=8,left=201,top=94,width=108,height=64,cx=left+width/2,cy=top+height/2;
