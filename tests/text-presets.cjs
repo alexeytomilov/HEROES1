@@ -11,4 +11,20 @@ assert.equal(api.get('dialogue').size,17);assert.equal(api.get('narrator').size,
 api.block(context(),'abcdef abcdef',1.5,2.5,40,100,'dialogue',fonts);assert.ok(draws.length);for(const a of draws){if(a.length===9)for(const n of a.slice(5))assert.ok(Number.isInteger(n),'bitmap destinations must use whole pixels')}
 const lines=api.lines('abcdefabcdefabcdef',20,'dialogue',fonts);assert.ok(lines.length>1);for(const l of lines)assert.ok(api.measure(l,'dialogue',fonts)<=20);
 state.presets.large.size=999;state.presets.large.color='invalid';state.assignments.question='invalid';api.update(state);assert.equal(api.get('large').size,32);assert.equal(api.get('large').color,'#bec4c9');assert.equal(api.state.assignments.question,'large');
+// Every role and direct preset obeys both sides of the Caps Lock switch.
+state=JSON.parse(JSON.stringify(api.defaults));
+for(const preset of Object.keys(api.names))state.presets[preset].uppercase=false;
+api.update(state);
+for(const role of [...Object.keys(api.roles),...Object.keys(api.names)]){
+ assert.equal(api.format('ПРИВЕТ. КАК ДЕЛА?\nНОВАЯ СТРОКА!',role),'Привет. Как дела?\nНовая строка!');
+ assert.equal(api.format('пРиВеТ',role),'Привет');
+}
+const wrapped=api.lines('ABCDEF ABCDEF ABCDEF',42,'dialogue',fonts);
+assert.equal(wrapped.join(' '),'Abcdef abcdef abcdef','wrapping must not capitalize continuation lines');
+const originalLine=api.line;const prepared=[];api.line=(...args)=>{prepared.push({text:args[1],prepared:args[7]});return originalLine(...args)};
+api.block(context(),'ABCDEF ABCDEF ABCDEF',0,0,52,100,'dialogue',fonts);
+assert(prepared.length>1);assert(prepared.every(row=>row.prepared===true));assert.equal(prepared.map(row=>row.text).join(' '),'Abcdef abcdef abcdef');api.line=originalLine;
+for(const preset of Object.keys(api.names))state.presets[preset].uppercase=true;
+api.update(state);
+for(const role of [...Object.keys(api.roles),...Object.keys(api.names)])assert.equal(api.format('Привет. Как дела?',role),'ПРИВЕТ. КАК ДЕЛА?');
 assert.ok(storage.size);console.log('PASS: six roles, four shared presets, casing, validation, wrapping and integer bitmap drawing.');

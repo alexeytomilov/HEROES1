@@ -15,7 +15,7 @@
   const lines=api.lines(body,w-2*p,role,fonts),titles=api.lines(title,w-2*p,role,fonts),h=Math.min(228,Math.max(s.height,2*p+(titles.length+lines.length)*step+(titles.length?s.gap:0)+s.gap+bh));
   const x=Math.round((320-w)/2),y=Math.round((240-h)/2),by=y+h-p-bh;
   c.save();c.imageSmoothingEnabled=false;c.fillStyle='#00000099';c.fillRect(0,22,320,218);currentUI.box(c,x,y,w,h,'#11171c');
-  currentUI.clip(c,x+p,y+p,w-2*p,Math.max(0,by-s.gap-y-p),()=>{let ty=y+p+style.offset;const tx=style.align==='center'?160:x+p;for(const line of titles){api.line(c,line,tx,ty,role,fonts);ty+=step}if(titles.length)ty+=s.gap;for(const line of lines){api.line(c,line,tx,ty,role,fonts);ty+=step}});
+  currentUI.clip(c,x+p,y+p,w-2*p,Math.max(0,by-s.gap-y-p),()=>{let ty=y+p+style.offset;const tx=style.align==='center'?160:x+p;for(const line of titles){api.line(c,line,tx,ty,role,fonts,undefined,true);ty+=step}if(titles.length)ty+=s.gap;for(const line of lines){api.line(c,line,tx,ty,role,fonts,undefined,true);ty+=step}});
   const start=Math.round(160-(labels.length*bw+(labels.length-1)*s.gap)/2);
   const buttons=labels.map((label,i)=>{const bx=start+i*(bw+s.gap);currentUI.box(c,bx,by,bw,bh,choice===i?'#394954':'#18242b');currentUI.clip(c,bx+2,by+1,bw-4,bh-2,()=>api.line(c,label,bx+bw/2,by+Math.floor((bh-style.size)/2),role,fonts,'center'));return {label,x:bx,y:by,w:bw,h:bh}});c.restore();api.last={x,y,w,h,buttons};return buttons;
  };
