@@ -8,6 +8,8 @@ assert.equal(api.kind('intro1'),'intro');assert.equal(api.kind('intro5'),'intro'
 api.updateStory({showSeconds:3});assert.equal(api.duration('1.1'),3);assert.equal(api.duration('5.2'),3);
 const clock=api.clock();clock.select('1.1');assert.equal(clock.tick(2),false);assert.equal(clock.tick(20,false),false);assert.equal(clock.tick(1),true);assert.equal(clock.tick(20),false);
 clock.select('1.2');assert.equal(clock.snapshot().elapsed,0);assert.equal(clock.tick(2),false);clock.select('hero0');assert.equal(clock.tick(100),false);
+for(const n of [1,5]){assert.equal(api.layered(n),false);api.updateIntro(n,{enabled:true,showSeconds:3});assert.equal(api.intros[n].enabled,false,'single-image intros never move');assert.equal(api.intros[n].showSeconds,3)}
+for(const n of [2,3,4]){assert.equal(api.layered(n),true);assert.equal(api.normalizeIntro(n,{}).enabled,true)}
 api.updateIntro(2,{enabled:false,showSeconds:4,interval:.75});assert.equal(api.intros[3].showSeconds,7);assert.equal(JSON.parse(storage.get(api.key(2))).interval,.75);
 assert.equal(api.normalizeIntro(2,{showSeconds:.1}).interval,.045000000000000005);
 const c={save(){},restore(){},translate(){},beginPath(){},rect(){},clip(){},drawImage(im,...args){draws.push({path:im.path,args})}};
@@ -19,5 +21,7 @@ const c={save(){},restore(){},translate(){},beginPath(){},rect(){},clip(){},draw
  motion.advance(10);assert.equal(motion.snapshot().elapsed,4);assert.equal(motion.advance(1),false,'motion must not loop the frame reveal sequence');
  for(const n of [1,3,4,5]){const game=await s.loadIntroParallax(n);draws.length=0;game.draw(c);assert.ok(draws.length);for(const d of draws)for(const value of d.args)assert.ok(Number.isInteger(value),'native pixel positions must remain integers')}
  events.storage({key:api.storyKey,newValue:'{"showSeconds":5}'});assert.equal(api.duration('2.3'),5);
- console.log('PASS: five intros, one shared story duration, frame reveal intervals, disabled motion, three layer speeds, screen clock cancellation and integer drawing.');
+ const host={querySelectorAll:()=>[]};for(const n of [1,5]){s.buildParallaxControls(host,await s.loadIntroParallax(n),()=>{});assert.ok(host.innerHTML.includes('showSeconds'));assert.ok(!host.innerHTML.includes('enabled')&&!host.innerHTML.includes('motion-field'),'no parallax controls without PSD layers')}
+ s.buildParallaxControls(host,await s.loadIntroParallax(3),()=>{});assert.ok(host.innerHTML.includes('data-scene-field="enabled"'));
+ console.log('PASS: five intros, parallax controls only for layered intros, one shared story duration, frame reveal intervals, disabled motion, three layer speeds, screen clock cancellation and integer drawing.');
 })().catch(e=>{console.error(e);process.exitCode=1});
