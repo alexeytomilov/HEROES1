@@ -39,22 +39,29 @@ const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!
 // The current screen owns its timer; changing screens cancels the old clock.
 let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
 const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');
+// Story screens with "photos" in story.js flip PSD photos; until they load the screen shows its still picture.
+const photoSlides={};
+for(const [id,node]of Object.entries(journeyNodes))if(node.photos&&window.loadPhotoSlides)loadPhotoSlides(node.photos).then(slides=>{photoSlides[id]=slides;scenePanelKey=null;if(activeScene()===id)render()}).catch(e=>console.error(e));
+// Click, Enter and Space show the next photo first and leave the screen from the last one; arrows flip both ways.
+function flipPhoto(step){const slides=screen==='story'&&photoSlides[journeyNode];if(!slides||!(step>0?slides.next():slides.previous()))return false;sceneClock.restart();render();return true}
+const advanceAfterPhotos=advanceStory;advanceStory=function(){if(!flipPhoto(1))advanceAfterPhotos()};
+window.addEventListener('keydown',e=>{if(screen!=='story'||!photoSlides[journeyNode]||e.target?.matches?.('input,select,textarea')||!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();flipPhoto(e.key==='ArrowRight'?1:-1)});
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
 function syncScenePanel(id){
  if(!sceneHost)return;
  if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const key='text-edit:'+Object.keys(PeninsulaText.overrides).length;if(scenePanelKey!==key){buildTextEditPanel();scenePanelKey=key}return}
  // An open question window takes over the panel with its size switch.
  if(window.PeninsulaPopup?.visible&&screen!=='embedded'){sceneHost.hidden=false;if(scenePanelKey!=='popup'){buildPopupControls();scenePanelKey='popup'}return}
- const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
+ const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?(photoSlides[id]?'story-photos':'story'):id;
  sceneHost.hidden=!kind;if(!kind){scenePanelKey=null;return}
  if(panelKey===scenePanelKey)return;
  if(kind==='intro'){
   const motion=fullIntroMotions[id];if(!motion){sceneHost.innerHTML='<h2>Заставка '+id.slice(5)+'</h2><p>Загрузка слоёв…</p>';return}
   buildParallaxControls(sceneHost,motion,()=>render());
  }else{
-  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>';
-  const input=sceneHost.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
-  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)})};
+  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+(photoSlides[id]?'<label class="number">Смена фото на этом экране, с<input data-photo-seconds type="number" min="0.1" max="60" step="0.1"></label>':'');
+  const input=sceneHost.querySelector('[data-story-seconds]'),photo=sceneHost.querySelector('[data-photo-seconds]');input.value=PeninsulaScenes.story.showSeconds;if(photo)photo.value=PeninsulaScenes.story.photoSeconds;
+  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)});if(photo&&e.target===photo&&photo.value!=='')PeninsulaScenes.updateStory({photoSeconds:Number(photo.value)})};
  }
  scenePanelKey=panelKey;
 }
@@ -84,10 +91,12 @@ function buildPopupControls(){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- trackScreen();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
+ trackScreen();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();photoSlides[id]?.reset();sceneShown=id}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
- if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
+ // Photos flip on their own interval; the screen's show time starts on the last photo.
+ const slides=photoSlides[id];let flipping=false;if(slides){slides.setPaused(scenePaused);const moving=slides.moving,flipped=slides.advance(visible?dt:0);if((flipped||moving)&&visible)render();flipping=flipped||!slides.last;if(flipping)sceneClock.restart()}
+ if(!flipping&&sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
  else if(fullIntroMotions[id])render();
  requestAnimationFrame(fullIntroAnimate);
 }
@@ -99,11 +108,13 @@ Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]
 const renderBeforeParallax=render;render=function(){
  if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
  const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx,1,1,151)}
+ const slides=photoSlides[id];if(slides){if(fullIntroKey!==id)slides.reset();slides.draw(ctx,1,1)}
  fullIntroKey=id;
 };
 window.addEventListener('scene-settings-change',()=>{
  const id=activeScene();sceneClock.restart();sceneLastTime=null;fullIntroMotions[id]?.reset();
  if(PeninsulaScenes.kind(id)==='story'&&sceneHost?.querySelector('[data-story-seconds]'))sceneHost.querySelector('[data-story-seconds]').value=PeninsulaScenes.story.showSeconds;
+ if(sceneHost?.querySelector('[data-photo-seconds]'))sceneHost.querySelector('[data-photo-seconds]').value=PeninsulaScenes.story.photoSeconds;
  if(currentUI.fonts.cozette?.image)render();
 });
 document.addEventListener('visibilitychange',()=>{sceneLastTime=null;for(const motion of Object.values(fullIntroMotions))motion.tick(performance.now(),false)});

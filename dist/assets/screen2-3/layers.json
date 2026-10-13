@@ -1,0 +1,63 @@
+{
+  "width": 318,
+  "height": 152,
+  "source": "screen_2-3.psd",
+  "sourceModified": "2026-10-13T00:40:29.684Z",
+  "sourceSha256": "7494656cf473f4634c661298e0a12459ab087f5d25d0108eb5bb1524780d7457",
+  "base": {
+    "src": "assets/screen2-3/base.png",
+    "x": 0,
+    "y": 0,
+    "w": 318,
+    "h": 152
+  },
+  "mask": {
+    "src": "assets/screen2-3/mask.png",
+    "x": 66,
+    "y": 31,
+    "w": 180,
+    "h": 84
+  },
+  "photos": [
+    {
+      "name": "1",
+      "src": "assets/screen2-3/photo-1.png",
+      "x": 66,
+      "y": 31,
+      "w": 180,
+      "h": 84
+    },
+    {
+      "name": "2",
+      "src": "assets/screen2-3/photo-2.png",
+      "x": 66,
+      "y": 31,
+      "w": 180,
+      "h": 84
+    },
+    {
+      "name": "3",
+      "src": "assets/screen2-3/photo-3.png",
+      "x": 66,
+      "y": 31,
+      "w": 180,
+      "h": 84
+    },
+    {
+      "name": "4",
+      "src": "assets/screen2-3/photo-4.png",
+      "x": 66,
+      "y": 31,
+      "w": 180,
+      "h": 84
+    },
+    {
+      "name": "5",
+      "src": "assets/screen2-3/photo-5.png",
+      "x": 66,
+      "y": 31,
+      "w": 180,
+      "h": 84
+    }
+  ]
+}

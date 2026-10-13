@@ -1,6 +1,7 @@
 // The journey script: every screen, its text and where it leads.
 // type: story — screen with a picture and text (hold = display time, ms); question — Yes/No (next / no);
 // game — a level (game = which level); victory — reward screen; epilogue — the final screen.
+// photos — folder in assets/ with PSD photos that flip one by one on the story picture.
 // Special targets: hero — character creation, map — the map, title — intro 1.
 window.PENINSULA_STORY = {
   "chapterQuestions": [
@@ -116,6 +117,7 @@ window.PENINSULA_STORY = {
     "2.3": {
       "type": "story",
       "image": "coast",
+      "photos": "screen2-3",
       "body": "Вы посмотрели на старые фотографии этих мест.",
       "next": "ruin",
       "hold": 6500
