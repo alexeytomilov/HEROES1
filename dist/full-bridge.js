@@ -69,6 +69,8 @@ function setScenePaused(value){scenePaused=!!value;for(const motion of Object.va
 if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
 // The travel window ("В пути") also waits while the show is paused, e.g. in text edit mode.
 window.peninsulaShowPaused=()=>scenePaused;
+// The pixel cursor turns into an hourglass while travelling or while a level loads.
+window.peninsulaBusy=()=>loading||(!levelFrame.hidden&&levelFrame.style.visibility==='hidden');
 // Text edit mode pauses the show, reaches the embedded level and lists the edits in the panel below.
 const textEditButton=document.querySelector('#text-edit');
 function syncTextEdit(){const on=!!window.PeninsulaTextEdit?.on;if(textEditButton){textEditButton.setAttribute('aria-pressed',String(on));textEditButton.textContent=on?'Готово':'Текст'}if(!levelFrame.hidden)levelFrame.contentWindow?.postMessage({type:'text-edit',on},location.origin);scenePanelKey=null}

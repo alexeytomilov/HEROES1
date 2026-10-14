@@ -11,7 +11,7 @@
   '.text-edit-panel .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.text-edit-panel button{font:inherit;padding:4px 8px;background:#293640;color:#e4e6e8;border:1px solid #91a1ad;cursor:pointer}'+
   '.zone-edit-hover{position:fixed;z-index:9997;pointer-events:none;outline:2px solid #6fd3ff;outline-offset:-1px;background:#6fd3ff1f;display:none}.zone-edit-hover span{position:absolute;left:-2px;top:-17px;background:#6fd3ff;color:#0b1116;font:11px/15px monospace;padding:0 4px;white-space:nowrap}'+
   '@keyframes settings-flash{0%,60%{outline-color:#6fd3ff;background-color:#6fd3ff33}100%{outline-color:transparent;background-color:transparent}}.settings-flash{outline:2px solid transparent;outline-offset:2px;animation:settings-flash 1.4s ease-out}'+
-  '.text-edit-panel small{display:block;color:#91a1ad;margin-bottom:6px}body.text-editing canvas,body.text-editing #controls,body.text-editing #controls *{cursor:pointer!important}';
+  '.text-edit-panel small{display:block;color:#91a1ad;margin-bottom:6px}body.text-editing canvas,body.text-editing #controls,body.text-editing #controls *{cursor:var(--px-hand,pointer)!important}';
  document.head.append(css);
  const hover=document.createElement('div');hover.className='text-edit-hover';
  const zoneHover=document.createElement('div');zoneHover.className='zone-edit-hover';zoneHover.append(document.createElement('span'));
