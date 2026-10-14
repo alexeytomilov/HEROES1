@@ -67,6 +67,8 @@ if(sceneBack)sceneBack.onclick=()=>{if(screenHistory.length<2)return;screenHisto
 const scenePause=document.querySelector('#scene-pause');
 function setScenePaused(value){scenePaused=!!value;for(const motion of Object.values(fullIntroMotions))motion.setPaused?.(scenePaused);if(scenePause){scenePause.textContent=scenePaused?'Продолжить показ':'Пауза';scenePause.setAttribute('aria-pressed',String(scenePaused))}}
 if(scenePause)scenePause.onclick=()=>setScenePaused(!scenePaused);
+// The travel window ("В пути") also waits while the show is paused, e.g. in text edit mode.
+window.peninsulaShowPaused=()=>scenePaused;
 // Text edit mode pauses the show, reaches the embedded level and lists the edits in the panel below.
 const textEditButton=document.querySelector('#text-edit');
 function syncTextEdit(){const on=!!window.PeninsulaTextEdit?.on;if(textEditButton){textEditButton.setAttribute('aria-pressed',String(on));textEditButton.textContent=on?'Готово':'Текст'}if(!levelFrame.hidden)levelFrame.contentWindow?.postMessage({type:'text-edit',on},location.origin);scenePanelKey=null}
