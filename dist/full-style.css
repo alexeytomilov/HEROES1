@@ -9,3 +9,9 @@ main{display:flex;gap:24px;align-items:flex-start;justify-content:center;width:m
 .color-tabs button:last-child:nth-child(odd){grid-column:1/-1}
 
 #scene-settings{width:640px;max-width:100%;border:1px solid #425873;background:#101924;padding:16px;color:#c6cfda;align-self:center}#scene-settings h2{font:600 16px monospace;margin:0 0 16px}#scene-settings .number{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}#scene-settings .motion-switch{display:flex;align-items:center;gap:8px;margin-bottom:16px}.motion-frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.motion-frames fieldset{min-width:0;margin:0;border:1px solid #425873;padding:12px}.motion-frames legend{padding:0 6px}#scene-settings input[type=number],#scene-settings select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:7px;font:inherit}#scene-settings input:disabled,#scene-settings select:disabled{opacity:.45}#scene-settings:focus-within{border-color:#91a1ad}
+
+/* The game field never moves: the toolbar is always one row of fixed height and does not widen the column, and the column keeps one width per scale. */
+.app{min-width:720px}
+.toolbar{align-self:stretch;max-width:none;flex-wrap:nowrap;contain:inline-size;justify-content:center;white-space:nowrap;gap:5px}
+.toolbar button{padding:7px 9px}
+.resolution{margin-right:8px}
