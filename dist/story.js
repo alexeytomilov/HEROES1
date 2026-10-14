@@ -29,7 +29,7 @@ window.PENINSULA_STORY = {
       "type": "story",
       "image": "intro4",
       "body": "Помоги странникам найти путь",
-      "next": "hero",
+      "next": "intro5",
       "hold": 6000
     },
     "intro5": {

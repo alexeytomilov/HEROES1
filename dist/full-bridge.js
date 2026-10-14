@@ -49,8 +49,8 @@ function syncScenePanel(id){
  sceneHost.hidden=!kind;if(!kind){scenePanelKey=null;return}
  if(panelKey===scenePanelKey)return;
  if(kind==='intro'){
-  const motion=fullIntroMotions[id];if(!motion){sceneHost.innerHTML='<h2>Заставка '+id.slice(5)+'</h2><p>Загрузка слоёв…</p>';return}
-  buildParallaxControls(sceneHost,motion,()=>render());
+  const n=Number(id.slice(5)),s=PeninsulaIntroVideo.sheets?.[n];sceneHost.oninput=null;
+  sceneHost.innerHTML='<h2>Заставка '+n+'</h2><p>'+(s?'Видео Intro Main v1, кадры '+s.first+'–'+s.last+' · '+PeninsulaIntroVideo.duration(n).toFixed(2).replace(/\.?0+$/,'')+' с ('+PeninsulaIntroVideo.FPS+' кадров/с)':'Загрузка видео…')+'</p>';if(!s)return;
  }else{
   sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>';
   const input=sceneHost.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
@@ -93,12 +93,12 @@ function fullIntroAnimate(now){
 }
 // "С начала" resets progress and returns to the first intro, even when it is already shown.
 document.querySelector('#demo-start').onclick=()=>{startJourney();showNode('title');sceneShown=null;sceneClock.restart();render()};
-Promise.all([currentUI.ready,...[1,2,3,4,5].map(n=>window.loadIntroParallax(n))]).then(([, ...motions])=>{
- fullIntroMotions=Object.fromEntries(motions.map((motion,i)=>['intro'+(i+1),motion]));setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
-}).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить слои заставок. Обновите страницу.</p>'}console.error(e)});
+Promise.all([currentUI.ready,PeninsulaIntroVideo.ready]).then(()=>{
+ fullIntroMotions=Object.fromEntries([1,2,3,4,5].map(n=>['intro'+n,PeninsulaIntroVideo.motion(n)]));setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
+}).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить видео заставок. Обновите страницу.</p>'}console.error(e)});
 const renderBeforeParallax=render;render=function(){
  if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
- const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx,1,1,151)}
+ const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx)}
  fullIntroKey=id;
 };
 window.addEventListener('scene-settings-change',()=>{
