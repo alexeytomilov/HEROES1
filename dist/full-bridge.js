@@ -42,7 +42,7 @@ const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scen
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
 function syncScenePanel(id){
  if(!sceneHost)return;
- if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const key='text-edit:'+Object.keys(PeninsulaText.overrides).length;if(scenePanelKey!==key){buildTextEditPanel();scenePanelKey=key}return}
+ if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const popup=!!window.PeninsulaPopup?.visible&&screen!=='embedded',key='text-edit:'+Object.keys(PeninsulaText.overrides).length+(popup?':popup':'');if(scenePanelKey!==key){buildTextEditPanel();if(popup)buildPopupControls(true);scenePanelKey=key}return}
  // An open question window takes over the panel with its size switch.
  if(window.PeninsulaPopup?.visible&&screen!=='embedded'){sceneHost.hidden=false;if(scenePanelKey!=='popup'){buildPopupControls();scenePanelKey='popup'}return}
  const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
@@ -77,9 +77,9 @@ function buildTextEditPanel(){const n=Object.keys(PeninsulaText.overrides).lengt
 // Toolbar buttons drop focus so Space and Enter keep advancing the screen instead of pressing the button again.
 document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('click',()=>b.blur()));
 // Entering an intro always replays it from its first frame.
-function buildPopupControls(){
+function buildPopupControls(append=false){
  const b=PeninsulaPopup.bounds,field=(key,label)=>'<label class="number">'+label+'<input data-popup-field="'+key+'" type="number" min="'+b[key][0]+'" max="'+b[key][1]+'" step="1"></label>';
- sceneHost.innerHTML='<h2>Окно вопроса</h2>'+field('width','Ширина, px')+field('height','Высота, px');
+ const html='<h2>Окно вопроса</h2>'+field('width','Ширина, px')+field('height','Высота, px');if(append)sceneHost.insertAdjacentHTML('beforeend','<div class="popup-size">'+html+'</div>');else sceneHost.innerHTML=html;
  for(const e of sceneHost.querySelectorAll('[data-popup-field]'))e.value=PeninsulaPopup.settings[e.dataset.popupField];
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }

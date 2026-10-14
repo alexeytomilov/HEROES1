@@ -8,4 +8,6 @@
  const update=e=>{const role=e.target.dataset.role,field=e.target.dataset.field;if(!role&&!field)return;const state=JSON.parse(JSON.stringify(api.state));if(role)state.assignments[role]=e.target.value;if(field)state.presets[selected][field]=e.target.type==='checkbox'?e.target.checked:e.target.type==='number'?Number(e.target.value):e.target.value;api.update(state)};
  host.addEventListener('input',update);assignments.addEventListener('input',update);
  window.addEventListener('text-presets-change',()=>{if(typeof levelFrame!=='undefined'&&!levelFrame.hidden)levelFrame.contentWindow.postMessage({type:'text-presets',settings:api.state},location.origin);if(typeof render==='function')render()});sync();
+ // Text edit mode: a click on a text in the game also opens its text type and preset here.
+ window.PeninsulaTextSettings={select(role){const preset=api.roles[role]?api.state.assignments[role]:api.names[role]?role:null;if(!preset)return;selected=preset;sync();PeninsulaSettingsFlash(assignments.querySelector('[data-role="'+role+'"]')?.closest('label'),host.querySelector('[data-preset="'+preset+'"]'))}};
 })();
