@@ -19,7 +19,10 @@ const PLAYERZ = 1000*DEPTH*1.35;
 const MAXSPEED = 6000, KMH = 90;
 const ACCEL = coastal ? 650 : MAXSPEED/32, BRAKE = -MAXSPEED*1.2, DECEL = -MAXSPEED/7, CENTRIFUGAL = .3;
 const JEEPW = 500, JW = JEEPW/ROADW;
-const FOG = '#c8cbcd', FOG_RGB = [200,203,205];
+// Colours, the road profile and sprite images can be changed in the race editor (race-edits.js).
+const RCOL = (k, light, fallback) => window.PeninsulaRace ? PeninsulaRace.color(k, light) : fallback;
+let FOG = RCOL('fog', false, '#c8cbcd'), FOG_RGB = [1,3,5].map(i => parseInt(FOG.slice(i,i+2),16));
+window.addEventListener('race-edits-change', () => { FOG = RCOL('fog', false, '#c8cbcd'); FOG_RGB = [1,3,5].map(i => parseInt(FOG.slice(i,i+2),16)); spriteCache.clear(); });
 const BUMP_SPEED = MAXSPEED*.07;
 const TOP = coastal ? 1050 : MAXSPEED*.4, GUIDE_SPEED = 380;
 const BUDDY_LANE = -.38, BUDDY_GAP = 2.5*SEG, BUDDY_MAX = MAXSPEED*.6;
@@ -34,6 +37,15 @@ function mk(w,h){ const c = document.createElement('canvas'); c.width = w; c.hei
 
 // ---------- sprites: redrawn at exact on-screen size, so slants are always 1px stairs ----------
 function makeSprite(def, wpx, o){
+  const file = window.PeninsulaRace?.spriteImage(def.id);
+  if (file){
+    const c = mk(wpx, Math.max(1, Math.round(file.height*wpx/file.width))), x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    if (o.flip){ x.translate(wpx, 0); x.scale(-1, 1); }
+    x.drawImage(file, 0, 0, wpx, c.height);
+    if (o.fog > 0){ x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation = 'source-atop'; x.globalAlpha = o.fog; x.fillStyle = FOG; x.fillRect(0, 0, wpx, c.height); }
+    return c;
+  }
   const sx = wpx/def.w, hpx = Math.max(1, Math.round(def.h*sx)), sy = hpx/def.h;
   const c = mk(wpx, hpx), x = c.getContext('2d');
   const fx = v => o.flip ? def.w - v : v;
@@ -396,7 +408,21 @@ function buildCoastalTrack(){
   }
   ents.push({kind:'buddy',z:PLAYERZ+7*SEG,x:0,vz:0,w:JEEPW,brake:false});
 }
-function buildTrack(stage){
+function buildTrack(stage){ buildTrackBase(stage); applyProfile(); }
+// A road profile drawn in the race editor replaces the bends and hills up to the finish; everything on the road stays put.
+function applyProfile(){
+  const p = window.PeninsulaRace?.profile(mode === 'fog' ? 'fog' : homeward ? 'home' : 'sredny');
+  if (!p) return;
+  const n = Math.max(1, finishIndex), K = p.curve.length;
+  const at = (arr, i) => { const f = i/n*(K - 1), a = Math.floor(f), b = Math.min(K - 1, a + 1); return lerp(arr[a], arr[b], f - a); };
+  let y = 0;
+  for (const seg of segments){
+    const i = seg.index;
+    seg.curve = i < n ? at(p.curve, i) : 0;
+    seg.p1.world.y = y; y += (i < n ? at(p.hill, i) : 0)*SEG*.05; seg.p2.world.y = y;
+  }
+}
+function buildTrackBase(stage){
   if(coastal){buildCoastalTrack();return;}
   rng = mulberry(stage*7919 + 3);
   const r = rng;
@@ -861,16 +887,17 @@ function drawSegment(seg, fog){
     for (let py = y0; py < y1; py++){
       const t = (a.y - (py + .5))/(a.y - b.y);
       const cx = lerp(a.x, b.x, t), w = lerp(a.w, b.w, t), k = seg.index*97 + Math.floor(t*6);
-      ctx.fillStyle = L ? '#8e9ea1' : '#8a9a9d'; ctx.fillRect(0, py, W, 1);
+      ctx.fillStyle = RCOL('lake', L, '#8a9a9d'); ctx.fillRect(0, py, W, 1);
       if (hsh(k) < .4){ const sx = cx + (hsh(k + 1)*2 - 1)*w*2.2; span(sx, sx + w*(.15 + hsh(k + 2)*.35), py, '#a9b7b9'); }
       if (hsh(k + 5) < .25){ const sx = cx + (hsh(k + 6)*2 - 1)*w*2.2; span(sx, sx + w*.2, py, '#7c8c8f'); }
     }
     if (fog > 0){ ctx.fillStyle = `rgba(${FOG_RGB},${fog*.6})`; ctx.fillRect(0, y0, W, y1 - y0); }
     return;
   }
-  const ground = coastal ? (L ? '#747b54' : '#707650') : Z === 'meadow' ? (L ? '#6a8a46' : '#668542') : Z === 'forest' ? (L ? '#4f6a3a' : '#4b6536') : (L ? '#525449' : '#4e5046');
-  const road = coastal ? (L ? '#aaa494' : '#a49e90') : Z === 'forest' ? (L ? '#86735e' : '#806d59') : (L ? '#8b877e' : '#86827a');
-  const edge = coastal ? '#686958' : Z === 'forest' ? '#3e4f2e' : '#44453e', track = coastal ? (L ? '#959080' : '#908b7c') : Z === 'forest' ? (L ? '#766450' : '#715f4c') : (L ? '#7a776f' : '#76736b');
+  const ground = RCOL(coastal ? 'coastGround' : Z === 'meadow' ? 'meadow' : Z === 'forest' ? 'forestGround' : 'ground', L, '#4e5046');
+  const road = RCOL(coastal ? 'coastRoad' : Z === 'forest' ? 'forestRoad' : 'road', L, '#86827a');
+  const edge = RCOL(coastal ? 'coastEdge' : Z === 'forest' ? 'forestEdge' : 'edge', false, '#44453e'), track = RCOL(coastal ? 'coastTrack' : Z === 'forest' ? 'forestTrack' : 'track', L, '#76736b');
+  const abyss = RCOL('abyss', false, ABYSS), cliffEdge = RCOL('cliffEdge', false, '#9a968b');
   for (let py = y0; py < y1; py++){
     const t = (a.y - (py + .5))/(a.y - b.y);
     const cx = lerp(a.x, b.x, t), w = lerp(a.w, b.w, t);
@@ -884,8 +911,8 @@ function drawSegment(seg, fog){
     for (const side of [-1, 1]){
       const e = cx + side*w*(1 + (side < 0 ? jl : jr));
       if (seg.cliff === side){
-        if (side < 0){ span(0, e - w*.05, py, ABYSS); span(e - w*.05, e, py, '#9a968b'); }
-        else { span(e + w*.05, W, py, ABYSS); span(e, e + w*.05, py, '#9a968b'); }
+        if (side < 0){ span(0, e - w*.05, py, abyss); span(e - w*.05, e, py, cliffEdge); }
+        else { span(e + w*.05, W, py, abyss); span(e, e + w*.05, py, cliffEdge); }
       } else {
         if (side < 0) span(e - w*.12, e, py, edge); else span(e, e + w*.12, py, edge);
       }
@@ -894,8 +921,8 @@ function drawSegment(seg, fog){
     for (const u of [-.72, -.28, .28, .72]) span(cx + (u - .07)*w, cx + (u + .07)*w, py, track);
     if(coastal&&seg.detour){
       const trail=lerp(guidePath[seg.index]||0,guidePath[seg.index+1]||0,clamp(t,0,1));
-      span(cx+(trail-.65)*w,cx+(trail+.65)*w,py,L?'#838361':'#7b7d59');
-      for(const rut of [-.23,.23])span(cx+(trail+rut-.055)*w,cx+(trail+rut+.055)*w,py,L?'#a19a73':'#96916b');
+      span(cx+(trail-.65)*w,cx+(trail+.65)*w,py,RCOL('detour',L,'#7b7d59'));
+      for(const rut of [-.23,.23])span(cx+(trail+rut-.055)*w,cx+(trail+rut+.055)*w,py,RCOL('detourRut',L,'#96916b'));
     }
   }
   // gravel & grass specks tied to the world, so they don't shimmer
@@ -1237,6 +1264,10 @@ return {
  stop(){active=false;cancelAnimationFrame(frameHandle);for(const k in keys)keys[k]=false;if(actx)actx.suspend()},
  restart(){startStage()},
  press, horn, useItem,
+ // The original bends and hills of this race as K editor columns (used by the race editor).
+ originalProfile(K){ buildTrackBase(1); const n = Math.max(1, finishIndex), curve = [], hill = [];
+  for (let k = 0; k < K; k++){ const a = Math.floor(k*n/K), b = Math.max(a + 1, Math.floor((k + 1)*n/K)); let c = 0, h = 0; for (let i = a; i < b; i++){ c += segments[i].curve; h += (segments[i].p2.world.y - segments[i].p1.world.y)/(SEG*.05); } curve.push(Math.round(c/(b - a))); hill.push(Math.round(h/(b - a))); }
+  return {curve, hill}; },
  setControl(k,value){if(k in keys)keys[k]=value}
 };
 };

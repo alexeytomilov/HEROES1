@@ -9,26 +9,26 @@ window.createWalkView=function({images,indoor=false,forest=false,level=null}){
  // Walk edits (walk-edits.js) choose the floor, a texture per wall cell and sprite replacements for this level.
  const W=window.PeninsulaWalk,edited=k=>level&&W?texture(k):null;
  function render(ctx,view,grid,x,y,dir,objects=[]){
-  const floorTex=edited(W?.floorTexture(level))||floor,wallAt=(mx,my)=>edited(W?.wallTexture(level,mx,my))||wall;let hx=0,hy=0;
+  const floorTex=edited(W?.floorTexture(level))||floor,skyTex=edited(W?.skyTexture(level))||sky,seaTex=edited(W?.waterTexture(level))||sea,wallAt=(mx,my,face)=>edited(W?.wallTexture(level,mx,my,face))||wall;let hx=0,hy=0,hf='n';
   const vectors=[[0,-1],[1,0],[0,1],[-1,0]], [fx,fy]=vectors[dir],rx=-fy,ry=fx,px=x+.5,py=y+.5,zbuf=new Float32Array(w).fill(999),d=frame.data;
   const cell=(a,b)=>grid[Math.floor(b)]?.[Math.floor(a)]|| (indoor?'#':'~');
   function put(cx,cy,tex,i,shade){const o=(cy*w+cx)*4;d[o]=tex[i]*shade;d[o+1]=tex[i+1]*shade;d[o+2]=tex[i+2]*shade;d[o+3]=255;}
   for(let cy=0;cy<h;cy++)for(let cx=0;cx<w;cx++){
-   if(cy<=horizon){if(indoor){const o=(cy*w+cx)*4;d[o]=22;d[o+1]=25;d[o+2]=28;d[o+3]=255;}else put(cx,cy,sky,sample(sky,Math.floor(cx*128/w),Math.floor(cy*42/horizon)),1);continue;}
+   if(cy<=horizon){if(indoor){const o=(cy*w+cx)*4;d[o]=22;d[o+1]=25;d[o+2]=28;d[o+3]=255;}else put(cx,cy,skyTex,sample(skyTex,Math.floor(cx*128/w),Math.floor(cy*42/horizon)),1);continue;}
    const depth=eye*focal/(cy-horizon),side=(cx-w/2)/focal*depth,wx=px+fx*depth+rx*side,wy=py+fy*depth+ry*side;
-   const water=cell(wx,wy)==='~',tex=water?sea:floorTex,u=Math.floor(wx*64),v=Math.floor(wy*64);
+   const water=cell(wx,wy)==='~',tex=water?seaTex:floorTex,u=Math.floor(wx*64),v=Math.floor(wy*64);
    const trail=cell(wx,wy)==='=';
-   put(cx,cy,tex,water?sample(sea,40+(u%45),65+(v%40)):sample(tex,u,v),Math.max(.35,1-depth*.055)*(trail?1.18:1));
+   put(cx,cy,tex,water?sample(seaTex,40+(u%45),65+(v%40)):sample(tex,u,v),Math.max(.35,1-depth*.055)*(trail?1.18:1));
   }
   for(let cx=0;cx<w;cx++){
    const side=(cx+.5-w/2)/focal,dx=fx+rx*side,dy=fy+ry*side;
    let mx=x,my=y;const ddx=dx===0?1e9:Math.abs(1/dx),ddy=dy===0?1e9:Math.abs(1/dy),sx=dx<0?-1:1,sy=dy<0?-1:1;
    let tx=(dx<0?px-mx:mx+1-px)*ddx,ty=(dy<0?py-my:my+1-py)*ddy,dist=999,axis=0;
-   for(let n=0;n<40;n++){if(tx<ty){dist=tx;tx+=ddx;mx+=sx;axis=0}else{dist=ty;ty+=ddy;my+=sy;axis=1}if(mx<0||my<0||my>=grid.length||mx>=grid[0].length)break;if(grid[my][mx]==='#'){zbuf[cx]=dist;hx=mx;hy=my;break}dist=999;}
+   for(let n=0;n<40;n++){if(tx<ty){dist=tx;tx+=ddx;mx+=sx;axis=0}else{dist=ty;ty+=ddy;my+=sy;axis=1}if(mx<0||my<0||my>=grid.length||mx>=grid[0].length)break;if(grid[my][mx]==='#'){zbuf[cx]=dist;hx=mx;hy=my;hf=axis===0?(sx>0?'w':'e'):(sy>0?'n':'s');break}dist=999;}
    if(dist===999||zbuf[cx]===999)continue;
    const wallHeight=indoor?1.5:1.25,top=horizon-(wallHeight-eye)*focal/dist,bottom=horizon+eye*focal/dist;
    const pos=axis===0?py+dy*dist:px+dx*dist,u=Math.floor((pos-Math.floor(pos))*128),shade=Math.max(.28,1-dist*.075)*(axis===0?.82:1);
-   const wt=wallAt(hx,hy);for(let cy=Math.max(0,Math.ceil(top));cy<Math.min(h,Math.ceil(bottom));cy++)put(cx,cy,wt,sample(wt,u,Math.floor((cy-top)/(bottom-top)*128)),shade);
+   const wt=wallAt(hx,hy,hf);for(let cy=Math.max(0,Math.ceil(top));cy<Math.min(h,Math.ceil(bottom));cy++)put(cx,cy,wt,sample(wt,u,Math.floor((cy-top)/(bottom-top)*128)),shade);
   }
   g.putImageData(frame,0,0);ctx.drawImage(output,view.x,view.y);
   const visible=[];const sorted=objects.map(o=>{const ax=o.x-px,ay=o.y-py;return{...o,depth:ax*fx+ay*fy,side:ax*rx+ay*ry}}).filter(o=>o.depth>.18).sort((a,b)=>b.depth-a.depth);

@@ -4,8 +4,8 @@
 (()=>{
  const key='peninsula-walk-edits-v1';
  const levels={coast:'Лагерь',bear:'Медведь',house:'Заброшка',village:'Поиск лавки'};
- const base={coast:{wall:'walk_cliff',floor:'shore_ground'},bear:{wall:'bear_wall',floor:'bear_floor'},house:{wall:'walk_wall',floor:'walk_floor'},village:{wall:'walk_cliff',floor:'shore_ground'}};
- const textures={walk_cliff:'Скала',walk_wall:'Стена дома',bear_wall:'Лес',latest_stone:'Камень',shore_ground:'Земля',bear_floor:'Лесной пол',walk_floor:'Доски',shore_north:'Небо',shore_west:'Море'};
+ const base={coast:{wall:'walk_cliff',floor:'shore_ground',sky:'shore_north',water:'shore_west'},bear:{wall:'bear_wall',floor:'bear_floor',sky:'shore_north',water:'shore_west'},house:{wall:'walk_wall',floor:'walk_floor',sky:'shore_north',water:'shore_west'},village:{wall:'walk_cliff',floor:'shore_ground',sky:'shore_north',water:'shore_west'}};
+ const textures={walk_cliff:'Скала',walk_wall:'Стена дома',bear_wall:'Лес',latest_stone:'Камень',shore_ground:'Земля',bear_floor:'Лесной пол',walk_floor:'Доски',shore_north:'Небо',shore_west:'Море',shore_south:'Берег юг',shore_east:'Берег восток',shore_eastfar:'Даль',mountains_far:'Горы вдали',mountains_near:'Горы'};
  const sprites={shore_tourists:'Туристы',shore_wet:'Мокрое место',camp_tent:'Палатка',camp_bottle:'Бутылка',camp_wrapper:'Обёртка',camp_good:'Стоянка',camp_wet:'Сырая стоянка',camp_inland:'Поляна',camp_tourists:'Лагерь туристов',bear_repeller:'Отпугиватель',bear_dagger:'Нож',walk_table:'Стол',walk_shelf:'Полка',walk_chair:'Стул'};
  const levelSprites={coast:['shore_tourists','camp_bottle','camp_wrapper','camp_tent'],bear:['bear_repeller'],house:['walk_shelf','walk_table','walk_chair'],village:['walk_table','walk_shelf']};
  const grids={
@@ -22,9 +22,11 @@
  function normalizeLevel(id,v={}){
   v=v&&typeof v==='object'?v:{};
   const grid=Array.isArray(v.grid)&&v.grid.every(r=>typeof r==='string')?v.grid.slice():null;
-  const walls={};for(const [k,t]of Object.entries(v.walls||{}))if(/^\d+,\d+$/.test(k)&&textures[t])walls[k]=t;
+  // A wall texture is kept per cell ("x,y") or per side of a cell ("x,y,n" / e / s / w).
+  const walls={};for(const [k,t]of Object.entries(v.walls||{}))if(/^\d+,\d+(,[nesw])?$/.test(k)&&textures[t])walls[k]=t;
   const sp={};for(const [a,t]of Object.entries(v.sprites||{}))if(sprites[a]&&sprites[t])sp[a]=t;
-  return {grid,walls,wall:textures[v.wall]?v.wall:base[id].wall,floor:textures[v.floor]?v.floor:base[id].floor,sprites:sp};
+  const pick=f=>textures[v[f]]?v[f]:base[id][f];
+  return {grid,walls,wall:pick('wall'),floor:pick('floor'),sky:pick('sky'),water:pick('water'),sprites:sp};
  }
  function normalize(v={}){
   v=v&&typeof v==='object'?v:{};const m=v.minimap||{};
@@ -47,7 +49,9 @@
   grid(id,fallback){const g=state.levels[id]?.grid,b=fallback||grids[id];if(!g||!b||g.length!==b.length||g.some((r,i)=>r.length!==b[i].length))return b;return g},
   // Lays the drawn walls and floor over a live plan (which may hold runtime marks like tourists).
   merge(id,current,original){const b=original||grids[id],g=api.grid(id,b);if(g===b)return current;return current.map((row,y)=>[...row].map((c,x)=>g[y][x]!==b[y][x]&&paintable(c)?g[y][x]:c).join(''))},
-  wallTexture:(id,x,y)=>state.levels[id]?.walls[x+','+y]||state.levels[id]?.wall||base[id]?.wall,
+  wallTexture:(id,x,y,face)=>(face&&state.levels[id]?.walls[x+','+y+','+face])||state.levels[id]?.walls[x+','+y]||state.levels[id]?.wall||base[id]?.wall,
+  skyTexture:id=>state.levels[id]?.sky||base[id]?.sky,
+  waterTexture:id=>state.levels[id]?.water||base[id]?.water,
   floorTexture:id=>state.levels[id]?.floor||base[id]?.floor,
   spriteImage(id,asset){const t=state.levels[id]?.sprites[asset];return t?image(t):null}
  };

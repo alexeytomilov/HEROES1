@@ -6,6 +6,8 @@ function raceDialog(d){
  if(d.state==='title')return params.get('mode')==='fog'?LT('race.startFog'):params.get('mode')==='home'?LT('race.startHome'):LT('race.followMe');
  if(d.state==='repair'||d.state==='over')return (d.msg?.t1||LT('race.stopped'))+'\n'+(d.msg?.t2||'');
  if(racePaused)return LT('race.paused');
+ // Your own dialogue cards (dialogue-rules.js) come before the built-in road messages.
+ const rule=window.PeninsulaDialogue?.evaluate('race:'+(['fog','home'].includes(params.get('mode'))?params.get('mode'):'sredny'),{progress:d.progress||0,speed:d.speed||0,state:d.state,detour:!!d.detour,warning:!!d.warning});if(rule)return rule;
  if(params.get('mode')==='fog'&&d.state==='drive')return d.warning?LT('race.cliffEdge'):LT('race.fogDrive');
  if(d.msg&&!d.msg.dim&&!d.msg.start)return d.msg.t1+'\n'+(d.msg.t2||'');
  if(d.detour)return d.detour.type==='hole'?LT('race.holeAhead'):LT('race.rocksAhead');

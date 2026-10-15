@@ -47,3 +47,42 @@ main{gap:16px}
 #minimap-settings h2{font:600 16px monospace;margin:0 0 10px}
 #minimap-settings label{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 #minimap-settings select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:7px;font:inherit}
+
+/* Level editor tabs, race editor, 3D view of walks, dialogue cards under the game. */
+.editor-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}
+.editor-tabs button{color:#b8c7d9;background:#172231;border:1px solid #425873;padding:8px 4px;font:12px monospace}
+.editor-tabs button[aria-selected=true]{background:#2b4059;border-color:#b0c8e7;color:#fff}
+#race-editor{border:1px solid #425873;background:#101924;padding:14px}
+#race-editor h2{font:600 16px monospace;margin:0 0 14px}
+#race-editor h3{font:600 13px monospace;margin:16px 0 8px;color:#b8c7d9}
+#race-editor label{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+#race-editor select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:6px;font:inherit}
+.race-plot-label{font-size:11px;color:#91a1ad;margin:6px 0 3px}
+.race-plot,.race-top,.walk-3d{display:block;width:100%;image-rendering:pixelated;border:1px solid #425873;cursor:crosshair;touch-action:none}
+.walk-3d{cursor:grab;margin-bottom:6px}
+.race-buttons{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 4px}
+.race-buttons button,.race-sprite button{color:#b8c7d9;background:#172231;border:1px solid #425873;padding:6px 6px;font:11px monospace}
+.race-colors{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+#race-editor .race-color{flex-direction:row;align-items:center;gap:6px;margin:0;font-size:11px}
+.race-color input{width:26px;height:20px;padding:0;border:1px solid #425873;background:none;flex:none}
+.race-sprite{display:grid;grid-template-columns:70px 1fr auto;gap:4px;align-items:center;margin-bottom:4px;font-size:11px}
+.race-sprite select{padding:4px!important;font-size:11px!important}
+#dialogue-editor{width:660px;max-width:100%;border:1px solid #425873;background:#101924;padding:16px;align-self:center}
+#dialogue-editor h2{font:600 16px monospace;margin:0 0 10px}
+.dlg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.dlg-card{border:1px solid #425873;background:#131e2b;font-size:12px;min-width:0}
+.dlg-card header{background:#2b4059;color:#f1d39a;padding:6px 8px;font:600 11px monospace;line-height:1.4}
+.dlg-builtin header{background:#1d2a39;color:#b8c7d9}
+.dlg-hidden{opacity:.5}
+.dlg-body{padding:8px;display:flex;flex-direction:column;gap:6px}
+.dlg-row{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end}
+.dlg-row>select,.dlg-num select{background:#172231;color:#c6cfda;border:1px solid #425873;padding:4px;font:11px monospace}
+.dlg-num{display:flex;flex-direction:column;gap:2px;font-size:10px;color:#91a1ad}
+.dlg-num input{width:58px;background:#172231;color:#c6cfda;border:1px solid #425873;padding:4px;font:11px monospace}
+.dlg-check{display:flex;align-items:center;gap:4px;font-size:11px;color:#b8c7d9}
+.dlg-text{display:flex;flex-direction:column;gap:3px;font-size:10px;color:#91a1ad}
+.dlg-text textarea{width:100%;box-sizing:border-box;background:#0d151e;color:#e4e6e8;border:1px solid #425873;padding:5px;font:12px monospace;resize:vertical}
+.dlg-card button,.dlg-add{color:#b8c7d9;background:#172231;border:1px solid #425873;padding:4px 7px;font:11px monospace}
+.dlg-delete{margin-left:auto;color:#dd9f82!important}
+.dlg-add{width:100%;padding:8px;margin-bottom:12px}
+.dlg-builtin-list summary{cursor:pointer;color:#b8c7d9;font:600 12px monospace;margin-bottom:8px}

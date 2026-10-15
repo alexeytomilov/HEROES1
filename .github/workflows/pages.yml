@@ -26,6 +26,8 @@ jobs:
           build="${GITHUB_SHA::8}"
           sed -i -E "s/\.(js|css)\?v=[A-Za-z0-9._-]+/.\1?v=$build/g; s/\.(js|css)\"/.\1?v=$build\"/g" dist/*.html
           sed -i "s/__BUILD__/$build/g" dist/full-bridge.js
+      - name: List the asset images the editors can choose from
+        run: (cd dist/assets && ls *.png | python3 -c 'import sys,json;print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))' > files.json)
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist

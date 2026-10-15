@@ -121,7 +121,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     hit('Меч',118,183,26,21,()=>{if(bear)install();else inspect()});hit('Назад',145,183,26,21,()=>step(-1));hit('Осмотр',172,183,25,21,inspect);
     const bagItems=bear?bearItems.map(o=>won&&o.id==='repeller'?null:o.asset):indoor||village?[]:['camp_tent',...Array.from(collected).map(id=>'camp_'+id)];currentUI.bag(ctx,bagItems,images);
     // The message under the scene is the shared Dialogue zone, as in the race and the camp.
-    PeninsulaColors.box(ctx,7,205,190,28,'dialogue');currentUI.roleBlock(ctx,lastMessage||LT('walk.dialogDefault'),8,206,188,26,'dialogue');
+    PeninsulaColors.box(ctx,7,205,190,28,'dialogue');currentUI.roleBlock(ctx,window.PeninsulaDialogue?.evaluate('walk:'+walkLevel,{x,y,dir,grid})||lastMessage||LT('walk.dialogDefault'),8,206,188,26,'dialogue');
     if(intro||won||failed){const popupButton=currentUI.modal(ctx,failed?LT('bear2.popupFailTitle'):won?village?LT('village3.popupTitle'):indoor?LT('house2.popupTitle'):LT('bear2.popupWonTitle'):'',failed?LT('bear2.popupFailBody'):lastMessage);hits=[];hit(popupButton.label,popupButton.x,popupButton.y,popupButton.w,popupButton.h,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
     drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);drawGameBorder(ctx);
   }
@@ -158,5 +158,5 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     if(e.key.toLowerCase()==='e'||e.key==='Enter')inspect();if(e.key.toLowerCase()==='t')install();
   });
   function restartBear(){x=3;y=5;dir=0;intro=false;won=false;failed=false;chosen=null;drag=null;showMap=false;seen.clear();reveal();describe()}
-  return {step,turn,inspect,install,snapshot:()=>({x,y,dir,won,failed,intro,grid:[...grid],seen:[...seen]}),start(){if(bear&&won)restartBear();if(!bear&&won){x=3;y=5;dir=0;intro=true;won=false;showMap=false;lastMessage='';collected.clear();seen.clear();reveal();}active=true;pointer=null;if(indoor||bear)describe();else render();announce(indoor?LT('house2.announce'):bear?LT('bear2.announce'):'Найдите место для установки лагеря.')},stop(){active=false;drag=null;pointer=null;inputSurface.style.cursor=''},render};
+  return {step,turn,inspect,install,snapshot:()=>({x,y,dir,won,failed,intro,grid:[...grid],seen:[...seen]}),start(){window.PeninsulaDialogue?.begin('walk:'+walkLevel);if(bear&&won)restartBear();if(!bear&&won){x=3;y=5;dir=0;intro=true;won=false;showMap=false;lastMessage='';collected.clear();seen.clear();reveal();}active=true;pointer=null;if(indoor||bear)describe();else render();announce(indoor?LT('house2.announce'):bear?LT('bear2.announce'):'Найдите место для установки лагеря.')},stop(){active=false;drag=null;pointer=null;inputSurface.style.cursor=''},render};
 };

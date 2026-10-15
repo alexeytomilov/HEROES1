@@ -88,7 +88,7 @@ async function startRPG(){
   ['knight','wanderer','mage'].forEach((name,i)=>{const bx=7+i*37;rect(bx+1,162,34,42,'#293640');ctx.drawImage(art['rpg_portrait_'+name],bx+1,162,34,42);border(bx,161,36,43);});
   const icons=[['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]];
   for(const [kind,bx,by]of icons){const w=bx===172?25:26;PeninsulaColors.box(ctx,bx,by,w,21,'buttons');controlIcon(kind,bx,by);}
-  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');block(message,8,206,188,26,{role:'dialogue'});
+  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');block(window.PeninsulaDialogue?.evaluate('walk:coast',{x,y,dir,grid})||message,8,206,188,26,{role:'dialogue'});
   heading(LT('camp1.heading'));
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
   drawMouseArrow();
