@@ -1,7 +1,7 @@
 // Join the accepted standalone levels with the complete five-chapter journey.
 const levelFrame=document.querySelector('#level-frame'),levelNext=document.querySelector('#level-next'),chapterSelect=document.querySelector('#chapter-select');
 let embeddedMode=null,embeddedComplete=false;
-const legacyStopGames=stopGames;stopGames=function(){legacyStopGames();if(!levelFrame.hidden){levelFrame.hidden=true;levelFrame.src='about:blank'}embeddedMode=null;embeddedComplete=false;levelNext.hidden=true;document.querySelector('#level-tools').hidden=true};
+const legacyStopGames=stopGames;stopGames=function(){legacyStopGames();if(!levelFrame.hidden){levelFrame.hidden=true;levelFrame.src='about:blank'}embeddedMode=null;embeddedComplete=false;document.querySelector('#level-tools').hidden=true};
 // While an embedded level loads, the game canvas shows a loading screen instead of half-built frames.
 let levelRevealTimer=null;
 function revealLevel(){clearTimeout(levelRevealTimer);levelFrame.style.visibility=''}
@@ -10,7 +10,7 @@ function drawLevelLoading(){PeninsulaColors.fill(ctx,0,0,320,240);PeninsulaColor
 for(const type of ['keydown','keyup'])window.addEventListener(type,e=>{if(screen!=='embedded'||levelFrame.hidden||e.target?.matches?.('input,select,textarea')||!levelFrame.contentDocument)return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();levelFrame.contentDocument.dispatchEvent(new KeyboardEvent(type,{key:e.key,code:e.code,repeat:e.repeat,shiftKey:e.shiftKey,bubbles:true,cancelable:true}))});
 // Publishing replaces __BUILD__ with the commit, so each release loads its own level pages.
 const levelBuild='__BUILD__';
-function launchAccepted(mode,variant='sredny'){stopGames();screen='embedded';embeddedMode=mode;embeddedComplete=false;controls.replaceChildren();document.querySelector('#fog-back').hidden=false;document.querySelector('#platform-pad').hidden=true;levelFrame.hidden=false;levelFrame.style.visibility='hidden';clearTimeout(levelRevealTimer);levelRevealTimer=setTimeout(revealLevel,10000);drawLevelLoading();levelFrame.src=(mode==='race'?'race.html':'rpg.html')+'?embed=1&scale=1&mode='+variant+'&v='+levelBuild;document.querySelector('#level-tools').hidden=mode!=='race';syncEmbeddedScale();chapterSelect.value=journeyNode;}
+function launchAccepted(mode,variant='sredny'){stopGames();screen='embedded';levelNext.disabled=false;embeddedMode=mode;embeddedComplete=false;controls.replaceChildren();document.querySelector('#fog-back').hidden=false;document.querySelector('#platform-pad').hidden=true;levelFrame.hidden=false;levelFrame.style.visibility='hidden';clearTimeout(levelRevealTimer);levelRevealTimer=setTimeout(revealLevel,10000);drawLevelLoading();levelFrame.src=(mode==='race'?'race.html':'rpg.html')+'?embed=1&scale=1&mode='+variant+'&v='+levelBuild;document.querySelector('#level-tools').hidden=mode!=='race';syncEmbeddedScale();chapterSelect.value=journeyNode;}
 const legacyCamp=launchCampSearch;launchCampSearch=function(mode='coast'){if(mode==='coast')launchAccepted('rpg');else legacyCamp(mode)};
 function launchFogRace(mode='fog'){launchAccepted('race',mode)}
 const legacySetScreen=setScreen;setScreen=function(s){if(screen==='embedded')stopGames();legacySetScreen(s)};
@@ -18,8 +18,10 @@ function syncEmbeddedScale(){levelFrame.style.transform='scale('+parseFloat(docu
 const priorScale=applyDisplayScale;applyDisplayScale=function(){priorScale();syncEmbeddedScale()};
 window.addEventListener('resize',()=>{applyDisplayScale();syncEmbeddedScale()});document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{displayScale=Number(b.dataset.scale);applyDisplayScale()});
 levelFrame.addEventListener('load',()=>{if(!levelFrame.hidden){levelFrame.contentWindow.postMessage({type:'text-edit',on:!!window.PeninsulaTextEdit?.on},location.origin);levelFrame.contentWindow.postMessage({type:'appearance',settings:currentUI.settings},location.origin);levelFrame.contentWindow.postMessage({type:'text-presets',settings:PeninsulaText.state},location.origin);levelFrame.contentWindow.postMessage({type:'color-presets',settings:PeninsulaColors.state},location.origin);levelFrame.contentWindow.focus()}});
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-continue'&&embeddedComplete){levelNext.onclick();return}if(e.data?.type==='level-complete'){embeddedComplete=true;levelNext.hidden=false}});
-levelNext.onclick=()=>{if(!embeddedComplete)return;if(journeyActive)gameCompleted();else showNode('map')};
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-continue'&&embeddedComplete){levelNext.onclick();return}if(e.data?.type==='level-complete')embeddedComplete=true});
+// "Вперёд" skips the game being played straight to the moment it is won (and continues after a win).
+const gameScreens=['embedded','camp','shop','platform','exchange'];
+levelNext.onclick=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
 const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['map','Карта']];
 for(let i=0;i<5;i++){
@@ -31,7 +33,7 @@ for(let i=0;i<5;i++){
 chapterSelect.innerHTML=selection.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');
 function reviewScreen(id){clearInterval(timer);loading=false;stopGames();journeyStarted=true;journeyActive=true;if(id==='title'){journeyActive=false;setScreen('title')}else if(/^hero[012]$/.test(id)){hero=Number(id.at(-1));setScreen('hero')}else if(id==='map')showNode('map');else if(/^entry[0-4]$/.test(id)){selected=Number(id.at(-1));journeyActive=false;setScreen('map');selectDestination(selected)}else showNode(id);chapterSelect.value=id;}
 chapterSelect.addEventListener('change',()=>reviewScreen(chapterSelect.value));
-const oldFullRender=render;render=function(){oldFullRender();if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
+const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=!gameScreens.includes(screen);if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
 document.querySelector('#fog-back').onclick=()=>{stopGames();showNode('map')};
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
@@ -88,7 +90,7 @@ function buildPopupControls(append=false){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- trackScreen();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
+ trackScreen();levelNext.disabled=!gameScreens.includes(screen);const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
  if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
