@@ -13,7 +13,7 @@
   '<div class="walk-tools" role="radiogroup" aria-label="Инструмент">'+[['wall','Стена'],['floor','Убрать'],['paint','Текстура']].map(([k,n])=>'<button type="button" role="radio" data-walk-tool="'+k+'">'+n+'</button>').join('')+'</div>'+
   '<div class="walk-palette" role="listbox" aria-label="Текстура стены"></div>'+
   '<canvas class="walk-plan" aria-label="План уровня"></canvas>'+
-  '<h3>3D-вид</h3><canvas class="walk-3d" width="276" height="176" aria-label="Уровень в 3D"></canvas><p class="walk-3d-info walk-hint"></p>'+
+  '<h3>3D-вид</h3><canvas class="walk-3d" width="276" height="176" aria-label="Уровень в 3D"></canvas><p class="walk-3d-info walk-hint"></p><div class="walk-3d-picker" role="listbox" aria-label="Текстура выбранного" hidden></div>'+
   '<div class="race-buttons"><button type="button" data-walk3d="cell">Текстуру на всю клетку</button><button type="button" data-walk3d="clear">Снять выбор</button></div>'+
   '<p class="walk-hint">Стена / Убрать / Текстура — мышью по плану. Буквы — места уровня, треугольник — старт.</p>';
  extra.innerHTML='<h2>Текстуры и спрайты уровня</h2>'+
@@ -25,7 +25,16 @@
   range('textureAmount','Сила текстуры')+range('noise','Зерно')+range('darkness','Темнота')+range('falloff','Спад от центра к краям');
  const plan=root.querySelector('.walk-plan'),pg=plan.getContext('2d'),info3d=root.querySelector('.walk-3d-info');
  // Picking in the 3D view: a palette click then textures that side, the floor, the water or the sky.
- const view3d=window.createWalk3D?createWalk3D(root.querySelector('.walk-3d'),()=>level,s=>{info3d.textContent=view3d.describe(s)}):null;
+ const view3d=window.createWalk3D?createWalk3D(root.querySelector('.walk-3d'),()=>level,s=>{info3d.textContent=view3d.describe(s);picker()}):null;
+ // The texture of whatever is picked in 3D: the current one is marked, a click puts another.
+ const pick3d=root.querySelector('.walk-3d-picker');
+ function currentOf(sel){return sel.kind==='wall'?W.wallTexture(level,sel.x,sel.y,sel.face):sel.kind==='floor'?W.floorTexture(level):sel.kind==='water'?W.waterTexture(level):W.skyTexture(level)}
+ function picker(){
+  const sel=view3d?.selection;pick3d.hidden=!sel;if(!sel)return;const cur=currentOf(sel);
+  pick3d.innerHTML=Object.entries(W.textures).map(([k,n])=>'<button type="button" role="option" data-pick="'+k+'" title="'+n+'" aria-selected="'+(k===cur)+'"><canvas width="16" height="16"></canvas><span>'+n+'</span></button>').join('');
+  for(const b of pick3d.querySelectorAll('[data-pick]')){const im=W.image(b.dataset.pick),g=b.querySelector('canvas').getContext('2d');g.imageSmoothingEnabled=false;if(im)g.drawImage(im,0,0,im.width,im.height,0,0,16,16)}
+ }
+ function applyToSelection(key){const sel=view3d?.selection;if(!sel)return false;setState((s,l)=>{if(sel.kind==='wall')l.walls[sel.x+','+sel.y+','+sel.face]=key;else if(sel.kind==='floor')l.floor=key;else if(sel.kind==='water')l.water=key;else if(sel.kind==='sky')l.sky=key});return true}
  const clone=()=>JSON.parse(JSON.stringify(W.state));
  const lv=()=>W.level(level),gridNow=()=>W.grid(level);
  function setState(fn){const s=clone();fn(s,s.levels[level]);W.update(s)}
@@ -59,7 +68,7 @@
   root.querySelector('.walk-sprites').innerHTML=W.levelSprites[level].map(a=>'<label>'+W.sprites[a]+'<select data-walk-sprite="'+a+'">'+opt(W.sprites,lv().sprites[a]||a)+'</select></label>').join('');
   const m=W.state.minimap;mini.querySelector('[data-mini="texture"]').value=m.texture;
   for(const f of ['textureAmount','noise','darkness','falloff']){mini.querySelector('[data-mini="'+f+'"]').value=m[f];mini.querySelector('[data-mini-out="'+f+'"]').textContent=m[f]+'%'}
-  drawPlan();if(view3d){view3d.render();info3d.textContent=view3d.describe(view3d.selection)}
+  drawPlan();if(view3d){view3d.render();info3d.textContent=view3d.describe(view3d.selection);picker()}
  }
  function cellAt(e){const r=plan.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)*plan.width/r.width/cs),y=Math.floor((e.clientY-r.top)*plan.height/r.height/cs);const g=gridNow();return g&&g[y]&&g[y][x]!==undefined?{x,y}:null}
  function apply(cell){
@@ -77,8 +86,8 @@
  plan.addEventListener('pointerdown',e=>{if(e.button!==0)return;plan.setPointerCapture(e.pointerId);painting=e.pointerId;apply(cellAt(e))});
  plan.addEventListener('pointermove',e=>{if(painting===e.pointerId)apply(cellAt(e))});
  for(const t of ['pointerup','pointercancel'])plan.addEventListener(t,()=>painting=null);
- on('click',e=>{const t=e.target.closest('[data-walk-tool]');if(t){tool=t.dataset.walkTool;sync()}const b=e.target.closest('[data-brush]');if(b){brush=b.dataset.brush;if(tool==='floor')tool='wall';const sel=view3d?.selection;
-   if(sel)setState((s,l)=>{if(sel.kind==='wall')l.walls[sel.x+','+sel.y+','+sel.face]=brush;else if(sel.kind==='floor')l.floor=brush;else if(sel.kind==='water')l.water=brush;else if(sel.kind==='sky')l.sky=brush});else sync()}
+ on('click',e=>{const t=e.target.closest('[data-walk-tool]');if(t){tool=t.dataset.walkTool;sync()}const b=e.target.closest('[data-brush]');if(b){brush=b.dataset.brush;if(tool==='floor')tool='wall';if(!applyToSelection(brush))sync()}
+  const pk=e.target.closest('[data-pick]');if(pk){brush=pk.dataset.pick;applyToSelection(brush)}
   const t3=e.target.closest('[data-walk3d]')?.dataset.walk3d;
   if(t3==='clear')view3d?.clear();
   if(t3==='cell'&&view3d?.selection?.kind==='wall'){const {x,y}=view3d.selection;setState((s,l)=>{for(const f of 'nesw')delete l.walls[x+','+y+','+f];l.walls[x+','+y]=brush})}

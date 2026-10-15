@@ -100,3 +100,9 @@ main{gap:16px}
 #walk-editor h3{margin:10px 0 6px}
 .walk-fields,.walk-sprites{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
 #walk-extra select{padding:5px;font-size:12px}
+/* Texture row under the 3D view for the picked wall side, floor, water or sky. */
+.walk-3d-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:0 0 6px;padding:6px;border:1px solid #f1d39a55;background:#0d151e}
+.walk-3d-picker button{display:flex;align-items:center;gap:4px;color:#b8c7d9;background:#172231;border:1px solid #425873;padding:3px;font:10px monospace;text-align:left;min-width:0}
+.walk-3d-picker button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.walk-3d-picker button[aria-selected=true]{border-color:#f1d39a;background:#2b4059;color:#fff}
+.walk-3d-picker canvas{width:16px;height:16px;image-rendering:pixelated;flex:none}
