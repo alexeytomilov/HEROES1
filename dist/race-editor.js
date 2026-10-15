@@ -40,7 +40,7 @@
   for(const cv of root.querySelectorAll('[data-plot]'))plot(cv,cv.dataset.plot);topView();
   root.querySelector('.race-colors').innerHTML=Object.entries(R.colors).map(([k,[n]])=>'<label class="race-color"><input type="color" data-race-color="'+k+'" value="'+R.color(k)+'"><span>'+n+'</span></label>').join('');
   const assetOpts='<option value="">Нарисованный</option>'+assetFiles.map(f=>'<option value="asset:'+f+'">'+f+'</option>').join('');
-  root.querySelector('.race-sprites').innerHTML=Object.entries(R.sprites).map(([k,n])=>{const cur=R.state.sprites[k]||'';return '<div class="race-sprite"><span>'+n+'</span><select data-race-sprite="'+k+'">'+assetOpts+(cur.startsWith('data:')?'<option value="'+cur+'" selected>Свой файл</option>':'')+'</select><button type="button" data-race-upload="'+k+'" title="Свой PNG с компьютера">Файл…</button></div>'}).join('');
+  root.querySelector('.race-sprites').innerHTML=Object.entries(R.sprites).map(([k,n])=>{const cur=R.state.sprites[k]||'';return '<div class="race-sprite"><span>'+n+'</span><select data-race-sprite="'+k+'">'+assetOpts+(cur.startsWith('data:')?'<option value="'+cur+'" selected>Свой файл</option>':'')+'</select><button type="button" data-race-upload="'+k+'" title="Выбрать картинку: окно откроется в папке assets игры">Файл…</button></div>'}).join('');
   for(const s of root.querySelectorAll('[data-race-sprite]')){const cur=R.state.sprites[s.dataset.raceSprite]||'';if(!cur.startsWith('data:'))s.value=cur}
  }
  function paint(e,cv){
@@ -61,14 +61,33 @@
   const p=engine.originalProfile(R.COLUMNS);engine.stop?.();setState(s=>{s.modes[mode].profile=p});
  }
  let uploadFor=null;const fileInput=root.querySelector('[data-race-file]');
- fileInput.addEventListener('change',()=>{const f=fileInput.files[0];fileInput.value='';if(!f||!uploadFor)return;if(f.size>600000){alert('Файл больше 600 КБ — для спрайта слишком большой.');return}const rd=new FileReader;rd.onload=()=>setState(s=>{s.sprites[uploadFor]=rd.result});rd.readAsDataURL(f)});
+ function useFile(f){if(!f||!uploadFor)return;if(f.size>600000){alert('Файл больше 600 КБ — для спрайта слишком большой.');return}const rd=new FileReader;rd.onload=()=>setState(s=>{s.sprites[uploadFor]=rd.result});rd.readAsDataURL(f)}
+ fileInput.addEventListener('change',()=>{const f=fileInput.files[0];fileInput.value='';useFile(f)});
+ // «Файл…» opens the picker in the game's assets folder (Chrome/Edge). The folder is asked for once and kept in the browser;
+ // a picture from that folder is used by name, like choosing it in the list; any other file is embedded as before.
+ const assetsDir={
+  db:()=>new Promise((ok,fail)=>{const r=indexedDB.open('peninsula-editor',1);r.onupgradeneeded=()=>r.result.createObjectStore('handles');r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error)}),
+  async get(){try{const db=await this.db();return await new Promise(ok=>{const q=db.transaction('handles').objectStore('handles').get('assets');q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch{return null}},
+  async set(h){try{const db=await this.db();db.transaction('handles','readwrite').objectStore('handles').put(h,'assets')}catch{}}
+ };
+ async function pickSprite(){
+  if(!window.showOpenFilePicker||!window.showDirectoryPicker){fileInput.click();return}
+  let dir=await assetsDir.get();
+  if(!dir){if(!confirm('Один раз укажите папку assets игры (GAME/HEROES1/dist/assets) — дальше «Файл…» будет сразу открываться в ней.')){fileInput.click();return}
+   try{dir=await showDirectoryPicker({id:'peninsula-assets',mode:'read'})}catch{return}assetsDir.set(dir)}
+  let handle;try{[handle]=await showOpenFilePicker({id:'peninsula-sprites',startIn:dir,types:[{description:'Картинки',accept:{'image/png':['.png'],'image/gif':['.gif'],'image/webp':['.webp']}}]})}
+  catch(e){if(e.name!=='AbortError')fileInput.click();return}
+  const path=await dir.resolve(handle).catch(()=>null);
+  if(path?.length===1&&assetFiles.includes(path[0])){const k=uploadFor;setState(s=>{s.sprites[k]='asset:'+path[0]});return}
+  useFile(await handle.getFile());
+ }
  on('click',e=>{
   const act=e.target.closest('[data-race-act]')?.dataset.raceAct;
   if(act==='original')original();
   if(act==='smooth')setState(s=>{const p=s.modes[mode].profile;if(!p)return;for(const kind of ['curve','hill'])p[kind]=p[kind].map((v,i,a)=>Math.round((a[Math.max(0,i-1)]+2*v+a[Math.min(a.length-1,i+1)])/4))});
   if(act==='reset'&&confirm('Вернуть исходную форму трассы «'+R.modes[mode]+'»?'))setState(s=>{s.modes[mode].profile=null});
   if(act==='colors'&&confirm('Вернуть исходные цвета гонок?'))setState(s=>{s.colors={}});
-  const up=e.target.closest('[data-race-upload]');if(up){uploadFor=up.dataset.raceUpload;fileInput.click()}
+  const up=e.target.closest('[data-race-upload]');if(up){uploadFor=up.dataset.raceUpload;pickSprite()}
  });
  on('input',e=>{const k=e.target.dataset.raceColor;if(k)setState(s=>{s.colors[k]=e.target.value})});
  on('change',e=>{
