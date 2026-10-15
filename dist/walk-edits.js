@@ -35,7 +35,7 @@
  }
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.walk);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s))}catch{}
  const changed=()=>window.dispatchEvent(new Event('walk-edits-change'));
- function update(value){state=normalize(value);try{localStorage.setItem(key,JSON.stringify(state))}catch{}minimapCache.clear();changed()}
+ function update(value){window.PeninsulaUndo?.record('walk',state);state=normalize(value);try{localStorage.setItem(key,JSON.stringify(state))}catch{}minimapCache.clear();changed()}
  window.addEventListener('storage',e=>{if(e.key===key){try{state=normalize(JSON.parse(e.newValue||'{}'));minimapCache.clear();changed()}catch{}}});
  // Textures and sprites load straight from assets/, so every page (also embedded levels) can use the whole library.
  const images={};

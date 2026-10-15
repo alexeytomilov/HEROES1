@@ -19,7 +19,7 @@
  function normalize(v={}){v=v&&typeof v==='object'?v:{};return {rules:(Array.isArray(v.rules)?v.rules:[]).map(normalizeRule).filter(Boolean),hidden:(Array.isArray(v.hidden)?v.hidden:[]).filter(c=>typeof c==='string'&&/^\w+\.\w+$/.test(c))}}
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.dialogue);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s))}catch{}
  const changed=()=>window.dispatchEvent(new Event('dialogue-rules-change'));
- function update(v){state=normalize(v);try{localStorage.setItem(key,JSON.stringify(state))}catch{}changed()}
+ function update(v){window.PeninsulaUndo?.record('dialogue',state);state=normalize(v);try{localStorage.setItem(key,JSON.stringify(state))}catch{}changed()}
  window.addEventListener('storage',e=>{if(e.key===key){try{state=normalize(JSON.parse(e.newValue||'{}'));changed()}catch{}}});
  // Hidden built-in texts come back empty, so the level shows nothing for them.
  const originalLT=window.LT;

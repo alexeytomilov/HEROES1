@@ -24,7 +24,7 @@
  }
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.race);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s))}catch{}
  const changed=()=>window.dispatchEvent(new Event('race-edits-change'));
- function update(value){state=normalize(value);try{localStorage.setItem(key,JSON.stringify(state))}catch(e){alert('Не удалось сохранить: файл спрайта слишком большой для браузера.')}changed()}
+ function update(value){window.PeninsulaUndo?.record('race',state);state=normalize(value);try{localStorage.setItem(key,JSON.stringify(state))}catch(e){alert('Не удалось сохранить: файл спрайта слишком большой для браузера.')}changed()}
  window.addEventListener('storage',e=>{if(e.key===key){try{state=normalize(JSON.parse(e.newValue||'{}'));changed()}catch{}}});
  const shade=(c,f)=>'#'+[1,3,5].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(c.slice(i,i+2),16)*f))).toString(16).padStart(2,'0')).join('');
  const images={};
