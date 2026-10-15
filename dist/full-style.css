@@ -67,7 +67,8 @@ main{gap:16px}
 .race-color input{width:26px;height:20px;padding:0;border:1px solid #425873;background:none;flex:none}
 .race-sprite{display:grid;grid-template-columns:70px 1fr auto;gap:4px;align-items:center;margin-bottom:4px;font-size:11px}
 .race-sprite select{padding:4px!important;font-size:11px!important}
-#dialogue-editor{width:660px;max-width:100%;border:1px solid #425873;background:#101924;padding:16px;align-self:center}
+.dialogue-sidebar{width:480px;flex:none;margin-top:50px}.dialogue-sidebar:not(:has(#dialogue-editor:not([hidden]))){display:none}
+#dialogue-editor{border:1px solid #425873;background:#101924;padding:16px}
 #dialogue-editor h2{font:600 16px monospace;margin:0 0 10px}
 .dlg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .dlg-card{border:1px solid #425873;background:#131e2b;font-size:12px;min-width:0}
