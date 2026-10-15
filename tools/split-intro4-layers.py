@@ -46,13 +46,20 @@ sword = (dilate(sword_loose & (lum < 260), 6) | (dilate(sword_loose & (lum < 260
 # The stones: the outline plus the blue-grey stone pixels just outside it (their light rims).
 stone_outlines = [
     [(0, 867), (0, 830), (40, 800), (80, 772), (120, 742), (150, 735), (200, 726), (250, 729), (300, 728), (360, 735), (400, 748), (440, 762), (480, 776), (505, 800), (515, 830), (522, 867)],
-    [(640, 867), (650, 800), (680, 775), (720, 762), (770, 765), (810, 775), (835, 795), (845, 820), (850, 867)],
+    [(596, 867), (604, 830), (618, 800), (645, 778), (680, 768), (720, 762), (770, 765), (810, 775), (835, 795), (845, 820), (850, 867)],
     [(1035, 867), (1040, 800), (1060, 770), (1100, 745), (1150, 738), (1200, 735), (1260, 740), (1300, 750), (1340, 770), (1365, 800), (1375, 840), (1380, 867)],
 ]
-stones = np.zeros((H, W), bool)
-rocklike = ((b - g) >= 6) | (lum > 450)
-for s in stone_outlines:
-    p = polygon(s); stones |= p | (dilate(p, 10) & rocklike & (rows > 700))
+# Stones are blue-grey (blue above green), grass and earth are olive (green at or above blue): take the
+# stone-coloured pixels near the outlines, close small gaps and keep the outlines themselves.
+def erode(m, n=1): return ~dilate(~m, n)
+near = np.zeros((H, W), bool); stones = np.zeros((H, W), bool)
+for p in stone_outlines: poly = polygon(p); near |= dilate(poly, 15); stones |= poly
+stonelike = ((b - g) >= 5) & (rows >= 715) & near & (np.arange(W)[None, :] < 1400)
+stonelike = dilate(erode(stonelike, 2), 2)  # drop thin bits and lone bluish pixels of the grass
+stones = erode(dilate(stones | stonelike, 3), 3)
+# the darkest outline of the stones is not bluish: take dark, non-green pixels right next to them
+stones |= dilate(stones, 3) & (lum < 150) & ((b - g) >= 0) & (rows >= 715)
+stones = dilate(stones, 1)
 fg = sword | stones
 
 # Clouds: darker than the clear sky of their row, above the horizon and not part of the land (heroes).
@@ -107,11 +114,15 @@ top = np.interp(np.arange(W), np.where(known)[0], top[known]).astype(int)
 # a column fully covered by the sword takes the land line of its neighbours
 top = np.array([top[max(0, x - 40):x + 41].min() for x in range(W)])
 ground_fg = fg & (rows >= top[None, :])
-# The sword is narrow: fill along rows. The stones are wide: fill each column upwards from the grass above them.
+# The sword is narrow: fill along rows.
 ground, bad2 = wave_fill(img, ground_fg & sword & ~stones, solid, range(H))
 for y in bad2: ground[y] = ground[y - 1]
-cols, _ = wave_fill(ground.transpose(1, 0, 2), (ground_fg & stones).T, (solid | (ground_fg & sword & ~stones)).T, range(W))
-ground = cols.transpose(1, 0, 2)
+# Under the stones: tiles of clean grass from just above them, mirrored so the tiles join without seams.
+def tri(v, n): v = np.mod(v, 2 * n); return np.where(v < n, v, 2 * n - 1 - v)
+GY0, GY1, GX0, GX1 = 660, 760, 420, 900
+patch = img[GY0:GY1, GX0:GX1]
+ys, xs_ = np.where(ground_fg & stones)
+ground[ys, xs_] = patch[tri(ys - GY0, GY1 - GY0), tri(xs_ - GX0, GX1 - GX0)]
 
 def save(name, rgb, alpha):
     a = np.dstack([rgb.clip(0, 255).astype(np.uint8), (alpha * 255).astype(np.uint8)])
