@@ -86,3 +86,17 @@ main{gap:16px}
 .dlg-delete{margin-left:auto;color:#dd9f82!important}
 .dlg-add{width:100%;padding:8px;margin-bottom:12px}
 .dlg-builtin-list summary{cursor:pointer;color:#b8c7d9;font:600 12px monospace;margin-bottom:8px}
+/* Second editor column: level textures and sprites (walks) or colours and sprites (races). */
+#walk-extra,#race-extra{border:1px solid #425873;background:#101924;padding:14px;margin-top:12px}
+#race-extra{margin-top:0}
+#walk-extra h2,#race-extra h2{font:600 16px monospace;margin:0 0 14px}
+#walk-extra h3,#race-extra h3{font:600 13px monospace;margin:16px 0 8px;color:#b8c7d9}
+#walk-extra label,#race-extra label{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+#walk-extra select,#race-extra select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:6px;font:inherit}
+#race-extra .race-color{flex-direction:row;align-items:center;gap:6px;margin:0;font-size:11px}
+.minimap-sidebar{width:270px}
+.walk-palette{grid-template-columns:repeat(4,1fr)}
+.walk-palette button{font-size:10px;padding:3px}
+#walk-editor h3{margin:10px 0 6px}
+.walk-fields,.walk-sprites{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+#walk-extra select{padding:5px;font-size:12px}

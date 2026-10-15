@@ -37,7 +37,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  function icon(id,x,y,size=24){const item=catalog.flatMap(c=>c.items).find(p=>p.id===id);ctx.drawImage(images['shop_'+(item?.icon||id)],Math.round(x),Math.round(y),size,size)}
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];currentUI.base(ctx,'shop3');
-  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?LT('shop3.price',{item:hovered.name,price:hovered.price})+(money<hovered.price?'\n'+LT('shop3.priceShort'):''):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
+  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?(window.PeninsulaDialogue?.itemText('shop:teriberka','hover',hovered.id)||LT('shop3.price',{item:hovered.name,price:hovered.price})+(money<hovered.price?'\n'+LT('shop3.priceShort'):'')):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
   rect(269,162,40,12,'#11171c');currentUI.resource(ctx,LT('shop3.cash'),money.toLocaleString('ru-RU'));
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
@@ -53,7 +53,8 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
  inputSurface.addEventListener('pointermove',e=>{if(!active)return;const p=point(e);if(drag){if(drag.id!==e.pointerId)return;drag.x=p.x;drag.y=p.y;render();return}const product=won?null:hits.find(h=>h.product&&contains(p,h))?.product||null;if(product?.id!==hovered?.id){hovered=product;render();}});
  inputSurface.addEventListener('pointerleave',()=>{if(active&&!drag&&hovered){hovered=null;render();}});
  inputSurface.addEventListener('pointerup',e=>{
-  if(!active||!drag||drag.id!==e.pointerId)return;e.preventDefault();const p=point(e),product=drag.product;drag=null;hovered=null;if(inputSurface.hasPointerCapture(e.pointerId))inputSurface.releasePointerCapture(e.pointerId);if(contains(p,bag))buy(product);else speak(LT('shop3.price',{item:product.name,price:product.price}));render();
+  if(!active||!drag||drag.id!==e.pointerId)return;e.preventDefault();const p=point(e),product=drag.product;drag=null;hovered=null;if(inputSurface.hasPointerCapture(e.pointerId))inputSurface.releasePointerCapture(e.pointerId);// Dropped on the merchant: your dialogue card for this item speaks, otherwise the price.
+if(contains(p,bag))buy(product);else speak(contains(p,{x:7,y:22,w:190,h:138})&&window.PeninsulaDialogue?.itemText('shop:teriberka','give',product.id)||LT('shop3.price',{item:product.name,price:product.price}));render();
  });
  inputSurface.addEventListener('pointercancel',()=>{if(active){drag=null;render()}});
  window.addEventListener('keydown',e=>{

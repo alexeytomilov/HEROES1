@@ -3,16 +3,18 @@
 // Stored in the browser and in the settings export; embedded levels follow through the storage event.
 (()=>{
  const key='peninsula-dialogue-rules-v1';
- const levels={'walk:coast':'Лагерь','walk:bear':'Медведь','walk:house':'Заброшка','walk:village':'Поиск лавки','race:sredny':'Гонка 1.1','race:fog':'Туманная гонка','race:home':'Дорога домой'};
+ const levels={'walk:coast':'Лагерь','walk:bear':'Медведь','walk:house':'Заброшка','walk:village':'Поиск лавки','race:sredny':'Гонка 1.1','race:fog':'Туманная гонка','race:home':'Дорога домой','shop:teriberka':'Лавка в Териберке','exchange:pass':'Странник на перевале'};
  const triggers={
   walk:{start:'В начале уровня',cell:'Игрок пришёл в клетку',line:'Игрок пересёк линию',facing:'Игрок смотрит в сторону',near:'Игрок рядом с местом'},
-  race:{start:'На старте',progress:'Проехали часть трассы',speed:'Скорость выше',detour:'На объезде',edge:'У края дороги'}
+  race:{start:'На старте',progress:'Проехали часть трассы',speed:'Скорость выше',detour:'На объезде',edge:'У края дороги'},
+  shop:{hover:'Мышка на товаре',give:'Товар перетащили на человека'},
+  exchange:{hover:'Мышка на вещи',give:'Вещь перетащили на человека'}
  };
  const kindOf=level=>level.split(':')[0];
  const num=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
  function normalizeRule(r){
   if(!r||!levels[r.level])return null;const t=triggers[kindOf(r.level)];const type=t[r.type]?r.type:Object.keys(t)[0];
-  return {id:String(r.id||Math.random().toString(36).slice(2,9)),level:r.level,type,x:num(r.x),y:num(r.y),axis:r.axis==='y'?'y':'x',value:num(r.value),dir:[0,1,2,3].includes(Number(r.dir))?Number(r.dir):0,anyCell:r.anyCell!==false,place:typeof r.place==='string'?r.place.slice(0,1):'c',distance:Math.max(0,num(r.distance,1)),percent:Math.max(0,Math.min(100,num(r.percent,50))),speed:Math.max(0,num(r.speed,60)),seconds:Math.max(1,Math.min(30,num(r.seconds,4))),once:!!r.once,text:String(r.text||'').slice(0,400)};
+  return {id:String(r.id||Math.random().toString(36).slice(2,9)),level:r.level,type,x:num(r.x),y:num(r.y),axis:r.axis==='y'?'y':'x',value:num(r.value),dir:[0,1,2,3].includes(Number(r.dir))?Number(r.dir):0,anyCell:r.anyCell!==false,place:typeof r.place==='string'?r.place.slice(0,1):'c',distance:Math.max(0,num(r.distance,1)),percent:Math.max(0,Math.min(100,num(r.percent,50))),speed:Math.max(0,num(r.speed,60)),seconds:Math.max(1,Math.min(30,num(r.seconds,4))),item:typeof r.item==='string'&&/^[\w*]+$/.test(r.item)?r.item:'*',once:!!r.once,text:String(r.text||'').slice(0,400)};
  }
  function normalize(v={}){v=v&&typeof v==='object'?v:{};return {rules:(Array.isArray(v.rules)?v.rules:[]).map(normalizeRule).filter(Boolean),hidden:(Array.isArray(v.hidden)?v.hidden:[]).filter(c=>typeof c==='string'&&/^\w+\.\w+$/.test(c))}}
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.dialogue);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s))}catch{}
@@ -55,5 +57,12 @@
   for(const r of rules){if(['start','line','progress'].includes(r.type))continue;if(r.once&&m.fired.has(r.id)&&!m.holding?.has(r.id))continue;if(holds(r,s)){m.fired.add(r.id);(m.holding||(m.holding=new Set)).add(r.id);return r.text}else m.holding?.delete(r.id)}
   return null;
  }
- window.PeninsulaDialogue={key,levels,triggers,kindOf,normalize,update,begin,evaluate,lastState,get state(){return state},newRule:level=>normalizeRule({level,text:''})};
+ // Trading levels: the line for hovering an item or for dragging it onto the person (a card for this item wins over "any item").
+ function itemText(level,type,id){
+  const m=memory[level]||(begin(level),memory[level]);
+  const rules=state.rules.filter(r=>r.level===level&&r.type===type&&r.text&&(r.item===id||r.item==='*')).sort((a,b)=>(a.item==='*')-(b.item==='*'));
+  for(const r of rules){if(r.once&&m.fired.has(r.id)&&type==='give')continue;if(r.once&&type==='hover'&&m.fired.has(r.id)&&m.hovered!==id)continue;m.fired.add(r.id);m.hovered=id;return r.text}
+  return null;
+ }
+ window.PeninsulaDialogue={key,levels,triggers,kindOf,normalize,update,begin,evaluate,itemText,lastState,get state(){return state},newRule:level=>normalizeRule({level,text:''})};
 })();

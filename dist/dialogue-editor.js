@@ -2,14 +2,22 @@
 // texts of that level with the condition they appear on. Cards can be added, changed, hidden or deleted.
 (()=>{
  const D=window.PeninsulaDialogue,host=document.querySelector('#dialogue-editor');if(!D||!host)return;
- const nodes={drive1:['race:sredny',['race']],fog4:['race:fog',['race']],traffic5:['race:home',['race']],camp1:['walk:coast',['camp1','walk']],bear2:['walk:bear',['bear2','walk']],house2:['walk:house',['house2','walk']],village3:['walk:village',['village3','walk']],shop3:[null,['shop3']],exchange4:[null,['exchange4']],platform5:[null,['platform5']]};
+ const nodes={drive1:['race:sredny',['race']],fog4:['race:fog',['race']],traffic5:['race:home',['race']],camp1:['walk:coast',['camp1','walk']],bear2:['walk:bear',['bear2','walk']],house2:['walk:house',['house2','walk']],village3:['walk:village',['village3','walk']],shop3:['shop:teriberka',['shop3']],exchange4:['exchange:pass',['exchange4']],platform5:[null,['platform5']]};
  const dirNames=['Север','Восток','Юг','Запад'],placeNames={t:'Туристы',c:'Стоянка',r:'Мусор',b:'Медведь',w:'Особое место'};
  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
  let node=null,openBuiltIn=false;
  const sel=(name,lib,value)=>'<select data-f="'+name+'">'+Object.entries(lib).map(([k,n])=>'<option value="'+k+'"'+(String(k)===String(value)?' selected':'')+'>'+n+'</option>').join('')+'</select>';
  const numIn=(name,label,value,step=1)=>'<label class="dlg-num">'+label+'<input type="number" data-f="'+name+'" value="'+value+'" step="'+step+'"></label>';
  function places(level){const id=level.split(':')[1],g=window.PeninsulaWalk?.grid(id)||[];const found={};for(const row of g)for(const c of row)if(placeNames[c])found[c]=placeNames[c];return Object.keys(found).length?found:placeNames}
+ // Things that can be hovered or handed over: the shop catalogue, or what the wanderer may take.
+ function items(level){
+  const T=window.PENINSULA_LEVEL_TEXTS,list={'*':'Любой товар'};
+  if(level==='shop:teriberka')for(const [k,e]of Object.entries(T.shop3?.texts||{}))if(k.startsWith('item_'))list[k.slice(5)]=e.text;
+  if(level==='exchange:pass')Object.assign(list,{'*':'Любая вещь',food:LT('exchange4.itemFood'),mug:LT('exchange4.itemMug'),tent:LT('exchange4.itemTent')});
+  return list;
+ }
  function describe(r){
+  if(r.type==='hover'||r.type==='give')return D.triggers[D.kindOf(r.level)][r.type]+' «'+(items(r.level)[r.item]||r.item)+'»';
   const t=D.triggers[D.kindOf(r.level)][r.type];
   if(r.type==='cell')return t+' '+r.x+','+r.y;
   if(r.type==='line')return t+' '+(r.axis==='x'?'X = ':'Y = ')+r.value;
@@ -27,6 +35,7 @@
   if(r.type==='near')return '<label class="dlg-num">Место'+sel('place',places(r.level),r.place)+'</label>'+numIn('distance','Клеток',r.distance);
   if(r.type==='progress')return numIn('percent','% трассы',r.percent);
   if(r.type==='speed')return numIn('speed','км/ч',r.speed);
+  if(r.type==='hover'||r.type==='give')return '<label class="dlg-num">Товар'+sel('item',items(r.level),r.item)+'</label>';
   return '';
  }
  function ruleCard(r){
@@ -48,7 +57,7 @@
   const [level,sections]=info,T=window.PENINSULA_LEVEL_TEXTS,logic=sections.map(s=>T[s]?.logic).filter(Boolean).join(' ');
   const rules=level?D.state.rules.filter(r=>r.level===level):[];
   host.innerHTML='<h2>Диалоги уровня'+(level?' · '+D.levels[level]:'')+'</h2>'+
-   (level?'<p class="walk-hint">Свои условия проверяются раньше встроенных: пока условие выполняется (или после события), в окне диалога стоит ваш текст.</p><div class="dlg-grid">'+rules.map(ruleCard).join('')+'</div><button type="button" class="dlg-add" data-act="add">+ Добавить условие</button>':'<p class="walk-hint">Свои условия пока работают в бродилках и гонках; здесь можно поправить или скрыть встроенные тексты.</p>')+
+   (level?'<p class="walk-hint">'+(['shop','exchange'].includes(D.kindOf(level))?'Что написать, пока мышка на товаре, и что скажет человек, если перетащить на него товар. Пока карточек нет, всё работает как раньше.':'Свои условия проверяются раньше встроенных: пока условие выполняется (или после события), в окне диалога стоит ваш текст.')+'</p><div class="dlg-grid">'+rules.map(ruleCard).join('')+'</div><button type="button" class="dlg-add" data-act="add">+ Добавить условие</button>':'<p class="walk-hint">Свои условия пока работают в бродилках и гонках; здесь можно поправить или скрыть встроенные тексты.</p>')+
    '<details class="dlg-builtin-list"'+(openBuiltIn?' open':'')+'><summary>Встроенные тексты уровня и когда они появляются</summary>'+(logic?'<p class="walk-hint">'+esc(logic)+'</p>':'')+'<div class="dlg-grid">'+builtInCards(sections)+'</div></details>';
  }
  const setRules=fn=>{const s=JSON.parse(JSON.stringify(D.state));fn(s);D.update(s)};
