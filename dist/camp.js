@@ -5,8 +5,11 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
   const coastGrid=['~########','~....t..#','~..c....#','~....w..#','~.......#','~.......#','~~~~~~~~~'];
   const houseGrid=['#############','#.....#.....#','#.....#.....#','#...........#','#.....#.....#','###.#####.###','#.....#.....#','#...........#','#.....#.....#','#.....#.....#','#############'];
   const bearGrid=['#########','#.......#','#..b....#','#.#..#..#','#.......#','#.......#','#########'];
-  const grid=indoor?houseGrid:bear?bearGrid:coastGrid;
-  const renderer=window.createWalkView({images,indoor,forest:bear});
+  const walkLevel=indoor?'house':bear?'bear':village?'village':'coast',baseGrid=indoor?houseGrid:bear?bearGrid:coastGrid;
+  // Walls drawn in the walk editor apply live.
+  let grid=window.PeninsulaWalk?PeninsulaWalk.merge(walkLevel,baseGrid,baseGrid):baseGrid;
+  window.addEventListener('walk-edits-change',()=>{grid=PeninsulaWalk.merge(walkLevel,baseGrid,baseGrid);if(active&&currentUI.images&&currentUI.rows)render()});
+  const renderer=window.createWalkView({images,indoor,forest:bear,level:walkLevel});
   const mapW=grid[0].length,mapH=grid.length;
   const vectors=[[0,-1],[1,0],[0,1],[-1,0]],cardinals=[LT('walk.dirNorth'),LT('walk.dirEast'),LT('walk.dirSouth'),LT('walk.dirWest')];
   const view={x:8,y:23,w:188,h:136},bag={x:198,y:176,w:28,h:28};
@@ -106,7 +109,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     rect(201,94,108,64,'#000000');currentUI.clip(ctx,201,94,108,64,()=>{for(let dy=-4;dy<=4;dy++)for(let dx=-7;dx<=7;dx++){
       const gx=x+dx,gy=y+dy,c=grid[gy]?.[gx];if(!c||!seen.has(gx+','+gy))continue;
       rect(251+dx*8,122+dy*8,7,7,c==='#'?'#535967':c==='~'?'#426988':c==='b'||village&&gx===5&&gy===1?'#d2ad73':'#657651');
-    }rect(252,123,6,6,currentUI.settings.textColor);rect(254+vectors[dir][0]*2,125+vectors[dir][1]*2,2,2,'#11171c');});
+    }window.PeninsulaWalk?.decorateMinimap(ctx,201,94,108,64);rect(252,123,6,6,currentUI.settings.textColor);rect(254+vectors[dir][0]*2,125+vectors[dir][1]*2,2,2,'#11171c');});
   }
   function render(){PeninsulaPopup.visible=false;
     if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];

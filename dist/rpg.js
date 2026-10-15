@@ -3,7 +3,7 @@ let rpgGame=null;
 async function startRPG(){
  const files=['shore_ground','shore_north','shore_west','shore_wet','shore_tourists','walk_cliff','camp_tent','camp_bottle','camp_wrapper','rpg_portrait_knight','rpg_portrait_wanderer','rpg_portrait_mage'];
  const art=Object.fromEntries(await Promise.all(files.map(async key=>[key,await load('assets/'+key.replaceAll('_','-')+'.png?v=psd-2')])));
- const renderer=window.createWalkView({images:art});
+ const renderer=window.createWalkView({images:art,level:'coast'});
  const map=await json('rpg-map.json?v=2'),cells=map.grid.map(row=>[...row]);
  const candidates=[];
  for(let gy=1;gy<cells.length-1;gy++)for(let gx=1;gx<cells[0].length-1;gx++)if(cells[gy][gx]==='.'&&!(gx===map.start.x&&gy===map.start.y)){
@@ -13,7 +13,10 @@ async function startRPG(){
  }
  const tourists=[];
  while(tourists.length<3&&candidates.length){const i=Math.floor(Math.random()*candidates.length),spot=candidates.splice(i,1)[0];if(tourists.some(t=>Math.abs(t.x-spot.x)+Math.abs(t.y-spot.y)<3))continue;cells[spot.y][spot.x]='t';tourists.push(spot);}
- const grid=cells.map(row=>row.join('')),piles=[];
+ const liveGrid=cells.map(row=>row.join('')),piles=[];
+ // Walls drawn in the walk editor apply live over the plan with its tourists.
+ let grid=window.PeninsulaWalk?PeninsulaWalk.merge('coast',liveGrid,map.grid):liveGrid;
+ window.addEventListener('walk-edits-change',()=>{grid=PeninsulaWalk.merge('coast',liveGrid,map.grid);if(typeof render==='function')render()});
  grid.forEach((row,gy)=>[...row].forEach((c,gx)=>{if(c==='r')piles.push({x:gx,y:gy});}));
 
  const vectors=[[0,-1],[1,0],[0,1],[-1,0]],directions=[LT('camp1.dirNorth'),LT('camp1.dirEast'),LT('camp1.dirSouth'),LT('camp1.dirWest')];
@@ -54,7 +57,7 @@ async function startRPG(){
     const clean=c==='r'&&trash.every(o=>collected.has(trashId(gx,gy,o.id)));
     rect(px,py,size-1,size-1,c==='~'?'#426988':c==='#'?'#535967':c==='='?'#a4b19a':c==='c'?'#d2ad73':c==='r'&&!clean?'#df493d':c==='t'?'#ad83bc':'#657651');
    }
-   rect(cx-3,cy-3,6,6,settings.textColor);
+   window.PeninsulaWalk?.decorateMinimap(ctx,left,top,width,height);rect(cx-3,cy-3,6,6,settings.textColor);
    rect(cx-1+vectors[dir][0]*2,cy-1+vectors[dir][1]*2,2,2,'#11171c');
   });
  }

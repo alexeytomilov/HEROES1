@@ -15,3 +15,29 @@ main{display:flex;gap:24px;align-items:flex-start;justify-content:center;width:m
 .toolbar{align-self:stretch;max-width:none;flex-wrap:nowrap;contain:inline-size;justify-content:center;white-space:nowrap;gap:5px}
 .toolbar button{padding:7px 9px}
 .resolution{margin-right:8px}
+
+/* Layout: text assignment, text settings and color settings on the left, the game in the middle, the walk editor on the right. */
+main{gap:16px}
+.assignment-sidebar,.settings-sidebar,.color-sidebar{width:210px}
+.color-sidebar{margin-top:81px}
+.app{min-width:660px}
+.toolbar{gap:4px}.toolbar button{padding:7px 7px}.resolution{margin-right:4px}
+.walk-sidebar{width:300px;flex:none;margin-top:50px}
+#walk-editor{border:1px solid #425873;background:#101924;padding:14px}
+#walk-editor h2{font:600 16px monospace;margin:0 0 14px}
+#walk-editor h3{font:600 13px monospace;margin:16px 0 10px;color:#b8c7d9}
+#walk-editor .walk-mini-title{margin-top:22px;padding-top:16px;border-top:1px solid #2a3a4f}
+#walk-editor label{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+#walk-editor select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:7px;font:inherit}
+.walk-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}
+.walk-tools button,.walk-reset{color:#b8c7d9;background:#172231;border:1px solid #425873;padding:8px 4px;font:12px monospace}
+.walk-tools button[aria-checked=true]{background:#2b4059;border-color:#b0c8e7;color:#fff}
+.walk-palette{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:10px}
+.walk-palette button{display:flex;align-items:center;gap:5px;color:#b8c7d9;background:#172231;border:1px solid #425873;padding:4px;font:11px monospace;text-align:left;min-width:0}
+.walk-palette button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.walk-palette button[aria-selected=true]{border-color:#f1d39a;background:#2b4059;color:#fff}
+.walk-palette canvas{width:16px;height:16px;image-rendering:pixelated;flex:none}
+.walk-plan{display:block;max-width:100%;margin:0 auto 8px;image-rendering:pixelated;border:1px solid #425873;cursor:crosshair;touch-action:none}
+.walk-hint{font-size:11px;line-height:1.5;color:#7f8fa3;margin:0 0 14px}
+.walk-reset{width:100%;margin-top:4px}
+.walk-range span{display:flex;align-items:center;gap:8px}.walk-range input{flex:1;min-width:0}.walk-range output{width:38px;text-align:right;color:#91a1ad}
