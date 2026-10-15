@@ -50,7 +50,9 @@
   const floorIm=W.image(W.floorTexture(level));
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
    const c=g[y][x],px=x*cs,py=y*cs;
-   if(c==='#'){const im=W.image(W.wallTexture(level,x,y));if(im)pg.drawImage(im,0,0,im.width,im.height,px,py,cs,cs);else{pg.fillStyle='#535967';pg.fillRect(px,py,cs,cs)}continue}
+   if(c==='#'){const im=W.image(W.wallTexture(level,x,y));if(im)pg.drawImage(im,0,0,im.width,im.height,px,py,cs,cs);else{pg.fillStyle='#535967';pg.fillRect(px,py,cs,cs)}
+    // Walls get a cool light tint and a bevel so stone never blends with the (darkened) ground.
+    pg.fillStyle='#d8e0ea38';pg.fillRect(px,py,cs,cs);pg.fillStyle='#ffffff40';pg.fillRect(px,py,cs,1);pg.fillRect(px,py,1,cs);pg.fillStyle='#00000070';pg.fillRect(px,py+cs-1,cs,1);pg.fillRect(px+cs-1,py,1,cs);continue}
    if(c==='~'){pg.fillStyle=cellColors['~'];pg.fillRect(px,py,cs,cs);continue}
    if(floorIm){pg.drawImage(floorIm,(x*16)%floorIm.width,(y*16)%floorIm.height,16,16,px,py,cs,cs)}else{pg.fillStyle='#657651';pg.fillRect(px,py,cs,cs)}
    pg.fillStyle='#00000066';pg.fillRect(px,py,cs,cs);
