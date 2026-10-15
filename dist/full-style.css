@@ -108,3 +108,4 @@ main{gap:16px}
 .walk-3d-picker button[aria-selected=true]{border-color:#f1d39a;background:#2b4059;color:#fff}
 .walk-3d-picker canvas{width:16px;height:16px;image-rendering:pixelated;flex:none}
 .undo-toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:1000;background:#2b4059;color:#f1d39a;border:1px solid #425873;padding:6px 12px;font:600 12px monospace;pointer-events:none}.undo-toast[hidden]{display:none}
+.toolbar #text-edit,.toolbar #scene-back{margin-left:14px}
