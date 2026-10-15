@@ -1,4 +1,4 @@
-// Dialogue editor in the right-hand column: on a level it shows your own "when … say …" cards and the built-in
+// Dialogue editor under the game (a scrolling panel): on a level it shows your own "when … say …" cards and the built-in
 // texts of that level with the condition they appear on. Cards can be added, changed, hidden or deleted.
 (()=>{
  const D=window.PeninsulaDialogue,host=document.querySelector('#dialogue-editor');if(!D||!host)return;
