@@ -1,11 +1,12 @@
-// Edits for the walk levels (camp, bear, house, village): drawn walls, a texture per wall cell,
+// Edits for the walk levels (camp, bear, house, village): drawn walls, a texture per wall cell and per floor cell
+// (the road is the "=" cells, shown with the road texture),
 // level floor/wall textures, sprite replacements and the look of the minimap. Stored in the browser,
 // included in the settings export; levels read them live (embedded levels through the storage event).
 (()=>{
  const key='peninsula-walk-edits-v1';
  const levels={coast:'Лагерь',bear:'Медведь',house:'Заброшка',village:'Поиск лавки'};
  const base={coast:{wall:'walk_cliff',floor:'shore_ground',sky:'shore_north',water:'shore_west'},bear:{wall:'bear_wall',floor:'bear_floor',sky:'shore_north',water:'shore_west'},house:{wall:'walk_wall',floor:'walk_floor',sky:'shore_north',water:'shore_west'},village:{wall:'walk_cliff',floor:'shore_ground',sky:'shore_north',water:'shore_west'}};
- const textures={walk_cliff:'Скала',stone_granite:'Гранит',stone_slate:'Сланец',walk_wall:'Стена дома',bear_wall:'Лес',forest_pine:'Сосновый бор',forest_birch:'Березняк',latest_stone:'Камень',shore_ground:'Земля',ground_tundra:'Тундра',ground_path:'Тропа',bear_floor:'Лесной пол',walk_floor:'Доски',shore_north:'Небо',shore_west:'Море',shore_south:'Берег юг',shore_east:'Берег восток',shore_eastfar:'Даль',mountains_far:'Горы вдали',mountains_near:'Горы'};
+ const textures={walk_cliff:'Скала',stone_granite:'Гранит',stone_slate:'Сланец',walk_wall:'Стена дома',bear_wall:'Лес',forest_pine:'Сосновый бор',forest_birch:'Березняк',latest_stone:'Камень',shore_ground:'Земля',ground_tundra:'Тундра',ground_path:'Тропа',walk_road:'Дорога',bear_floor:'Лесной пол',walk_floor:'Доски',shore_north:'Небо',shore_west:'Море',shore_south:'Берег юг',shore_east:'Берег восток',shore_eastfar:'Даль',mountains_far:'Горы вдали',mountains_near:'Горы'};
  const sprites={shore_tourists:'Туристы',shore_wet:'Мокрое место',camp_tent:'Палатка',camp_bottle:'Бутылка',camp_wrapper:'Обёртка',camp_good:'Стоянка',camp_wet:'Сырая стоянка',camp_inland:'Поляна',camp_tourists:'Лагерь туристов',bear_repeller:'Отпугиватель',bear_dagger:'Нож',walk_table:'Стол',walk_shelf:'Полка',walk_chair:'Стул'};
  const levelSprites={coast:['shore_tourists','camp_bottle','camp_wrapper','camp_tent'],bear:['bear_repeller'],house:['walk_shelf','walk_table','walk_chair'],village:['walk_table','walk_shelf']};
  const grids={
@@ -24,9 +25,10 @@
   const grid=Array.isArray(v.grid)&&v.grid.every(r=>typeof r==='string')?v.grid.slice():null;
   // A wall texture is kept per cell ("x,y") or per side of a cell ("x,y,n" / e / s / w).
   const walls={};for(const [k,t]of Object.entries(v.walls||{}))if(/^\d+,\d+(,[nesw])?$/.test(k)&&textures[t])walls[k]=t;
+  const floors={};for(const [k,t]of Object.entries(v.floors||{}))if(/^\d+,\d+$/.test(k)&&textures[t])floors[k]=t;
   const sp={};for(const [a,t]of Object.entries(v.sprites||{}))if(sprites[a]&&sprites[t])sp[a]=t;
   const pick=f=>textures[v[f]]?v[f]:base[id][f];
-  return {grid,walls,wall:pick('wall'),floor:pick('floor'),sky:pick('sky'),water:pick('water'),sprites:sp};
+  return {grid,walls,floors,wall:pick('wall'),floor:pick('floor'),sky:pick('sky'),water:pick('water'),sprites:sp};
  }
  function normalize(v={}){
   v=v&&typeof v==='object'?v:{};const m=v.minimap||{};
@@ -53,6 +55,8 @@
   skyTexture:id=>state.levels[id]?.sky||base[id]?.sky,
   waterTexture:id=>state.levels[id]?.water||base[id]?.water,
   floorTexture:id=>state.levels[id]?.floor||base[id]?.floor,
+  // A floor cell: its own texture, else the road texture on road cells ("="), else the level floor.
+  floorTextureAt:(id,x,y,c)=>state.levels[id]?.floors?.[x+','+y]||(c==='='?'walk_road':api.floorTexture(id)),
   spriteImage(id,asset){const t=state.levels[id]?.sprites[asset];return t?image(t):null}
  };
  // Minimap look: a texture or noise laid over the tiles, darkness, and a falloff from the centre to the edges.

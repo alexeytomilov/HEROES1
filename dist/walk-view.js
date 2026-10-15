@@ -12,12 +12,16 @@ window.createWalkView=function({images,indoor=false,forest=false,level=null}){
   const floorTex=edited(W?.floorTexture(level))||floor,skyTex=edited(W?.skyTexture(level))||sky,seaTex=edited(W?.waterTexture(level))||sea,wallAt=(mx,my,face)=>edited(W?.wallTexture(level,mx,my,face))||wall;let hx=0,hy=0,hf='n';
   const vectors=[[0,-1],[1,0],[0,1],[-1,0]], [fx,fy]=vectors[dir],rx=-fy,ry=fx,px=x+.5,py=y+.5,zbuf=new Float32Array(w).fill(999),d=frame.data;
   const cell=(a,b)=>grid[Math.floor(b)]?.[Math.floor(a)]|| (indoor?'#':'~');
+  // Floor texture per cell (walk edits), looked up once per cell for this frame.
+  const perCell=!!(level&&W),floors=new Map();
+  const floorAt=(mx,my,c)=>{if(!perCell)return floorTex;const k=mx*4096+my;let t=floors.get(k);if(t===undefined){t=edited(W.floorTextureAt(level,mx,my,c))||floorTex;floors.set(k,t)}return t};
   function put(cx,cy,tex,i,shade){const o=(cy*w+cx)*4;d[o]=tex[i]*shade;d[o+1]=tex[i+1]*shade;d[o+2]=tex[i+2]*shade;d[o+3]=255;}
   for(let cy=0;cy<h;cy++)for(let cx=0;cx<w;cx++){
    if(cy<=horizon){if(indoor){const o=(cy*w+cx)*4;d[o]=22;d[o+1]=25;d[o+2]=28;d[o+3]=255;}else put(cx,cy,skyTex,sample(skyTex,Math.floor(cx*128/w),Math.floor(cy*42/horizon)),1);continue;}
    const depth=eye*focal/(cy-horizon),side=(cx-w/2)/focal*depth,wx=px+fx*depth+rx*side,wy=py+fy*depth+ry*side;
-   const water=cell(wx,wy)==='~',tex=water?seaTex:floorTex,u=Math.floor(wx*64),v=Math.floor(wy*64);
-   const trail=cell(wx,wy)==='=';
+   const c=cell(wx,wy),water=c==='~',tex=water?seaTex:floorAt(Math.floor(wx),Math.floor(wy),c),u=Math.floor(wx*64),v=Math.floor(wy*64);
+   // Without walk edits the road ("=") is the floor drawn lighter; with them it is the road texture.
+   const trail=c==='='&&!perCell;
    put(cx,cy,tex,water?sample(seaTex,40+(u%45),65+(v%40)):sample(tex,u,v),Math.max(.35,1-depth*.055)*(trail?1.18:1));
   }
   for(let cx=0;cx<w;cx++){

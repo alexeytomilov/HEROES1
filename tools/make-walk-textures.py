@@ -1,4 +1,4 @@
-"""Generate extra walk textures (two grounds, two forests, two stones) as seamless 128x128 pixel art.
+"""Generate extra walk textures (two grounds, two forests, two stones, the road) as seamless 128x128 pixel art.
 
 Usage: py tools/make-walk-textures.py
 Writes dist/assets/<name>.png; the keys (name with "_") are listed in dist/walk-edits.js.
@@ -163,5 +163,11 @@ def stone_slate():
     return img
 
 
-for fn in [ground_tundra, ground_path, forest_birch, forest_pine, stone_granite, stone_slate]:
+def walk_road():
+    """The coast road: the shore ground lit like the trail used to be drawn (x1.18), so the game looks the same."""
+    ground = np.asarray(Image.open(os.path.join(OUT, 'shore-ground.png')).convert('RGB')).astype(float)
+    return np.clip(ground * 1.18, 0, 255)
+
+
+for fn in [ground_tundra, ground_path, forest_birch, forest_pine, stone_granite, stone_slate, walk_road]:
     save(fn.__name__, fn())

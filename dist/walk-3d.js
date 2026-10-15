@@ -27,7 +27,7 @@ window.createWalk3D=function(canvas,getLevel,onPick){
   const ground=[];for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(grid[y][x]!=='#')ground.push({x,y,d:P(x+.5,y+.5,0)[2]});
   ground.sort((a,b)=>a.d-b.d);
   for(const t of ground){const c=grid[t.y][t.x],water=c==='~',a=P(t.x,t.y,0),b=P(t.x+1,t.y,0),d=P(t.x,t.y+1,0);
-   quad(water?waterIm:floorIm,a,b,d,water?'#426988':'#657651',water?0:.15);
+   quad(water?waterIm:(W.image(W.floorTextureAt(level,t.x,t.y,c))||floorIm),a,b,d,water?'#426988':'#657651',water?0:.15);
    const poly=[a,b,P(t.x+1,t.y+1,0),d];faces.push({kind:water?'water':'floor',x:t.x,y:t.y,poly});
    if(!water&&!'.='.includes(c)){g.fillStyle='#f1d39a';const m=P(t.x+.5,t.y+.5,0);g.fillRect(Math.round(m[0])-1,Math.round(m[1])-1,3,3)}}
   const cubes=[];for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(grid[y][x]==='#')cubes.push({x,y,d:P(x+.5,y+.5,0)[2]});
@@ -56,6 +56,6 @@ window.createWalk3D=function(canvas,getLevel,onPick){
  canvas.addEventListener('pointerup',e=>{const d=drag;drag=null;if(!d||d.moved)return;const p=point(e);let hit=null;for(let i=faces.length-1;i>=0;i--)if(inside(p,faces[i].poly)){hit=faces[i];break}
   if(hit?.kind==='wallTop')hit=null;selection=hit?{kind:hit.kind,x:hit.x,y:hit.y,face:hit.face}:null;render();onPick?.(selection)});
  canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.6,Math.min(3,zoom*(e.deltaY<0?1.12:.89)));render()},{passive:false});
- const describe=s=>!s?'Ничего не выбрано — кликните по стене, полу, воде или небу.':s.kind==='wall'?'Стена '+s.x+','+s.y+', сторона: '+names[s.face]:s.kind==='floor'?'Пол уровня':s.kind==='water'?'Вода уровня':'Небо уровня';
+ const describe=s=>!s?'Ничего не выбрано — кликните по стене, полу, воде или небу.':s.kind==='wall'?'Стена '+s.x+','+s.y+', сторона: '+names[s.face]:s.kind==='floor'?'Пол '+s.x+','+s.y:s.kind==='water'?'Вода уровня':'Небо уровня';
  return {render,describe,get selection(){return selection},clear(){selection=null;render()}};
 };

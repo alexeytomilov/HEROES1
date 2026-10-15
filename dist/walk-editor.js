@@ -1,5 +1,5 @@
 // Walk level editor (right panel): a plan of the level where walls are placed and removed like blocks,
-// a texture for every wall, level floor/wall textures and sprite replacements; the minimap look has its own panel.
+// a texture for every wall and every floor cell (the road is painted with «Дорога»), level floor/wall textures and sprite replacements; the minimap look has its own panel.
 (()=>{
  const W=window.PeninsulaWalk,host=document.querySelector('#walk-editor'),mini=document.querySelector('#minimap-settings'),extra=document.querySelector('#walk-extra');if(!W||!host||!mini||!extra)return;
  // Level textures and sprites sit in a second column (#walk-extra), so no panel grows taller than the left ones.
@@ -11,11 +11,11 @@
  host.innerHTML='<h2>Редактор бродилок</h2>'+
   '<label>Уровень<select data-walk-level>'+opt(W.levels,level)+'</select></label>'+
   '<div class="walk-tools" role="radiogroup" aria-label="Инструмент">'+[['wall','Стена'],['floor','Убрать'],['paint','Текстура']].map(([k,n])=>'<button type="button" role="radio" data-walk-tool="'+k+'">'+n+'</button>').join('')+'</div>'+
-  '<div class="walk-palette" role="listbox" aria-label="Текстура стены"></div>'+
+  '<div class="walk-palette" role="listbox" aria-label="Текстура"></div>'+
   '<canvas class="walk-plan" aria-label="План уровня"></canvas>'+
   '<h3>3D-вид</h3><canvas class="walk-3d" width="276" height="176" aria-label="Уровень в 3D"></canvas><p class="walk-3d-info walk-hint"></p><div class="walk-3d-picker" role="listbox" aria-label="Текстура выбранного" hidden></div>'+
   '<div class="race-buttons"><button type="button" data-walk3d="cell">Текстуру на всю клетку</button><button type="button" data-walk3d="clear">Снять выбор</button></div>'+
-  '<p class="walk-hint">Стена / Убрать / Текстура — мышью по плану. Буквы — места уровня, треугольник — старт.</p>';
+  '<p class="walk-hint">Мышью по плану: «Стена» ставит стену, «Текстура» красит стену или клетку пола (дорога — текстура «Дорога»), «Убрать» снимает стену или текстуру клетки. Буквы — места уровня, треугольник — старт.</p>';
  extra.innerHTML='<h2>Текстуры и спрайты уровня</h2>'+
   '<div class="walk-fields"><label>Стены<select data-walk-field="wall"></select></label><label>Пол<select data-walk-field="floor"></select></label><label>Небо<select data-walk-field="sky"></select></label><label>Вода<select data-walk-field="water"></select></label></div>'+
   '<h3>Спрайты</h3><div class="walk-sprites"></div>'+
@@ -28,13 +28,20 @@
  const view3d=window.createWalk3D?createWalk3D(root.querySelector('.walk-3d'),()=>level,s=>{info3d.textContent=view3d.describe(s);picker()}):null;
  // The texture of whatever is picked in 3D: the current one is marked, a click puts another.
  const pick3d=root.querySelector('.walk-3d-picker');
- function currentOf(sel){return sel.kind==='wall'?W.wallTexture(level,sel.x,sel.y,sel.face):sel.kind==='floor'?W.floorTexture(level):sel.kind==='water'?W.waterTexture(level):W.skyTexture(level)}
+ function currentOf(sel){return sel.kind==='wall'?W.wallTexture(level,sel.x,sel.y,sel.face):sel.kind==='floor'?W.floorTextureAt(level,sel.x,sel.y,gridNow()?.[sel.y]?.[sel.x]):sel.kind==='water'?W.waterTexture(level):W.skyTexture(level)}
  function picker(){
   const sel=view3d?.selection;pick3d.hidden=!sel;if(!sel)return;const cur=currentOf(sel);
   pick3d.innerHTML=Object.entries(W.textures).map(([k,n])=>'<button type="button" role="option" data-pick="'+k+'" title="'+n+'" aria-selected="'+(k===cur)+'"><canvas width="16" height="16"></canvas><span>'+n+'</span></button>').join('');
   for(const b of pick3d.querySelectorAll('[data-pick]')){const im=W.image(b.dataset.pick),g=b.querySelector('canvas').getContext('2d');g.imageSmoothingEnabled=false;if(im)g.drawImage(im,0,0,im.width,im.height,0,0,16,16)}
  }
- function applyToSelection(key){const sel=view3d?.selection;if(!sel)return false;setState((s,l)=>{if(sel.kind==='wall')l.walls[sel.x+','+sel.y+','+sel.face]=key;else if(sel.kind==='floor')l.floor=key;else if(sel.kind==='water')l.water=key;else if(sel.kind==='sky')l.sky=key});return true}
+ // A floor cell takes a texture; «Дорога» on plain ground makes it a road cell ("="), another texture on the road makes it ground.
+ function paintFloor(l,rows,x,y,key){
+  const k=x+','+y,c=rows[y][x];
+  if(key==='walk_road'&&(c==='.'||c==='=')){rows[y][x]='=';delete l.floors[k];return}
+  if(c==='=')rows[y][x]='.';
+  if(key===l.floor&&rows[y][x]==='.')delete l.floors[k];else l.floors[k]=key;
+ }
+ function applyToSelection(key){const sel=view3d?.selection;if(!sel)return false;setState((s,l)=>{if(sel.kind==='wall')l.walls[sel.x+','+sel.y+','+sel.face]=key;else if(sel.kind==='floor'){const rows=gridNow().map(r=>[...r]);paintFloor(l,rows,sel.x,sel.y,key);l.grid=rows.map(r=>r.join(''))}else if(sel.kind==='water')l.water=key;else if(sel.kind==='sky')l.sky=key});return true}
  const clone=()=>JSON.parse(JSON.stringify(W.state));
  const lv=()=>W.level(level),gridNow=()=>W.grid(level);
  function setState(fn){const s=clone();fn(s,s.levels[level]);W.update(s)}
@@ -54,7 +61,8 @@
     // Walls get a cool light tint and a bevel so stone never blends with the (darkened) ground.
     pg.fillStyle='#d8e0ea38';pg.fillRect(px,py,cs,cs);pg.fillStyle='#ffffff40';pg.fillRect(px,py,cs,1);pg.fillRect(px,py,1,cs);pg.fillStyle='#00000070';pg.fillRect(px,py+cs-1,cs,1);pg.fillRect(px+cs-1,py,1,cs);continue}
    if(c==='~'){pg.fillStyle=cellColors['~'];pg.fillRect(px,py,cs,cs);continue}
-   if(floorIm){pg.drawImage(floorIm,(x*16)%floorIm.width,(y*16)%floorIm.height,16,16,px,py,cs,cs)}else{pg.fillStyle='#657651';pg.fillRect(px,py,cs,cs)}
+   const cellIm=W.image(W.floorTextureAt(level,x,y,c))||floorIm;
+   if(cellIm){pg.drawImage(cellIm,(x*16)%cellIm.width,(y*16)%cellIm.height,16,16,px,py,cs,cs)}else{pg.fillStyle='#657651';pg.fillRect(px,py,cs,cs)}
    pg.fillStyle='#00000066';pg.fillRect(px,py,cs,cs);
    if(c==='='){pg.fillStyle='#a4b19a55';pg.fillRect(px,py,cs,cs)}
    if(cellColors[c]&&c!=='='){pg.fillStyle=cellColors[c];pg.fillRect(px+2,py+2,cs-4,cs-4);pg.fillStyle='#11171c';pg.font=(cs-4)+'px monospace';pg.textAlign='center';pg.textBaseline='middle';pg.fillText(c,px+cs/2,py+cs/2+1)}
@@ -75,14 +83,17 @@
  function cellAt(e){const r=plan.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)*plan.width/r.width/cs),y=Math.floor((e.clientY-r.top)*plan.height/r.height/cs);const g=gridNow();return g&&g[y]&&g[y][x]!==undefined?{x,y}:null}
  function apply(cell){
   if(!cell)return;const g=gridNow(),c=g[cell.y][cell.x],k=cell.x+','+cell.y,st=W.start(level);
-  if(!W.paintable(c))return;
+  // Level sites (letters) keep their place but can still get a floor texture.
+  if((!W.paintable(c)&&tool!=='paint')||(tool==='paint'&&c==='~'))return;
   if(tool==='wall'){if(st&&st.x===cell.x&&st.y===cell.y)return;if(c==='#'&&lv().walls[k]===brush)return}
-  if(tool==='floor'&&c!=='#')return;
-  if(tool==='paint'&&(c!=='#'||lv().walls[k]===brush))return;
+  if(tool==='floor'&&c!=='#'&&!lv().floors[k]&&c!=='=')return;
+  if(tool==='paint'&&(c==='#'?lv().walls[k]===brush:W.floorTextureAt(level,cell.x,cell.y,c)===brush))return;
   setState((s,l)=>{const rows=g.map(r=>[...r]);
-   if(tool==='wall'){rows[cell.y][cell.x]='#';for(const f of 'nesw')delete l.walls[k+','+f];l.walls[k]=brush}
-   else if(tool==='floor'){const b=W.baseGrid(level)?.[cell.y]?.[cell.x];rows[cell.y][cell.x]=b&&b!=='#'?b:'.';delete l.walls[k];for(const f of 'nesw')delete l.walls[k+','+f]}
-   else{for(const f of 'nesw')delete l.walls[k+','+f];l.walls[k]=brush}
+   if(tool==='wall'){rows[cell.y][cell.x]='#';for(const f of 'nesw')delete l.walls[k+','+f];l.walls[k]=brush;delete l.floors[k]}
+   else if(tool==='floor'&&c==='#'){const b=W.baseGrid(level)?.[cell.y]?.[cell.x];rows[cell.y][cell.x]=b&&b!=='#'?b:'.';delete l.walls[k];for(const f of 'nesw')delete l.walls[k+','+f]}
+   else if(tool==='floor'){delete l.floors[k];if(c==='=')rows[cell.y][cell.x]='.'}
+   else if(c==='#'){for(const f of 'nesw')delete l.walls[k+','+f];l.walls[k]=brush}
+   else paintFloor(l,rows,cell.x,cell.y,brush);
    l.grid=rows.map(r=>r.join(''))});
  }
  plan.addEventListener('pointerdown',e=>{if(e.button!==0)return;plan.setPointerCapture(e.pointerId);painting=e.pointerId;apply(cellAt(e))});
