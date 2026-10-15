@@ -1,19 +1,19 @@
-"""Pack the rendered "Intro Main v1" PNG sequence into one lossless sprite sheet per intro.
+"""Pack the rendered "Intro Main" frame sequence (PNG or TIFF) into one lossless sprite sheet per intro.
 
-Usage: py tools/build-intro-video.py "<folder with Intro Main v1_0000.png ...>"
+Usage: py tools/build-intro-video.py "<folder with Intro Main v2_0000.tif ...>"
 Frame ranges must match INTRO_VIDEO in dist/intro-video.js.
 """
-import json, math, os, sys
+import glob, json, math, os, sys
 from PIL import Image
 
-RANGES = {1: (50, 91), 2: (92, 135), 3: (136, 177), 4: (178, 203), 5: (204, 246)}
+RANGES = {1: (50, 95), 2: (96, 142), 3: (143, 189), 4: (190, 219), 5: (220, 266)}
 COLUMNS = 8
 src = sys.argv[1]
 out = os.path.join(os.path.dirname(__file__), '..', 'dist', 'assets', 'intro-video')
 os.makedirs(out, exist_ok=True)
 manifest = {}
 for n, (first, last) in RANGES.items():
-    frames = [Image.open(os.path.join(src, f'Intro Main v1_{i:04d}.png')).convert('RGB') for i in range(first, last + 1)]
+    frames = [Image.open(glob.glob(os.path.join(src, f'*_{i:04d}.*'))[0]).convert('RGB') for i in range(first, last + 1)]
     w, h = frames[0].size
     rows = math.ceil(len(frames) / COLUMNS)
     sheet = Image.new('RGB', (w * COLUMNS, h * rows))

@@ -1,8 +1,9 @@
-// Intros 1–5 play consecutive pieces of the rendered "Intro Main v1" sequence (RENDER/Intro Main).
+// Intros 1–5 play consecutive pieces of the rendered "Intro Main v2" sequence (RENDER/Intro Main/Intro Main v2).
 // tools/build-intro-video.py packs each piece into assets/intro-video/introN.webp; the screen text is drawn on top.
 window.PeninsulaIntroVideo=(()=>{
- const FPS=10,base='assets/intro-video/',images={};let sheets=null;
- const ready=fetch(base+'sheets.json').then(r=>{if(!r.ok)throw Error('intro video');return r.json()}).then(m=>Promise.all(Object.entries(m).map(([n,s])=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(s.src));im.src=base+s.src}))).then(()=>{sheets=m}));
+ // SHEETS names the render the sprite sheets come from, so browsers never reuse sheets from an older render.
+ const FPS=10,SHEETS='v2',base='assets/intro-video/',images={};let sheets=null;
+ const ready=fetch(base+'sheets.json?r='+SHEETS).then(r=>{if(!r.ok)throw Error('intro video');return r.json()}).then(m=>Promise.all(Object.entries(m).map(([n,s])=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(s.src));im.src=base+s.src+'?r='+SHEETS}))).then(()=>{sheets=m}));
  // Each intro lasts exactly as long as its piece of the video.
  const duration=n=>sheets?.[n]?sheets[n].frames/FPS:null;
  // Text sits in the black band under the picture; intro 5 is a full-screen picture without text.

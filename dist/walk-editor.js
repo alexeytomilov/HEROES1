@@ -1,7 +1,7 @@
 // Walk level editor (right panel): a plan of the level where walls are placed and removed like blocks,
-// a texture for every wall, level floor/wall textures, sprite replacements and the minimap look.
+// a texture for every wall, level floor/wall textures and sprite replacements; the minimap look has its own panel.
 (()=>{
- const W=window.PeninsulaWalk,host=document.querySelector('#walk-editor');if(!W||!host)return;
+ const W=window.PeninsulaWalk,host=document.querySelector('#walk-editor'),mini=document.querySelector('#minimap-settings');if(!W||!host||!mini)return;
  const screenLevel={camp1:'coast',bear2:'bear',house2:'house',village3:'village'};
  let level='coast',tool='wall',brush='walk_cliff',painting=null,lastNode=null;
  const opt=(lib,value)=>Object.entries(lib).map(([k,n])=>'<option value="'+k+'"'+(k===value?' selected':'')+'>'+n+'</option>').join('');
@@ -14,8 +14,8 @@
   '<p class="walk-hint">Стена — ставит стену выбранной текстурой, Убрать — делает клетку проходимой, Текстура — меняет текстуру у стоящих стен. Можно вести мышью. Буквы — места уровня, их не трогаем; жёлтый треугольник — старт.</p>'+
   '<label>Стены уровня<select data-walk-field="wall"></select></label><label>Пол уровня<select data-walk-field="floor"></select></label>'+
   '<h3>Спрайты</h3><div class="walk-sprites"></div>'+
-  '<button type="button" class="walk-reset" data-walk-act="reset">Сбросить уровень</button>'+
-  '<h2 class="walk-mini-title">Мини-карта</h2>'+
+  '<button type="button" class="walk-reset" data-walk-act="reset">Сбросить уровень</button>';
+ mini.innerHTML='<h2>Мини-карта</h2><p class="walk-hint">Мини-карта справа в бродилках: всё, что ниже, меняет её вид во всех уровнях.</p>'+
   '<label>Текстура<select data-mini="texture"><option value="none">Нет</option><option value="noise">Шум</option>'+opt(W.textures)+'</select></label>'+
   range('textureAmount','Сила текстуры')+range('noise','Зерно')+range('darkness','Темнота')+range('falloff','Спад от центра к краям');
  const plan=host.querySelector('.walk-plan'),pg=plan.getContext('2d');
@@ -50,8 +50,8 @@
   for(const b of host.querySelectorAll('[data-brush]'))b.setAttribute('aria-selected',String(b.dataset.brush===brush));
   for(const f of ['wall','floor'])host.querySelector('[data-walk-field="'+f+'"]').innerHTML=opt(W.textures,lv()[f]);
   host.querySelector('.walk-sprites').innerHTML=W.levelSprites[level].map(a=>'<label>'+W.sprites[a]+'<select data-walk-sprite="'+a+'">'+opt(W.sprites,lv().sprites[a]||a)+'</select></label>').join('');
-  const m=W.state.minimap;host.querySelector('[data-mini="texture"]').value=m.texture;
-  for(const f of ['textureAmount','noise','darkness','falloff']){host.querySelector('[data-mini="'+f+'"]').value=m[f];host.querySelector('[data-mini-out="'+f+'"]').textContent=m[f]+'%'}
+  const m=W.state.minimap;mini.querySelector('[data-mini="texture"]').value=m.texture;
+  for(const f of ['textureAmount','noise','darkness','falloff']){mini.querySelector('[data-mini="'+f+'"]').value=m[f];mini.querySelector('[data-mini-out="'+f+'"]').textContent=m[f]+'%'}
   drawPlan();
  }
  function cellAt(e){const r=plan.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)*plan.width/r.width/cs),y=Math.floor((e.clientY-r.top)*plan.height/r.height/cs);const g=gridNow();return g&&g[y]&&g[y][x]!==undefined?{x,y}:null}
@@ -77,7 +77,7 @@
   const f=e.target.dataset.walkField;if(f){setState((s,l)=>{l[f]=e.target.value});return}
   const a=e.target.dataset.walkSprite;if(a){setState((s,l)=>{if(e.target.value===a)delete l.sprites[a];else l.sprites[a]=e.target.value});return}
  });
- host.addEventListener('input',e=>{const f=e.target.dataset.mini;if(!f)return;setState(s=>{s.minimap[f]=f==='texture'?e.target.value:Number(e.target.value)})});
+ mini.addEventListener('input',e=>{const f=e.target.dataset.mini;if(!f)return;setState(s=>{s.minimap[f]=f==='texture'?e.target.value:Number(e.target.value)})});
  // The panel follows the walk level being played; another level can still be picked by hand.
  setInterval(()=>{const node=window.journey?.snapshot?.().node;if(node!==lastNode){lastNode=node;if(screenLevel[node]&&screenLevel[node]!==level){level=screenLevel[node];sync()}}},400);
  window.addEventListener('walk-edits-change',()=>{palette();sync()});

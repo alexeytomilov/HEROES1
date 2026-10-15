@@ -41,3 +41,9 @@ main{gap:16px}
 .walk-hint{font-size:11px;line-height:1.5;color:#7f8fa3;margin:0 0 14px}
 .walk-reset{width:100%;margin-top:4px}
 .walk-range span{display:flex;align-items:center;gap:8px}.walk-range input{flex:1;min-width:0}.walk-range output{width:38px;text-align:right;color:#91a1ad}
+/* The minimap settings have their own column right of the walk editor. */
+.minimap-sidebar{width:240px;flex:none;margin-top:50px}
+#minimap-settings{border:1px solid #425873;background:#101924;padding:14px}
+#minimap-settings h2{font:600 16px monospace;margin:0 0 10px}
+#minimap-settings label{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+#minimap-settings select{width:100%;background:#172231;color:#c6cfda;border:1px solid #425873;padding:7px;font:inherit}
