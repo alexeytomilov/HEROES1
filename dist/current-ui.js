@@ -2,7 +2,7 @@
 window.currentUI={rpgPortraits:{},images:{},glyphs:{},fonts:{},layouts:[],assets:{},settings:{textColor:'#bec4c9',lineColor:'#91a1ad',headingBackground:'#293640',headingColor:'#bec4c9',lineStep:13,padding:5,resourcePadding:5,narratorOffset:0,resourceOffset:1}};
 try{Object.assign(currentUI.settings,JSON.parse(localStorage.getItem('peninsula-layout-settings')||'{}'))}catch{}
 const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>resolve(im);im.onerror=()=>reject(Error(path));im.src=path});
-const uiKeys=['entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
+const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
 currentUI.ready=Promise.all([
  PeninsulaVictoryAnimation.ready,
  ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png')),
@@ -73,8 +73,8 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  if(['camp1','bear2','house2','village3'].includes(key)){PeninsulaColors.fill(c,1,22,318,217);PeninsulaColors.fill(c,7,22,306,212);currentUI.box(c,7,22,190,138);currentUI.box(c,198,22,115,138,'#293640','situation');currentUI.text(c,LT('ui.situationTitle'),255.5,27,'center');currentUI.controls(c);currentUI.box(c,7,205,190,28,'#11171c','dialogue');currentUI.resource(c,LT('ui.power'),'80%');currentUI.slots(c);currentUI.header(c,key==='camp1'?LT('ui.placeFull_sredny'):key==='village3'?LT('ui.placeFull_teriberka'):LT('ui.placeFull_zelentsy'));return}
  if(['drive1','fog4','traffic5','platform5'].includes(key)){PeninsulaColors.outline(c,7,22,306,138);for(const [x,y,w,h]of [[1,22,6,217],[313,22,6,217],[7,160,306,1],[197,161,1,78],[7,234,306,5]])PeninsulaColors.fill(c,x,y,w,h);currentUI.box(c,7,161,190,72,'#11171c','dialogue');currentUI.resource(c,'','');currentUI.slots(c);}
  const rows=currentUI.rows[key]||[];
- // A story screen without a drawn background yet (like «Экран 0») still gets the picture frame and its text from the script.
- const isStory=rows.some(r=>r.y>=150&&r.w>280)&&!['platform5','drive1','fog4','traffic5','map'].includes(key)||!background&&!rows.length&&window.PENINSULA_STORY?.nodes?.[key]?.type==='story';
+ // Story nodes without exported text rows still get their frame and script text.
+ const isStory=rows.some(r=>r.y>=150&&r.w>280)&&!['platform5','drive1','fog4','traffic5','map'].includes(key)||!rows.length&&window.PENINSULA_STORY?.nodes?.[key]?.type==='story';
  // Image and text blocks share one 1px divider at row 152 instead of stacking two outlines.
  if(isStory){PeninsulaColors.box(c,1,1,318,152,'storyImage');if(background)currentUI.clip(c,2,2,316,150,()=>c.drawImage(currentUI.backgrounds[key],0,0));if(key==='win1')PeninsulaVictoryAnimation.draw(c);currentUI.box(c,1,152,318,87,'#11171c','narrator');// Screen text comes from the journey script (dist/story.js); the Figma export is only a fallback.
  const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');currentUI.roleBlock(c,body,8,164,304,69,'narrator')}
