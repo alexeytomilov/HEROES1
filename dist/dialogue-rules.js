@@ -18,8 +18,8 @@
  }
  // Typing and portrait effects of the dialogue strip (dialogue-fx.js): which portrait pixels show, letters per
  // second, when the portrait starts to blow away after the text (s), how long that takes, wind strength and direction.
- const fxLimits={typing:[4,120],offset:[-5,5],vanish:[.2,6],wind:[0,100],angle:[0,359],appear:[0,3]},fxDefaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.25};
- function normalizeFx(f){f=f&&typeof f==='object'?f:{};const out={pixels:f.pixels==='dark'?'dark':'light'};for(const [k,[a,b]]of Object.entries(fxLimits)){const n=Number(f[k]);out[k]=Number.isFinite(n)?Math.max(a,Math.min(b,n)):fxDefaults[k]}return out}
+ const fxLimits={typing:[4,120],offset:[-5,5],vanish:[.2,6],wind:[0,100],angle:[0,359],appear:[0,3],flickerOut:[0,3],sound:[0,100]},fxDefaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.4,flickerOut:.5,leave:'flicker',sound:60};
+ function normalizeFx(f){f=f&&typeof f==='object'?f:{};const out={pixels:f.pixels==='dark'?'dark':'light',leave:['flicker','sand','both'].includes(f.leave)?f.leave:fxDefaults.leave};for(const [k,[a,b]]of Object.entries(fxLimits)){const n=Number(f[k]);out[k]=Number.isFinite(n)?Math.max(a,Math.min(b,n)):fxDefaults[k]}return out}
  function normalize(v={}){v=v&&typeof v==='object'?v:{};return {rules:(Array.isArray(v.rules)?v.rules:[]).map(normalizeRule).filter(Boolean),hidden:(Array.isArray(v.hidden)?v.hidden:[]).filter(c=>typeof c==='string'&&/^\w+\.\w+$/.test(c)),fx:normalizeFx(v.fx)}}
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.dialogue);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s));
   // The effect settings first lived in the race edits (race.radio); carry them over once.
