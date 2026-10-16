@@ -22,6 +22,9 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
 // "Вперёд" skips the game being played straight to the moment it is won (and continues after a win).
 const gameScreens=['embedded','camp','shop','platform','exchange'];
 levelNext.onclick=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
+// «Рестарт уровня» launches the open level again from its start (the race page reloads, walks and shops reset).
+const levelRestart=document.querySelector('#level-restart');
+if(levelRestart)levelRestart.onclick=()=>{if(!gameScreens.includes(screen)||!journeyNodes[journeyNode])return;showNode(journeyNode)};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
 const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['0','Экран 0'],['map','Карта']];
 for(let i=0;i<5;i++){
@@ -33,7 +36,7 @@ for(let i=0;i<5;i++){
 chapterSelect.innerHTML=selection.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');
 function reviewScreen(id){clearInterval(timer);loading=false;stopGames();journeyStarted=true;journeyActive=true;if(id==='title'){journeyActive=false;setScreen('title')}else if(/^hero[012]$/.test(id)){hero=Number(id.at(-1));setScreen('hero')}else if(id==='map')showNode('map');else if(/^entry[0-4]$/.test(id)){selected=Number(id.at(-1));journeyActive=false;setScreen('map');selectDestination(selected)}else showNode(id);chapterSelect.value=id;}
 chapterSelect.addEventListener('change',()=>reviewScreen(chapterSelect.value));
-const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=!gameScreens.includes(screen);if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
+const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=!gameScreens.includes(screen);if(levelRestart)levelRestart.disabled=levelNext.disabled;if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
 {const fogBack=document.querySelector('#fog-back');if(fogBack)fogBack.onclick=()=>{stopGames();showNode('map')}}
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
@@ -101,7 +104,7 @@ function buildPopupControls(append=false){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- trackScreen();levelNext.disabled=!gameScreens.includes(screen);const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
+ trackScreen();levelNext.disabled=!gameScreens.includes(screen);if(levelRestart)levelRestart.disabled=levelNext.disabled;const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  const victory1=screen==='story'&&journeyNode==='win1';
  window.PeninsulaVictoryAnimation?.tick(dt,victory1,visible&&!scenePaused);
