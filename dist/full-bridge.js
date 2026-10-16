@@ -23,7 +23,7 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
 const gameScreens=['embedded','camp','shop','platform','exchange'];
 levelNext.onclick=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
-const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['map','Карта']];
+const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['0','Экран 0'],['map','Карта']];
 for(let i=0;i<5;i++){
  journeyNodes['q'+i]={type:'question',body:chapterQuestions[i],next:(i+1)+'.1',no:i===3?'4.1':'map'};
  selection.push(['entry'+i,'Вход · '+points[i].full],['q'+i,'Вопрос '+(i+1)+'-1']);
@@ -61,6 +61,16 @@ function syncScenePanel(id){
  scenePanelKey=panelKey;
 }
 let sceneShown=null,scenePaused=false;
+// Intro 5 is shown without the cursor for START_DELAY seconds; then the cursor returns and «Начать игру» fades in.
+const START_DELAY=4,START_FADE=.8;let intro5Time=0;
+function drawStartPrompt(){
+ const a=Math.max(0,Math.min(1,(intro5Time-START_DELAY)/START_FADE));controls.replaceChildren();if(a<=0)return;
+ const w=128,h=20,x=(320-w)/2,y=212;
+ ctx.save();ctx.globalAlpha=a;panel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,LT('ui.startGame'),x,y,w,h,'buttons');ctx.restore();
+ const el=document.createElement('button');el.className='hotspot';el.setAttribute('aria-label',LT('ui.startGame'));Object.assign(el.style,{left:x/3.2+'%',top:y/2.4+'%',width:w/3.2+'%',height:h/2.4+'%'});el.onclick=advanceStory;controls.append(el);
+}
+// Nothing (Enter, Space, a click) moves past intro 5 before the button is there.
+const advanceStoryAnyTime=advanceStory;advanceStory=function(){if(activeScene()==='intro5'&&intro5Time<START_DELAY)return;advanceStoryAnyTime()};
 // "Назад" walks back through the screens shown in this session, one at a time.
 const screenHistory=[],sceneBack=document.querySelector('#scene-back');
 function trackScreen(){const id=chapterSelect.value;if(id&&screenHistory.at(-1)!==id){screenHistory.push(id);if(screenHistory.length>200)screenHistory.shift()}if(sceneBack)sceneBack.disabled=screenHistory.length<2}
@@ -90,10 +100,12 @@ function buildPopupControls(append=false){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- trackScreen();levelNext.disabled=!gameScreens.includes(screen);const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id}
+ trackScreen();levelNext.disabled=!gameScreens.includes(screen);const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
- if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else advanceStory()}
+ if(id==='intro5')intro5Time+=visible&&!scenePaused?dt:0;document.querySelector('#frame').classList.toggle('cursor-hidden',id==='intro5'&&intro5Time<START_DELAY);
+ // Intro 5 does not move on by itself: it waits for «Начать игру».
+ if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else if(id!=='intro5')advanceStory()}
  else if(fullIntroMotions[id])render();
  requestAnimationFrame(fullIntroAnimate);
 }
@@ -105,6 +117,7 @@ Promise.all([currentUI.ready,PeninsulaIntroVideo.ready]).then(()=>{
 const renderBeforeParallax=render;render=function(){
  if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
  const motion=fullIntroMotions[id];if(motion){if(fullIntroKey!==id)motion.reset();motion.draw(ctx)}
+ if(id==='intro5')drawStartPrompt();
  fullIntroKey=id;
 };
 window.addEventListener('scene-settings-change',()=>{

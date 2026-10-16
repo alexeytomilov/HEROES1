@@ -15,7 +15,7 @@
  let intros=Object.fromEntries([1,2,3,4,5].map(n=>[n,normalizeIntro(n,read(key(n),window.PENINSULA_PROJECT_CONFIG?.intros?.[n]))])),story=normalizeStory(read(storyKey,window.PENINSULA_PROJECT_CONFIG?.story));
  const changed=()=>window.dispatchEvent?.(new Event('scene-settings-change'));
  const api=window.PeninsulaScenes={key,storyKey,layered,normalizeIntro,normalizeStory,get intros(){return intros},get story(){return story},
-  kind:id=>/^intro[1-5]$/.test(id)?'intro':/^\d+\.\d+$/.test(id)?'story':null,
+  kind:id=>/^intro[1-5]$/.test(id)?'intro':/^\d+(\.\d+)?$/.test(id)?'story':null,
   duration(id){return api.kind(id)==='intro'?window.PeninsulaIntroVideo?.duration(Number(id.slice(5)))??intros[Number(id.slice(5))].showSeconds:api.kind(id)==='story'?story.showSeconds:null},
   updateIntro(n,value){intros[n]=normalizeIntro(n,{...intros[n],...value});try{localStorage.setItem(key(n),JSON.stringify(intros[n]))}catch{}changed()},
   updateStory(value){story=normalizeStory({...story,...value});try{localStorage.setItem(storyKey,JSON.stringify(story))}catch{}changed()},

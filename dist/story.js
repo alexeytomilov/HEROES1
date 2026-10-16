@@ -36,8 +36,15 @@ window.PENINSULA_STORY = {
       "type": "story",
       "image": "party",
       "body": "",
-      "next": "map",
+      "next": "0",
       "hold": 4000
+    },
+    "0": {
+      "type": "story",
+      "image": "",
+      "body": "Экран 0.\nТекст этого экрана пока не написан.",
+      "next": "map",
+      "hold": 6000
     },
     "1.1": {
       "type": "story",
