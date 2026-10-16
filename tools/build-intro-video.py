@@ -9,7 +9,7 @@ from PIL import Image
 RANGES = {1: (50, 95), 2: (96, 142), 3: (143, 189), 4: (190, 219), 5: (220, 266)}
 COLUMNS = 8
 src = sys.argv[1]
-out = os.path.join(os.path.dirname(__file__), '..', 'dist', 'assets', 'intro-video')
+out = os.path.join(os.path.dirname(__file__), '..', 'dist', 'assets', 'screens', 'intros')
 os.makedirs(out, exist_ok=True)
 manifest = {}
 for n, (first, last) in RANGES.items():

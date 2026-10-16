@@ -6,11 +6,11 @@ const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4'
 currentUI.ready=Promise.all([
  PeninsulaVictoryAnimation.ready,
  ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png')),
- ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad('assets/sharp/'+k+'-bg.png')),
+ ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
  ...['cozette','unifont'].map(async name=>{const [image,rows]=await Promise.all([uiLoad('assets/'+name+'.png'),fetch('assets/'+name+'.json').then(r=>r.json())]);currentUI.fonts[name]={image,height:name==='unifont'?16:13,glyphs:Object.fromEntries(rows.map(g=>[g.ch,g]))}}),
  fetch('assets/current/native-text.json').then(r=>r.json()).then(r=>currentUI.rows=r),
  fetch('figma-layouts.json').then(r=>r.json()).then(async layouts=>{currentUI.layouts=layouts;const hashes=[...new Set(layouts.flatMap(s=>s.items.flatMap(n=>(n.fills||[]).filter(p=>p.type==='IMAGE').map(p=>p.hash))))];await Promise.all(hashes.map(async hash=>currentUI.assets[hash]=await uiLoad('assets/'+hash+'.png')))}),
- uiLoad('assets/intro5-full.png').then(im=>currentUI.intro5Full=im),
+ uiLoad(PeninsulaScreenAssets.intro5).then(im=>currentUI.intro5Full=im),
  uiLoad('assets/latest-stone.png').then(im=>currentUI.stone=im)
 ]).then(()=>currentUI.tint());
 currentUI.tint=()=>{currentUI.backgrounds={};for(const [name,f]of Object.entries(currentUI.fonts)){const c=document.createElement('canvas');c.width=f.image.width;c.height=f.image.height;const g=c.getContext('2d');g.drawImage(f.image,0,0);g.globalCompositeOperation='source-in';g.fillStyle=name==='unifont'?currentUI.settings.headingColor:currentUI.settings.textColor;g.fillRect(0,0,c.width,c.height);f.atlas=c;}currentUI.glyphs=currentUI.fonts.cozette.glyphs};

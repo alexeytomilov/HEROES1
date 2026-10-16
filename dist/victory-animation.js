@@ -1,4 +1,4 @@
-// Frames and timings from assets/victory1/fish-pickup.gif. A sprite sheet keeps
+// Frames and timings from assets/screens/victory1/fish-pickup.gif. A sprite sheet keeps
 // GIF playback reliable on canvas and lets the game's pause button freeze it.
 (()=>{
  const durations=[300,220,220,240,800],total=durations.reduce((a,b)=>a+b,0);
@@ -8,7 +8,7 @@
    const image=new Image();
    image.onload=()=>{sheet=image;resolve()};
    image.onerror=()=>reject(Error('Victory 1 animation could not be loaded'));
-   image.src='assets/victory1/fish-pickup-frames.png';
+   image.src=PeninsulaScreenAssets.victory;
   }),
   tick(dt,shown,playing=true){
    if(!shown||!active)elapsed=0;

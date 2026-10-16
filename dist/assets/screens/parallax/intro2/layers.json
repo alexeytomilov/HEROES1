@@ -11,21 +11,21 @@
   "frames": [
     {
       "frame": {
-        "src": "assets/intro2/1frame.png",
+        "src": "assets/screens/parallax/intro2/1frame.png",
         "x": 1,
         "y": 1,
         "w": 103,
         "h": 150
       },
       "a": {
-        "src": "assets/intro2/1a.png",
+        "src": "assets/screens/parallax/intro2/1a.png",
         "x": 0,
         "y": -2,
         "w": 224,
         "h": 193
       },
       "b": {
-        "src": "assets/intro2/1b.png",
+        "src": "assets/screens/parallax/intro2/1b.png",
         "x": 1,
         "y": 1,
         "w": 103,
@@ -34,21 +34,21 @@
     },
     {
       "frame": {
-        "src": "assets/intro2/2frame.png",
+        "src": "assets/screens/parallax/intro2/2frame.png",
         "x": 107,
         "y": 1,
         "w": 104,
         "h": 150
       },
       "a": {
-        "src": "assets/intro2/2a.png",
+        "src": "assets/screens/parallax/intro2/2a.png",
         "x": 101,
         "y": 12,
         "w": 121,
         "h": 154
       },
       "b": {
-        "src": "assets/intro2/2b.png",
+        "src": "assets/screens/parallax/intro2/2b.png",
         "x": 107,
         "y": 1,
         "w": 104,
@@ -57,21 +57,21 @@
     },
     {
       "frame": {
-        "src": "assets/intro2/3frame.png",
+        "src": "assets/screens/parallax/intro2/3frame.png",
         "x": 213,
         "y": 1,
         "w": 103,
         "h": 150
       },
       "a": {
-        "src": "assets/intro2/3a.png",
+        "src": "assets/screens/parallax/intro2/3a.png",
         "x": 145,
         "y": -8,
         "w": 173,
         "h": 195
       },
       "b": {
-        "src": "assets/intro2/3b.png",
+        "src": "assets/screens/parallax/intro2/3b.png",
         "x": 213,
         "y": 1,
         "w": 103,
@@ -80,7 +80,7 @@
     }
   ],
   "background": {
-    "src": "assets/intro2/back.png",
+    "src": "assets/screens/parallax/intro2/back.png",
     "x": -60,
     "y": -69,
     "w": 471,

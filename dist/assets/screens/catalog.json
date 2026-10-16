@@ -1,0 +1,415 @@
+{
+  "root": "assets/screens/",
+  "pathBase": "dist/",
+  "screens": {
+    "0": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/0-bg.png"
+      ],
+      "preview": "assets/screens/layouts/0-bg.png"
+    },
+    "title": {
+      "kind": "intro",
+      "files": [
+        "assets/screens/intros/intro1.webp",
+        "assets/screens/intros/sheets.json"
+      ],
+      "preview": "assets/screens/previews/intro1.png",
+      "note": "Превью кадра середины заставки; игра проигрывает спрайт-лист."
+    },
+    "intro2": {
+      "kind": "intro",
+      "files": [
+        "assets/screens/intros/intro2.webp",
+        "assets/screens/intros/sheets.json"
+      ],
+      "preview": "assets/screens/previews/intro2.png",
+      "note": "Превью кадра середины заставки; игра проигрывает спрайт-лист."
+    },
+    "intro3": {
+      "kind": "intro",
+      "files": [
+        "assets/screens/intros/intro3.webp",
+        "assets/screens/intros/sheets.json"
+      ],
+      "preview": "assets/screens/previews/intro3.png",
+      "note": "Превью кадра середины заставки; игра проигрывает спрайт-лист."
+    },
+    "intro4": {
+      "kind": "intro",
+      "files": [
+        "assets/screens/intros/intro4.webp",
+        "assets/screens/intros/sheets.json"
+      ],
+      "preview": "assets/screens/previews/intro4.png",
+      "note": "Превью кадра середины заставки; игра проигрывает спрайт-лист."
+    },
+    "intro5": {
+      "kind": "intro",
+      "files": [
+        "assets/screens/intros/intro5.webp",
+        "assets/screens/intros/sheets.json"
+      ],
+      "preview": "assets/screens/previews/intro5.png",
+      "note": "Превью кадра середины заставки; игра проигрывает спрайт-лист."
+    },
+    "map": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Изображение местности; маркеры и интерфейс рисуются кодом."
+    },
+    "hero0": {
+      "kind": "character",
+      "files": [
+        "assets/screens/layouts/hero0-bg.png"
+      ],
+      "preview": "assets/screens/previews/hero0.png",
+      "note": "Фон экспорта; текущие портреты и интерфейс собираются из figma-layouts.json и общих ассетов."
+    },
+    "hero1": {
+      "kind": "character",
+      "files": [
+        "assets/screens/layouts/hero1-bg.png"
+      ],
+      "preview": "assets/screens/previews/hero1.png",
+      "note": "Фон экспорта; текущие портреты и интерфейс собираются из figma-layouts.json и общих ассетов."
+    },
+    "hero2": {
+      "kind": "character",
+      "files": [
+        "assets/screens/layouts/hero2-bg.png"
+      ],
+      "preview": "assets/screens/previews/hero2.png",
+      "note": "Фон экспорта; текущие портреты и интерфейс собираются из figma-layouts.json и общих ассетов."
+    },
+    "1.1": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/1.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.1-bg.png"
+    },
+    "drive1": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/drive1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/drive1-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "1.2": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/1.2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.2-bg.png"
+    },
+    "camp1": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/camp1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/camp1-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "1.3": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/1.3-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.3-bg.png"
+    },
+    "sleep": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/1.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "1.4": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/1.4-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.4-bg.png"
+    },
+    "win1": {
+      "kind": "victory",
+      "files": [
+        "assets/screens/layouts/win1-bg.png",
+        "assets/screens/victory1/fish-pickup.gif",
+        "assets/screens/victory1/fish-pickup-frames.png"
+      ],
+      "preview": "assets/screens/victory1/fish-pickup.gif",
+      "note": "В игре анимация из спрайт-листа с таймингом исходного GIF."
+    },
+    "2.1": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/2.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/2.1-bg.png"
+    },
+    "bear2": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/bear2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/bear2-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "2.2": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/2.2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/2.2-bg.png"
+    },
+    "2.3": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/2.3-bg.png",
+        "assets/screens/photos2-3/photo1.png",
+        "assets/screens/photos2-3/photo2.png",
+        "assets/screens/photos2-3/photo3.png",
+        "assets/screens/photos2-3/photo4.png",
+        "assets/screens/photos2-3/photo5.png"
+      ],
+      "preview": "assets/screens/layouts/2.3-bg.png"
+    },
+    "ruin": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/2.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/2.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "house2": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/house2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/house2-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "win2": {
+      "kind": "victory",
+      "files": [
+        "assets/screens/layouts/win2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/win2-bg.png"
+    },
+    "3.1": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/3.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/3.1-bg.png"
+    },
+    "village3": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/village3-bg.png"
+      ],
+      "preview": "assets/screens/layouts/village3-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "3.2": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/3.2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/3.2-bg.png"
+    },
+    "shop3": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/shop3-bg.png"
+      ],
+      "preview": "assets/screens/layouts/shop3-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "win3": {
+      "kind": "victory",
+      "files": [
+        "assets/screens/layouts/win3-bg.png"
+      ],
+      "preview": "assets/screens/layouts/win3-bg.png"
+    },
+    "4.1": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/4.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/4.1-bg.png"
+    },
+    "fog4": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/fog4-bg.png"
+      ],
+      "preview": "assets/screens/layouts/fog4-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "4.2": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/4.2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/4.2-bg.png"
+    },
+    "exchange4": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/exchange4-bg.png"
+      ],
+      "preview": "assets/screens/layouts/exchange4-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "win4": {
+      "kind": "victory",
+      "files": [
+        "assets/screens/layouts/win4-bg.png"
+      ],
+      "preview": "assets/screens/layouts/win4-bg.png"
+    },
+    "5.1": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/5.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/5.1-bg.png"
+    },
+    "platform5": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/platform5-bg.png"
+      ],
+      "preview": "assets/screens/layouts/platform5-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "5.2": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/5.2-bg.png"
+      ],
+      "preview": "assets/screens/layouts/5.2-bg.png"
+    },
+    "home": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/5.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/5.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "traffic5": {
+      "kind": "game",
+      "files": [
+        "assets/screens/layouts/traffic5-bg.png"
+      ],
+      "preview": "assets/screens/layouts/traffic5-bg.png",
+      "note": "Статичный фон интерфейса; сам уровень рисуется движком."
+    },
+    "win5": {
+      "kind": "victory",
+      "files": [
+        "assets/screens/layouts/win5-bg.png"
+      ],
+      "preview": "assets/screens/layouts/win5-bg.png"
+    },
+    "epilogue": {
+      "kind": "epilogue",
+      "files": [
+        "assets/screens/layouts/win5-bg.png"
+      ],
+      "preview": "assets/screens/layouts/win5-bg.png"
+    },
+    "q0": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/1.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/1.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "entry0": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Выбор локации на карте; окно рисуется кодом."
+    },
+    "q1": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/2.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/2.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "entry1": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Выбор локации на карте; окно рисуется кодом."
+    },
+    "q2": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/3.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/3.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "entry2": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Выбор локации на карте; окно рисуется кодом."
+    },
+    "q3": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/4.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/4.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "entry3": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Выбор локации на карте; окно рисуется кодом."
+    },
+    "q4": {
+      "kind": "question",
+      "files": [
+        "assets/screens/layouts/5.1-bg.png"
+      ],
+      "preview": "assets/screens/layouts/5.1-bg.png",
+      "note": "Вопрос поверх сюжетного экрана; окно и текст рисуются кодом."
+    },
+    "entry4": {
+      "kind": "map",
+      "files": [
+        "assets/screens/map-terrain-expanded.png"
+      ],
+      "preview": "assets/screens/previews/map.png",
+      "note": "Выбор локации на карте; окно рисуется кодом."
+    }
+  }
+}

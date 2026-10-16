@@ -17,14 +17,14 @@
         "h": 152
       },
       "a": {
-        "src": "assets/intro4/a.png",
+        "src": "assets/screens/parallax/intro4/a.png",
         "x": 16,
         "y": 75,
         "w": 250,
         "h": 77
       },
       "b": {
-        "src": "assets/intro4/b.png",
+        "src": "assets/screens/parallax/intro4/b.png",
         "x": -37,
         "y": 64,
         "w": 303,
@@ -33,7 +33,7 @@
     }
   ],
   "background": {
-    "src": "assets/intro4/c.png",
+    "src": "assets/screens/parallax/intro4/c.png",
     "x": -57,
     "y": 0,
     "w": 432,

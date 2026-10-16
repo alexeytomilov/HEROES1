@@ -1,5 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const s={Image:class{set src(value){this.srcValue=value;this.onload()}}};s.window=s;
+vm.runInNewContext(fs.readFileSync('dist/screen-assets.js','utf8'),s);
 vm.runInNewContext(fs.readFileSync('dist/victory-animation.js','utf8'),s);
 const a=s.PeninsulaVictoryAnimation,draws=[],ctx={drawImage(...args){draws.push(args)}};
 a.tick(0,true);assert.equal(a.frame(),0);

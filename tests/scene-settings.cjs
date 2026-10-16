@@ -2,7 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const storage=new Map(),events={},draws=[];
 class Image{set src(path){this.path=path;queueMicrotask(()=>this.onload())}}
 const s={console,Image,Event:class{},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},fetch:async p=>({ok:true,json:async()=>JSON.parse(fs.readFileSync('dist/'+p,'utf8'))}),addEventListener:(n,f)=>events[n]=f,dispatchEvent(){},PeninsulaColors:{fill(){}}};s.window=s;vm.createContext(s);
-for(const p of ['scene-settings.js','intro-parallax.js'])vm.runInContext(fs.readFileSync('dist/'+p,'utf8'),s);
+for(const p of ['screen-assets.js','scene-settings.js','intro-parallax.js'])vm.runInContext(fs.readFileSync('dist/'+p,'utf8'),s);
 const api=s.PeninsulaScenes;
 assert.equal(api.kind('intro1'),'intro');assert.equal(api.kind('intro5'),'intro');assert.equal(api.kind('1.2'),'story');assert.equal(api.kind('drive1'),null);assert.equal(api.kind('q0'),null);
 api.updateStory({showSeconds:3});assert.equal(api.duration('1.1'),3);assert.equal(api.duration('5.2'),3);
