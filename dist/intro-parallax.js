@@ -2,13 +2,13 @@
 window.loadIntroParallax=async function(number=2){
  let manifest;
  if([2,3,4].includes(number)){
-  manifest=await fetch('assets/intro'+number+'/layers.json').then(r=>{if(!r.ok)throw Error('intro PSD layers');return r.json()});
+  manifest=await fetch(PeninsulaScreenAssets.root+'parallax/intro'+number+'/layers.json').then(r=>{if(!r.ok)throw Error('intro PSD layers');return r.json()});
   // The full backing image is the third layer inside each image frame.
   manifest.frames=manifest.frames.map(f=>({...f,c:f.c||manifest.background}));
  }else if(number===1){
   manifest={width:318,height:132,frames:[{frame:{x:0,y:0,w:318,h:132},a:{src:'assets/4db3bc3c0077083ef0d3018b337d0f2183e8a852.png',x:74,y:39,w:170,h:82}}]};
  }else{
-  manifest={width:318,height:238,frames:[{frame:{x:0,y:0,w:318,h:238},a:{src:'assets/intro5-full.png',x:-1,y:-1,w:320,h:240}}]};
+  manifest={width:318,height:238,frames:[{frame:{x:0,y:0,w:318,h:238},a:{src:PeninsulaScreenAssets.intro5,x:-1,y:-1,w:320,h:240}}]};
  }
  const assets={};await Promise.all([manifest.background,...manifest.frames.flatMap(f=>[f.a,f.b,f.c])].filter(l=>l?.src).map(async l=>{if(assets[l.src])return;assets[l.src]=await new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>resolve(im);im.onerror=()=>reject(Error(l.src));im.src=l.src})}));
  const offsets=manifest.frames.map(()=>({a:0,b:0,c:0}));let paused=false,last=null,elapsed=0;

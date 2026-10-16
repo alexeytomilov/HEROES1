@@ -11,7 +11,7 @@ from pathlib import Path
 from psd_tools import PSDImage
 
 root = Path(__file__).resolve().parents[1] / 'dist'
-out = root / 'assets' / 'screen2-3'
+out = root / 'assets' / 'screens' / 'photos2-3'
 out.mkdir(exist_ok=True)
 psd = PSDImage.open(sys.argv[1])
 group = next(layer for layer in psd if layer.is_group() and layer.name.strip().lower() == 'old')
@@ -22,6 +22,6 @@ for photo in photos:
         other.visible = other is photo
     psd.composite(force=True).crop((left, top, right, bottom)).save(out / f'photo{photo.name}.png')
 # The PSD picture sits at (1, 1) inside the 320x240 screen.
-manifest = {'x': left + 1, 'y': top + 1, 'w': right - left, 'h': bottom - top, 'photos': [f'assets/screen2-3/photo{p.name}.png' for p in photos]}
+manifest = {'x': left + 1, 'y': top + 1, 'w': right - left, 'h': bottom - top, 'photos': [f'assets/screens/photos2-3/photo{p.name}.png' for p in photos]}
 (out / 'photos.json').write_text(json.dumps(manifest, indent=2))
 print(manifest)
