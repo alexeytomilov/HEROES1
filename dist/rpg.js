@@ -1,4 +1,5 @@
 // Coast mechanics restored from the pre-Figma campsite search; UI is drawn separately.
+let rpgDialogueFx=null;
 let rpgGame=null;
 async function startRPG(){
  const files=['shore_ground','shore_north','shore_west','shore_wet','shore_tourists','walk_cliff','camp_tent','camp_bottle','camp_wrapper','rpg_portrait_knight','rpg_portrait_wanderer','rpg_portrait_mage'];
@@ -88,7 +89,10 @@ async function startRPG(){
   ['knight','wanderer','mage'].forEach((name,i)=>{const bx=7+i*37;rect(bx+1,162,34,42,'#293640');ctx.drawImage(art['rpg_portrait_'+name],bx+1,162,34,42);border(bx,161,36,43);});
   const icons=[['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]];
   for(const [kind,bx,by]of icons){const w=bx===172?25:26;PeninsulaColors.box(ctx,bx,by,w,21,'buttons');controlIcon(kind,bx,by);}
-  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');block(window.PeninsulaDialogue?.evaluate('walk:coast',{x,y,dir,grid})||message,8,206,188,26,{role:'dialogue'});
+  PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
+  // The line types out and the mage's portrait shows in the corner of the view (dialogue-fx.js).
+  rpgDialogueFx=rpgDialogueFx||PeninsulaDialogueFX.create({ctx,fonts,portrait:{x:137,y:101},clip:[8,23,188,136],render:()=>render()});
+  rpgDialogueFx.line(window.PeninsulaDialogue?.evaluate('walk:coast',{x,y,dir,grid})||message,8,206,188,26);rpgDialogueFx.portrait();
   heading(LT('camp1.heading'));
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
   drawMouseArrow();

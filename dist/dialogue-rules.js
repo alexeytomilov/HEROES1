@@ -16,8 +16,14 @@
   if(!r||!levels[r.level])return null;const t=triggers[kindOf(r.level)];const type=t[r.type]?r.type:Object.keys(t)[0];
   return {id:String(r.id||Math.random().toString(36).slice(2,9)),level:r.level,type,x:num(r.x),y:num(r.y),axis:r.axis==='y'?'y':'x',value:num(r.value),dir:[0,1,2,3].includes(Number(r.dir))?Number(r.dir):0,anyCell:r.anyCell!==false,place:typeof r.place==='string'?r.place.slice(0,1):'c',distance:Math.max(0,num(r.distance,1)),percent:Math.max(0,Math.min(100,num(r.percent,50))),speed:Math.max(0,num(r.speed,60)),seconds:Math.max(1,Math.min(30,num(r.seconds,4))),item:typeof r.item==='string'&&/^[\w*]+$/.test(r.item)?r.item:'*',once:!!r.once,text:String(r.text||'').slice(0,400)};
  }
- function normalize(v={}){v=v&&typeof v==='object'?v:{};return {rules:(Array.isArray(v.rules)?v.rules:[]).map(normalizeRule).filter(Boolean),hidden:(Array.isArray(v.hidden)?v.hidden:[]).filter(c=>typeof c==='string'&&/^\w+\.\w+$/.test(c))}}
- let state=normalize(window.PENINSULA_PROJECT_CONFIG?.dialogue);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s))}catch{}
+ // Typing and portrait effects of the dialogue strip (dialogue-fx.js): which portrait pixels show, letters per
+ // second, when the portrait starts to blow away after the text (s), how long that takes, wind strength and direction.
+ const fxLimits={typing:[4,120],offset:[-5,5],vanish:[.2,6],wind:[0,100],angle:[0,359],appear:[0,3]},fxDefaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.25};
+ function normalizeFx(f){f=f&&typeof f==='object'?f:{};const out={pixels:f.pixels==='dark'?'dark':'light'};for(const [k,[a,b]]of Object.entries(fxLimits)){const n=Number(f[k]);out[k]=Number.isFinite(n)?Math.max(a,Math.min(b,n)):fxDefaults[k]}return out}
+ function normalize(v={}){v=v&&typeof v==='object'?v:{};return {rules:(Array.isArray(v.rules)?v.rules:[]).map(normalizeRule).filter(Boolean),hidden:(Array.isArray(v.hidden)?v.hidden:[]).filter(c=>typeof c==='string'&&/^\w+\.\w+$/.test(c)),fx:normalizeFx(v.fx)}}
+ let state=normalize(window.PENINSULA_PROJECT_CONFIG?.dialogue);try{const s=localStorage.getItem(key);if(s)state=normalize(JSON.parse(s));
+  // The effect settings first lived in the race edits (race.radio); carry them over once.
+  if(!s||!JSON.parse(s).fx){const r=JSON.parse(localStorage.getItem('peninsula-race-edits-v1')||'{}').radio;if(r)state.fx=normalizeFx(r)}}catch{}
  const changed=()=>window.dispatchEvent(new Event('dialogue-rules-change'));
  function update(v){window.PeninsulaUndo?.record('dialogue',state);state=normalize(v);try{localStorage.setItem(key,JSON.stringify(state))}catch{}changed()}
  window.addEventListener('storage',e=>{if(e.key===key){try{state=normalize(JSON.parse(e.newValue||'{}'));changed()}catch{}}});
@@ -64,5 +70,5 @@
   for(const r of rules){if(r.once&&m.fired.has(r.id)&&type==='give')continue;if(r.once&&type==='hover'&&m.fired.has(r.id)&&m.hovered!==id)continue;m.fired.add(r.id);m.hovered=id;return r.text}
   return null;
  }
- window.PeninsulaDialogue={key,levels,triggers,kindOf,normalize,update,begin,evaluate,itemText,lastState,get state(){return state},newRule:level=>normalizeRule({level,text:''})};
+ window.PeninsulaDialogue={key,levels,triggers,kindOf,normalize,update,fxLimits,fxDefaults,begin,evaluate,itemText,lastState,get state(){return state},newRule:level=>normalizeRule({level,text:''})};
 })();

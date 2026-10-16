@@ -111,6 +111,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
       rect(251+dx*8,122+dy*8,7,7,c==='#'?'#535967':c==='~'?'#426988':c==='b'||village&&gx===5&&gy===1?'#d2ad73':'#657651');
     }window.PeninsulaWalk?.decorateMinimap(ctx,201,94,108,64);rect(252,123,6,6,currentUI.settings.textColor);rect(254+vectors[dir][0]*2,125+vectors[dir][1]*2,2,2,'#11171c');});
   }
+  let dialogueFx=null;
   function render(){PeninsulaPopup.visible=false;
     if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];
     currentUI.base(ctx,indoor?'house2':village?'village3':bear?'bear2':'camp1');drawScene();
@@ -121,7 +122,10 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     hit('Меч',118,183,26,21,()=>{if(bear)install();else inspect()});hit('Назад',145,183,26,21,()=>step(-1));hit('Осмотр',172,183,25,21,inspect);
     const bagItems=bear?bearItems.map(o=>won&&o.id==='repeller'?null:o.asset):indoor||village?[]:['camp_tent',...Array.from(collected).map(id=>'camp_'+id)];currentUI.bag(ctx,bagItems,images);
     // The message under the scene is the shared Dialogue zone, as in the race and the camp.
-    PeninsulaColors.box(ctx,7,205,190,28,'dialogue');currentUI.roleBlock(ctx,window.PeninsulaDialogue?.evaluate('walk:'+walkLevel,{x,y,dir,grid})||lastMessage||LT('walk.dialogDefault'),8,206,188,26,'dialogue');
+    PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
+    // The line types out and the mage's portrait shows in the corner of the view (dialogue-fx.js).
+    dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:137,y:101},clip:[8,23,188,136],render:()=>render()});
+    dialogueFx.line(window.PeninsulaDialogue?.evaluate('walk:'+walkLevel,{x,y,dir,grid})||lastMessage||LT('walk.dialogDefault'),8,206,188,26);dialogueFx.portrait();
     if(intro||won||failed){const popupButton=currentUI.modal(ctx,failed?LT('bear2.popupFailTitle'):won?village?LT('village3.popupTitle'):indoor?LT('house2.popupTitle'):LT('bear2.popupWonTitle'):'',failed?LT('bear2.popupFailBody'):lastMessage);hits=[];hit(popupButton.label,popupButton.x,popupButton.y,popupButton.w,popupButton.h,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
     drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);drawGameBorder(ctx);
   }

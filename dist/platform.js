@@ -43,6 +43,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  }
  const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
  function drawHero(){let index=0;if(p.hang)index=6;else if(!p.ground)index=5;else if(Math.abs(p.vx)>1)index=1+Math.floor(time*9)%4;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
+ let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT('platform5.heading'));
   currentUI.clip(ctx,8,23,304,136,()=>{ctx.save();ctx.translate(8,23);
@@ -50,7 +51,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    ctx.drawImage(im,Math.round((304-iw)/2),Math.round((136-ih)/2),iw,ih);
    for(const l of rooms[room].ledges){currentUI.clip(ctx,l.x,l.y,l.w,136-l.y,()=>{for(let sy=l.y+6;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y,64,32)});}drawHero();ctx.restore();
   });
-  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66,'dialogue');currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);
+  currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
+  // The line types out and the mage's portrait shows in the corner of the picture (dialogue-fx.js).
+  dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:253,y:101},clip:[8,23,304,136],render:()=>render()});
+  dialogueFx.line(p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66);dialogueFx.portrait();currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:LT('platform5.askHome'),labels:[LT('platform5.yes'),LT('platform5.no')],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
   }else if(state!=='play'){const b=currentUI.modal(ctx,state==='fallen'?LT('platform5.fallTitle'):LT('platform5.homeTitle'),state==='fallen'?LT('platform5.fallBody'):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);
