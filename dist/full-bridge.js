@@ -64,11 +64,12 @@ let sceneShown=null,scenePaused=false;
 // Intro 5 is shown without the cursor for START_DELAY seconds; then the cursor returns and «Начать игру» fades in.
 const START_DELAY=4,START_FADE=.8;let intro5Time=0;
 function drawStartPrompt(){
- const a=Math.max(0,Math.min(1,(intro5Time-START_DELAY)/START_FADE));controls.replaceChildren();if(a<=0)return;
- const w=128,h=20,x=(320-w)/2,y=212;
+ const a=Math.max(0,Math.min(1,(intro5Time-START_DELAY)/START_FADE));if(a<=0)return;const {x,y,w,h}=START_BUTTON;
  ctx.save();ctx.globalAlpha=a;panel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,LT('ui.startGame'),x,y,w,h,'buttons');ctx.restore();
- const el=document.createElement('button');el.className='hotspot';el.setAttribute('aria-label',LT('ui.startGame'));Object.assign(el.style,{left:x/3.2+'%',top:y/2.4+'%',width:w/3.2+'%',height:h/2.4+'%'});el.onclick=advanceStory;controls.append(el);
 }
+const START_BUTTON={x:96,y:212,w:128,h:20};
+// On intro 5 the only clickable spot is «Начать игру», once it shows (instead of the usual full-screen «Продолжить»).
+const syncHotspotsBase=syncHotspots;syncHotspots=function(){if(activeScene()==='intro5')buttons=intro5Time>=START_DELAY?[{...START_BUTTON,label:LT('ui.startGame'),fn:()=>advanceStory()}]:[];syncHotspotsBase()};
 // Nothing (Enter, Space, a click) moves past intro 5 before the button is there.
 const advanceStoryAnyTime=advanceStory;advanceStory=function(){if(activeScene()==='intro5'&&intro5Time<START_DELAY)return;advanceStoryAnyTime()};
 // "Назад" walks back through the screens shown in this session, one at a time.
