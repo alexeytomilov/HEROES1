@@ -4,7 +4,7 @@
 // leaves — flickering out, blown away like pixel sand, or both (settings «Как уходит»).
 // Settings live in the dialogue rules (PeninsulaDialogue.state.fx) and are edited in the right-hand column.
 window.PeninsulaDialogueFX=(()=>{
- const defaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.4,flickerOut:.5,leave:'flicker',sound:60};
+ const defaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.4,flickerOut:.5,leave:'flicker',sound:60,firstDelay:2,textHold:3,textFade:.8,textNoise:60,textDust:40};
  const FLY=.9,image=new Image(),instances=new Set();
  image.onload=()=>{for(const fx of instances)fx.reset(true)};image.src='assets/radio-mage.png?v=34x42';
  const settings=()=>({...defaults,...(window.PeninsulaDialogue?.state?.fx||{})});
@@ -39,37 +39,58 @@ window.PeninsulaDialogueFX=(()=>{
  // One per level: ctx to draw on, the text fonts, where the portrait sits (x, y) and the picture area it is
  // clipped to, and the level's own render function for the frames the effect needs while the level is still.
  function create({ctx,fonts,portrait,clip,render}){
-  let text=null,start=0,sprite=null,mode=null,typed=0,raf=0,own=false,outside=0,alive=false;
+  let text=null,start=0,sprite=null,mode=null,typed=0,raf=0,own=false,outside=0,alive=false,sounded=false,textMoving=false;
   // Our own frame: only when the level has not drawn for a moment; otherwise just keep watching.
   const tick=()=>{raf=0;if(!alive)return;if(performance.now()-outside>40){own=true;try{render()}finally{own=false}}else raf=requestAnimationFrame(tick)};
   const fx={
-   reset(redraw){start=performance.now();sprite=null;if(redraw&&text!==null){radio();render()}},
-   // Draws the typed part of `full` in the dialogue strip; returns nothing, remembers when typing ends.
+   reset(redraw){start=performance.now();sprite=null;sounded=false;if(redraw&&text!==null)render()},
+   // The level (re)starts: its next line is the first one again and waits `firstDelay` seconds.
+   levelStart(){text=null},
+   // Draws the line in the dialogue strip: typed letter by letter after an optional delay (the first line of a
+   // level waits `firstDelay` seconds so the picture is seen first); `textHold` seconds after it is typed every
+   // letter fades on its own schedule (`textNoise` spreads them, `textFade` is how long one letter takes) and
+   // the wind blows pixels off it (`textDust`, same wind as the portrait sand).
    line(full,x,y,w,h,role='dialogue'){
-    if(!own)outside=performance.now();
-    const T=PeninsulaText,s0=settings();if(full!==text){text=full;start=performance.now();sprite=null;if(full)radio()}
+    const now=performance.now();if(!own)outside=now;
+    const T=PeninsulaText,s0=settings();
+    if(full!==text){start=now+(text===null?s0.firstDelay*1000:0);text=full;sprite=null;sounded=false}
+    const sec=(now-start)/1000;if(!sounded&&sec>=0&&full){sounded=true;radio()}
     T.record(ctx,full,x,y,w,h,role);
     const {s,f,ratio,step}=T.metrics(role,fonts),pad=Math.min(s.padding,Math.max(0,Math.floor((w-1)/2))),rows=T.lines(T.text(full),w-pad*2,role,fonts);
-    const total=rows.reduce((n,r)=>n+[...r].length,0),sec=(performance.now()-start)/1000;
-    let left=Math.floor(sec*s0.typing),cx=null,cy=null;typed=total/s0.typing;
+    const total=rows.reduce((n,r)=>n+[...r].length,0);typed=total/s0.typing;
+    const fadeAt=typed+s0.textHold,spread=s0.textNoise/100*Math.max(.3,s0.textFade)*1.6,cw=Math.max(2,Math.round((f.glyphs['M']?.w||6)*ratio)),ch=Math.round(s.size);
+    const a=s0.angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),speed=s0.wind*1.4,dust=Math.round(s0.textDust/100*6);
+    let shown=Math.floor(sec*s0.typing),index=0,cx=null,cy=null,live=false;
     ctx.save();ctx.beginPath();ctx.rect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));ctx.clip();
     rows.forEach((row,i)=>{
-     const chars=[...row],part=chars.slice(0,Math.max(0,left)).join(''),rowX=s.align==='center'?Math.round(x+w/2-T.measure(row,role,fonts,true)/2):x+pad,rowY=y+s.offset+i*step;
-     if(part)T.line(ctx,part,rowX,rowY,role,fonts,'left',true);
-     if(left>=0&&(left<chars.length||i===rows.length-1)&&cx===null){cx=rowX+(part?T.measure(part,role,fonts,true)+s.letterSpacing:0);cy=rowY}
-     left-=chars.length;
+     const chars=[...row],rowX=s.align==='center'?Math.round(x+w/2-T.measure(row,role,fonts,true)/2):x+pad,rowY=y+s.offset+i*step;let prefix='';
+     chars.forEach(c=>{
+      const k=index++,cxL=rowX+(prefix?T.measure(prefix,role,fonts,true)+s.letterSpacing:0);prefix+=c;
+      if(k>=shown){if(cx===null){cx=cxL;cy=rowY}return}
+      const t0=fadeAt+hash(k*3.1+.3)*spread,u=(sec-t0)/Math.max(.05,s0.textFade);
+      if(u<1)live=true;
+      // The letter itself: full until its own moment, then fading with a little flicker of its own.
+      if(c.trim()&&u<1){ctx.globalAlpha=u<=0?1:Math.max(0,(1-u)*(.75+.25*hash(k+Math.floor(sec*20))));T.line(ctx,c,cxL,rowY,role,fonts,'left',true)}
+      // Pixels blown off the letter while it fades.
+      if(c.trim()&&u>0)for(let j=0;j<dust;j++){const r1=hash(k*7.3+j),r2=hash(k*3.7+j*1.9),r3=hash(k*5.1+j*2.3),tt=(sec-t0-r3*s0.textFade)*1;if(tt<=0||tt>FLY)continue;live=true;
+       const v=speed*(.5+r1)+8,px=cxL+r1*cw+dx*v*tt-dy*Math.sin(tt*9+r2*6)*1.5,py=rowY+r2*ch+dy*v*tt+dx*Math.sin(tt*9+r2*6)*1.5+(s0.wind<5?tt*tt*25:0);
+       ctx.globalAlpha=1-tt/FLY;ctx.fillStyle=s.color||'#e4e6e8';ctx.fillRect(Math.round(px),Math.round(py),1,1)}
+     });
+     if(cx===null&&shown>=index&&i===rows.length-1){cx=rowX+(prefix?T.measure(prefix,role,fonts,true)+s.letterSpacing:0);cy=rowY}
     });
-    // A block cursor the size of a letter: solid while typing, blinking once the line is complete.
-    if(cx!==null&&(sec<typed||Math.floor((sec-typed)*2.5)%2===0)){ctx.fillStyle=s.color||'#e4e6e8';ctx.fillRect(Math.round(cx),Math.round(cy),Math.max(2,Math.round((f.glyphs['M']?.w||6)*ratio)),Math.round(s.size))}
+    ctx.globalAlpha=1;
+    // A block cursor the size of a letter: solid while typing, blinking once typed, gone when the text leaves.
+    if(cx!==null&&sec>=0&&sec<fadeAt&&(sec<typed||Math.floor((sec-typed)*2.5)%2===0)){ctx.fillStyle=s.color||'#e4e6e8';ctx.fillRect(Math.round(cx),Math.round(cy),cw,ch)}
     ctx.restore();
+    textMoving=sec<0||sec<fadeAt||live;
    },
    // The portrait: a frame (1px border, dark ground) with the pixels inside. It flickers in over `appear` seconds;
    // from (typed + offset) it leaves: flickering out over `flickerOut` seconds, its pixels blown away with the wind
    // over `vanish` seconds (a flying pixel gets a one-pixel shadow so it reads on the picture), or both.
    portrait(){
     const s=settings();if(!sprite||mode!==s.pixels){sprite=pixels(s.pixels);mode=s.pixels}
-    const sec=(performance.now()-start)/1000;let moving=sec<typed+1;
-    if(sprite&&text){
+    const sec=(performance.now()-start)/1000;let moving=sec<typed+1||textMoving;
+    if(sprite&&text&&sec>=0){
      const {list,w:pw,h:ph}=sprite,a=s.angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),begin=Math.max(0,typed+s.offset),speed=s.wind*1.4;
      const sand=s.leave!=='flicker',flick=s.leave!=='sand',proj=p=>((p.x/pw-.5)*dx+(p.y/ph-.5)*dy)/1.42+.5;
      // Visibility of the frame and the pixels still in it: flicker in, steady, flicker out (or fade after the sand).
