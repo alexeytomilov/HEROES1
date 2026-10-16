@@ -53,7 +53,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   });
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
   // The line types out and the mage's portrait shows in the corner of the picture (dialogue-fx.js).
-  dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:253,y:101},clip:[8,23,304,136],render:()=>render()});
+  dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:271,y:110},clip:[8,23,304,136],render:()=>render()});
   dialogueFx.line(p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66);dialogueFx.portrait();currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:LT('platform5.askHome'),labels:[LT('platform5.yes'),LT('platform5.no')],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));

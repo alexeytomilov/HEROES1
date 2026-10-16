@@ -48,16 +48,11 @@ function cockpitPanel(d){
 }
 function cockpitRadio(d){
  const r=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
- // Upright antenna, right-hand keypad and a separate hanging microphone.
+ // Upright antenna, screen and keypad; no microphone or cord (the speaker's portrait sits beside it instead).
  r(268,44,2,64,'#151719');r(267,43,4,2,'#2b3030');r(266,104,6,10,'#171b1c');
  r(262,111,28,41,'#111517');r(264,112,24,38,'#22282a');r(264,110,8,3,'#343c3d');
  r(266,120,18,10,'#79afc7');r(267,121,16,1,'#a6c9d6');
  for(let row=0;row<3;row++)for(let col=0;col<3;col++){r(267+col*5,133+row*5,4,3,'#4b5558');r(267+col*5,133+row*5,4,1,'#788184')}
- r(241,116,16,20,'#161a1c');r(243,114,12,2,'#1c2224');
- for(let y=118;y<132;y+=2)r(243,y,12,1,'#354043');
- for(let y=137;y<160;y++){const x=247+Math.round(Math.sin((y-137)*.12)*2);r(x,y,2,1,'#111719')}
- for(let x=249;x<274;x++){const y=161+Math.round(Math.sin((x-249)/25*Math.PI)*5);r(x,y,1,2,'#111719')}
- for(let y=146;y<162;y+=3){r(290,y,7,1,'#13191a');r(291,y+1,5,1,'#303a3b')}
  clipped(266,119,19,11,()=>PeninsulaText.line(ctx,'145',275.5,118,'data',fonts,'center'));
 }
 // The radio line types out and the mage's portrait shows next to the radio (dialogue-fx.js).
@@ -75,7 +70,7 @@ function drawRace(){
  // One row of supplies; the radio messages run along the bottom to the frame edge.
  for(let row=0;row<1;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
  PeninsulaColors.box(ctx,7,205,306,28,'dialogue');
- radioFx=radioFx||PeninsulaDialogueFX.create({ctx,fonts,portrait:{x:184,y:62},clip:[8,23,304,136],render:()=>render()});
+ radioFx=radioFx||PeninsulaDialogueFX.create({ctx,fonts,portrait:{x:222,y:106},clip:[8,23,304,136],render:()=>render()});
  radioFx.line(raceDialog(d),8,206,304,26);
  cockpitRadio(d);
  radioFx.portrait();

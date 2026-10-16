@@ -1,11 +1,12 @@
 // Dialogue effects shared by every level with a dialogue strip (races, walks, platformer; not the shop and
 // the wanderer): the line types out letter by letter with a blinking block cursor, and the mage's 1-bit portrait
-// shows in the picture, then blows away like pixel sand once the text is typed.
+// shows in a small dark frame (light pixels on a dark ground), then blows away like pixel sand once the text is
+// typed; the empty frame fades after it.
 // Settings live in the dialogue rules (PeninsulaDialogue.state.fx) and are edited in the right-hand column.
 window.PeninsulaDialogueFX=(()=>{
  const defaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0,appear:.25};
  const FLY=.9,image=new Image(),instances=new Set();
- image.onload=()=>{for(const fx of instances)fx.reset(true)};image.src='assets/radio-mage.png';
+ image.onload=()=>{for(const fx of instances)fx.reset(true)};image.src='assets/radio-mage.png?v=34x42';
  const settings=()=>({...defaults,...(window.PeninsulaDialogue?.state?.fx||{})});
  // Any change of the settings (here or in another frame) replays the current line everywhere.
  window.addEventListener('dialogue-rules-change',()=>{for(const fx of instances)fx.reset(true)});
@@ -43,22 +44,25 @@ window.PeninsulaDialogueFX=(()=>{
     if(cx!==null&&(sec<typed||Math.floor((sec-typed)*2.5)%2===0)){ctx.fillStyle=s.color||'#e4e6e8';ctx.fillRect(Math.round(cx),Math.round(cy),Math.max(2,Math.round((f.glyphs['M']?.w||6)*ratio)),Math.round(s.size))}
     ctx.restore();
    },
-   // The portrait: fades in, then from (typed + offset) its pixels leave one by one, downwind side first,
-   // over `vanish` seconds and fly off with the wind. Each pixel has a one-pixel shadow so it reads on any picture.
+   // The portrait: a frame (1px border, dark ground) with the pixels inside; it fades in, then from (typed + offset)
+   // the pixels leave one by one, downwind side first, over `vanish` seconds and fly off with the wind (a flying
+   // pixel gets a one-pixel shadow so it reads on the picture); the empty frame fades out last.
    portrait(){
     const s=settings();if(!sprite||mode!==s.pixels){sprite=pixels(s.pixels);mode=s.pixels}
     const sec=(performance.now()-start)/1000;let moving=sec<typed+1;
     if(sprite&&text){
      const {list,w:pw,h:ph}=sprite,a=s.angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),begin=Math.max(0,typed+s.offset),appear=Math.min(1,sec/Math.max(.01,s.appear)),speed=s.wind*1.4;
      const proj=p=>((p.x/pw-.5)*dx+(p.y/ph-.5)*dy)/1.42+.5;
-     const ink=s.pixels==='dark'?'#0b0d0e':'#e9eef0',shade=s.pixels==='dark'?'rgba(233,238,240,.45)':'rgba(5,7,8,.6)';
+     const dark=s.pixels==='dark',ink=dark?'#14170f':'#e9eee0',shade=dark?'rgba(233,238,240,.45)':'rgba(5,7,8,.6)',ox=portrait.x+2,oy=portrait.y+2;
+     const gone=begin+s.vanish+FLY*.6,frame=appear*Math.max(0,Math.min(1,1-(sec-gone)/.35));
      ctx.save();ctx.beginPath();ctx.rect(...clip);ctx.clip();
+     if(frame>0){ctx.globalAlpha=frame;ctx.fillStyle=dark?'#d8dccf':'#d8dccf';ctx.fillRect(portrait.x,portrait.y,pw+4,ph+4);ctx.fillStyle=dark?'#c9cdbf':'#1d2119';ctx.fillRect(portrait.x+1,portrait.y+1,pw+2,ph+2)}
      for(const pass of [0,1])for(const p of list){
-      const release=begin+(1-(.75*proj(p)+.25*p.r))*s.vanish,t=sec-release;let px=portrait.x+p.x,py=portrait.y+p.y,alpha=appear;
+      const release=begin+(1-(.75*proj(p)+.25*p.r))*s.vanish,t=sec-release;let px=ox+p.x,py=oy+p.y,alpha=appear;if(!pass&&t<=0)continue;
       if(t>0){if(t>FLY)continue;const v=speed*(.55+p.j*.9),swirl=s.wind>0?Math.sin(t*9+p.k*6)*2.2:0;px+=dx*v*t-dy*swirl;py+=dy*v*t+dx*swirl+(s.wind<5?t*t*20:0);alpha*=1-t/FLY}
       ctx.globalAlpha=alpha;ctx.fillStyle=pass?ink:shade;ctx.fillRect(Math.round(px)+(pass?0:1),Math.round(py)+(pass?0:1),1,1);
      }
-     ctx.restore();moving=moving||sec<begin+s.vanish+FLY;
+     ctx.restore();moving=moving||sec<gone+.4;
     }
     // While anything still moves and the level itself is not redrawing every frame, ask for the next frame.
     alive=moving;if(moving&&!raf)raf=requestAnimationFrame(tick);

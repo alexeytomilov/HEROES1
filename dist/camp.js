@@ -124,7 +124,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     // The message under the scene is the shared Dialogue zone, as in the race and the camp.
     PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
     // The line types out and the mage's portrait shows in the corner of the view (dialogue-fx.js).
-    dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:137,y:101},clip:[8,23,188,136],render:()=>render()});
+    dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:155,y:110},clip:[8,23,188,136],render:()=>render()});
     dialogueFx.line(window.PeninsulaDialogue?.evaluate('walk:'+walkLevel,{x,y,dir,grid})||lastMessage||LT('walk.dialogDefault'),8,206,188,26);dialogueFx.portrait();
     if(intro||won||failed){const popupButton=currentUI.modal(ctx,failed?LT('bear2.popupFailTitle'):won?village?LT('village3.popupTitle'):indoor?LT('house2.popupTitle'):LT('bear2.popupWonTitle'):'',failed?LT('bear2.popupFailBody'):lastMessage);hits=[];hit(popupButton.label,popupButton.x,popupButton.y,popupButton.w,popupButton.h,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
     drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);drawGameBorder(ctx);
