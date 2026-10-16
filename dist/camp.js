@@ -53,7 +53,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     else if(village)objects=[{x:5.5,y:1.2,asset:'walk_table',height:.65},{x:5.5,y:.9,asset:'walk_shelf',height:1.2}];
     else objects=[{x:5.5,y:3.2,asset:'shore_wet',height:.12,ratio:3},{x:5.5,y:1.3,asset:'shore_tourists',height:.75,ratio:1.7},
       ...trashSpots.filter(o=>tile()!=='c'&&!collected.has(o.id)).map((o,i)=>({id:o.id,x:3.25+i*.5,y:2.1,asset:'camp_'+o.id,height:.12})),
-      ...(won?[{x:3.5,y:2.1,asset:'camp_tent',height:.6}]:[])];
+      ...(won?[{x:3.5,y:2.1,asset:'camp_tent_pitched',height:.75,ratio:72/42}]:[])];
     renderer.render(ctx,view,grid,x,y,dir,objects);
     // Nearby ground items must remain visible and reachable at the player's feet.
     if(!indoor&&!bear&&!village&&tile()==='c'&&!won)for(const o of trashSpots){

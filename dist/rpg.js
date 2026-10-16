@@ -2,8 +2,8 @@
 let rpgDialogueFx=null;
 let rpgGame=null;
 async function startRPG(){
- const files=['shore_ground','shore_north','shore_west','shore_wet','shore_tourists','walk_cliff','camp_tent','camp_bottle','camp_wrapper','rpg_portrait_knight','rpg_portrait_wanderer','rpg_portrait_mage'];
- const art=Object.fromEntries(await Promise.all(files.map(async key=>[key,await load('assets/'+key.replaceAll('_','-')+'.png?v=psd-2')])));
+ const files=['shore_ground','shore_north','shore_west','shore_wet','shore_tourists','walk_cliff','camp_tent','camp_tent_pitched','camp_bottle','camp_wrapper','rpg_portrait_knight','rpg_portrait_wanderer','rpg_portrait_mage'];
+ const art=Object.fromEntries(await Promise.all(files.map(async key=>[key,await load('assets/'+key.replaceAll('_','-')+'.png?v=tent-1')])));
  const renderer=window.createWalkView({images:art,level:'coast'});
  const map=await json('rpg-map.json?v=2'),cells=map.grid.map(row=>[...row]);
  const candidates=[];
@@ -45,7 +45,9 @@ async function startRPG(){
  function turn(amount){if(won||drag)return;dir=(dir+amount+4)%4;if(facingTrash())describe();else say(LT('camp1.look',{dir:directions[dir]}));}
  function inspect(){if(won)return;if(facingTrash()){describe();return;}say(reason()||LT('camp1.good'));}
  function collect(id){if(!facingTrash()||picked(id)||won)return;const a=ahead();collected.add(trashId(a.x,a.y,id));say(clean(a.x,a.y)?LT('camp1.allTrash'):LT('camp1.moreTrash'));}
- function install(){const why=reason();if(why){say(why);return false;}won=true;tentPosition={x:x+.5,y:y+.2};say(LT('camp1.won'));return true;}
+ function install(){const why=reason();if(why){say(why);return false;}won=true;
+  // The pitched tent stands on the free cell in front of the player, so it is in view; else in this cell.
+  const [fx,fy]=vectors[dir],ahead=grid[y+fy]?.[x+fx];tentPosition=ahead==='.'||ahead==='='?{x:x+.5+fx*.9,y:y+.5+fy*.9}:{x:x+.5,y:y+.2};say(LT('camp1.won'));return true;}
  function icon(key,a,b,w=24,h=24){ctx.drawImage(art[key],Math.round(a),Math.round(b),w,h);}
  function drawMap(){
   const size=8,left=201,top=94,width=108,height=64,cx=left+width/2,cy=top+height/2;
@@ -73,7 +75,7 @@ async function startRPG(){
   clipped(view.x,view.y,view.w,view.h,()=>{
    const objects=[...tourists.map(t=>({x:t.x+.5,y:t.y+.3,asset:'shore_tourists',height:.75,ratio:1.7})),
     ...piles.flatMap(p=>trash.filter(o=>!(facingTrash()&&p.x===ahead().x&&p.y===ahead().y)&&!collected.has(trashId(p.x,p.y,o.id))).map((o,i)=>({x:p.x+.25+i*.5,y:p.y+.1,asset:'camp_'+o.id,height:.12}))),
-    ...(won?[{...tentPosition,asset:'camp_tent',height:.6}]:[])];
+    ...(won?[{...tentPosition,asset:'camp_tent_pitched',height:.75,ratio:72/42}]:[])];
    renderer.render(ctx,view,grid,x,y,dir,objects);
    if(facingTrash()&&!won)for(const o of trash)if(!picked(o.id))icon('camp_'+o.id,o.x,o.y,o.w,o.h);
 
