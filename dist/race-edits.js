@@ -13,12 +13,18 @@
   meadow:['Луг','#668542'],lake:['Озеро','#8a9a9d'],cliffEdge:['Край обрыва','#9a968b'],abyss:['Обрыв','#b6babd'],fog:['Туман','#c8cbcd']
  };
  const sprites={jeep:'Джип',hiker:'Турист',goat:'Козёл',car:'Машина',pine:'Ель',birch:'Берёза',ypine:'Ёлочка',hole:'Яма',rock:'Камень',boulder:'Валун',tuft:'Трава',bollard:'Столбик',hut:'Домик'};
+ // The radio portrait of the mage: which pixels show, typing speed of the radio text and how the portrait
+ // blows away like pixel sand (start offset from the end of typing, how long it takes, wind strength and direction).
+ const radioDefaults={pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0};
+ const radioLimits={typing:[4,120],offset:[-5,5],vanish:[.2,6],wind:[0,100],angle:[0,359]};
+ const clampF=(v,[a,b],d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
  const clampN=(v,a,b)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Math.round(Number(v)))):0;
  const hex=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
  function normalize(v={}){
-  v=v&&typeof v==='object'?v:{};const out={modes:{},colors:{},sprites:{}};
+  v=v&&typeof v==='object'?v:{};const out={modes:{},colors:{},sprites:{},radio:{}};
   for(const m of Object.keys(modes)){const p=v.modes?.[m]?.profile;out.modes[m]={profile:p&&Array.isArray(p.curve)&&Array.isArray(p.hill)?{curve:Array.from({length:COLUMNS},(_,i)=>clampN(p.curve[i],-30,30)),hill:Array.from({length:COLUMNS},(_,i)=>clampN(p.hill[i],-10,10))}:null}}
   for(const [k,c]of Object.entries(v.colors||{}))if(colors[k]&&hex(c))out.colors[k]=c;
+  const rv=v.radio||{};out.radio.pixels=rv.pixels==='dark'?'dark':'light';for(const k of Object.keys(radioLimits))out.radio[k]=clampF(rv[k],radioLimits[k],radioDefaults[k]);
   for(const [k,s]of Object.entries(v.sprites||{}))if(sprites[k]&&typeof s==='string'&&(/^asset:[\w.-]+$/.test(s)||/^data:image\/(png|gif|webp);base64,/.test(s)))out.sprites[k]=s;
   return out;
  }
@@ -33,7 +39,7 @@
   if(!images[s]){const im=new Image;im.onload=changed;im.src=s.startsWith('asset:')?'assets/'+s.slice(6):s;images[s]=im}
   return images[s].complete&&images[s].naturalWidth?images[s]:null;
  }
- window.PeninsulaRace={key,COLUMNS,modes,colors,sprites,normalize,update,spriteImage,
+ window.PeninsulaRace={key,COLUMNS,modes,colors,sprites,normalize,update,spriteImage,radioDefaults,radioLimits,
   get state(){return state},
   color:(k,light=false)=>{const c=state.colors[k]||colors[k][1];return light?shade(c,1.04):c},
   profile:m=>state.modes[m]?.profile||null};

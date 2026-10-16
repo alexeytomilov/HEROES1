@@ -16,6 +16,7 @@
   '<div class="race-buttons"><button type="button" data-race-act="original">Начать с исходной</button><button type="button" data-race-act="smooth">Сгладить</button><button type="button" data-race-act="reset">Исходная трасса</button></div>';
  extra.innerHTML='<h2>Цвета и спрайты гонки</h2>'+
   '<h3>Цвета</h3><div class="race-colors"></div><button type="button" class="walk-reset" data-race-act="colors">Вернуть цвета</button>'+
+  '<h3>Портрет по рации</h3><p class="walk-hint">Когда маг говорит по рации, текст печатается по буквам с мигающим курсором, рядом с рацией проявляется его чёрно-белый портрет и, когда текст допечатан, рассыпается по ветру. Любое изменение здесь сразу проигрывает текущую реплику заново.</p><div class="race-radio"></div><button type="button" class="walk-reset" data-race-act="radio">Вернуть настройки портрета</button>'+
   '<h3>Спрайты</h3><p class="walk-hint">Картинка из папки игры (assets) или свой PNG с компьютера вместо нарисованного спрайта.</p><div class="race-sprites"></div><input type="file" accept="image/png,image/gif,image/webp" hidden data-race-file>';
  const clone=()=>JSON.parse(JSON.stringify(R.state));
  const setState=fn=>{const s=clone();fn(s);R.update(s)};
@@ -42,6 +43,15 @@
   const assetOpts='<option value="">Нарисованный</option>'+assetFiles.map(f=>'<option value="asset:'+f+'">'+f+'</option>').join('');
   root.querySelector('.race-sprites').innerHTML=Object.entries(R.sprites).map(([k,n])=>{const cur=R.state.sprites[k]||'';return '<div class="race-sprite"><span>'+n+'</span><select data-race-sprite="'+k+'">'+assetOpts+(cur.startsWith('data:')?'<option value="'+cur+'" selected>Свой файл</option>':'')+'</select><button type="button" data-race-upload="'+k+'" title="Выбрать картинку: окно откроется в папке assets игры">Файл…</button></div>'}).join('');
   for(const s of root.querySelectorAll('[data-race-sprite]')){const cur=R.state.sprites[s.dataset.raceSprite]||'';if(!cur.startsWith('data:'))s.value=cur}
+  radioPanel();
+ }
+ // Radio portrait settings: sliders write straight into the race edits; the race replays the line on change.
+ const radioFields=[['typing','Скорость печати, букв/с',1],['offset','Начало распада после текста, с',.1],['vanish','Скорость исчезновения (длится), с',.1],['wind','Сила ветра',1],['angle','Направление ветра, ° (0 — вправо, 90 — вниз)',1]];
+ function radioPanel(){
+  const host=root.querySelector('.race-radio'),r=R.state.radio;if(!host)return;
+  if(!host.firstChild)host.innerHTML='<label>Видны пиксели<select data-radio="pixels"><option value="light">Светлые</option><option value="dark">Тёмные</option></select></label>'+radioFields.map(([k,n,step])=>'<label class="walk-range">'+n+'<span><input data-radio="'+k+'" type="range" min="'+R.radioLimits[k][0]+'" max="'+R.radioLimits[k][1]+'" step="'+step+'"><output data-radio-out="'+k+'"></output></span></label>').join('');
+  host.querySelector('[data-radio="pixels"]').value=r.pixels;
+  for(const [k]of radioFields){const i=host.querySelector('[data-radio="'+k+'"]');if(document.activeElement!==i)i.value=r[k];host.querySelector('[data-radio-out="'+k+'"]').textContent=r[k]}
  }
  function paint(e,cv){
   const r=cv.getBoundingClientRect(),k=Math.max(0,Math.min(R.COLUMNS-1,Math.floor((e.clientX-r.left)/r.width*R.COLUMNS))),kind=cv.dataset.plot,max=ranges[kind];
@@ -87,9 +97,10 @@
   if(act==='smooth')setState(s=>{const p=s.modes[mode].profile;if(!p)return;for(const kind of ['curve','hill'])p[kind]=p[kind].map((v,i,a)=>Math.round((a[Math.max(0,i-1)]+2*v+a[Math.min(a.length-1,i+1)])/4))});
   if(act==='reset'&&confirm('Вернуть исходную форму трассы «'+R.modes[mode]+'»?'))setState(s=>{s.modes[mode].profile=null});
   if(act==='colors'&&confirm('Вернуть исходные цвета гонок?'))setState(s=>{s.colors={}});
+  if(act==='radio')setState(s=>{s.radio={...R.radioDefaults}});
   const up=e.target.closest('[data-race-upload]');if(up){uploadFor=up.dataset.raceUpload;pickSprite()}
  });
- on('input',e=>{const k=e.target.dataset.raceColor;if(k)setState(s=>{s.colors[k]=e.target.value})});
+ on('input',e=>{const k=e.target.dataset.raceColor;if(k)setState(s=>{s.colors[k]=e.target.value});const f=e.target.dataset.radio;if(f)setState(s=>{s.radio[f]=f==='pixels'?e.target.value:Number(e.target.value)})});
  on('change',e=>{
   if(e.target.matches('[data-race-mode]')){mode=e.target.value;sync();return}
   const k=e.target.dataset.raceSprite;if(k)setState(s=>{if(e.target.value)s.sprites[k]=e.target.value;else delete s.sprites[k]});

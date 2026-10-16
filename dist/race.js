@@ -60,6 +60,58 @@ function cockpitRadio(d){
  for(let y=146;y<162;y+=3){r(290,y,7,1,'#13191a');r(291,y+1,5,1,'#303a3b')}
  clipped(266,119,19,11,()=>PeninsulaText.line(ctx,'145',275.5,118,'data',fonts,'center'));
 }
+// Radio line: the mage's words type out letter by letter with a blinking block cursor, and his 1-bit portrait
+// shows next to the radio, then blows away like pixel sand once the text is typed (settings: race edits → radio).
+const radio={text:null,start:0,list:null,mode:null,raf:0,engineAt:0};
+const radioImage=new Image();radioImage.onload=()=>{radio.list=null;render()};radioImage.src='assets/radio-mage.png';
+const RADIO_X=184,RADIO_Y=62,RADIO_FADE_IN=.25,RADIO_FLY=.9;
+const radioSettings=()=>window.PeninsulaRace?.state?.radio||{pixels:'light',typing:30,offset:.4,vanish:1.6,wind:45,angle:0};
+function radioRestart(){radio.start=performance.now()}
+window.addEventListener('race-edits-change',()=>{radio.list=null;radioRestart();render()});
+// The visible pixels of the portrait (only the light or only the dark ones), each with its own random seed.
+function radioPixels(){
+ const s=radioSettings();if(radio.list&&radio.mode===s.pixels)return radio.list;
+ if(!radioImage.complete||!radioImage.naturalWidth)return null;
+ const c=document.createElement('canvas');c.width=radioImage.width;c.height=radioImage.height;const g=c.getContext('2d');g.drawImage(radioImage,0,0);
+ const d=g.getImageData(0,0,c.width,c.height).data,list=[];
+ for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){const o=(y*c.width+x)*4;if(d[o+3]<128||(d[o]>127)!==(s.pixels!=='dark'))continue;list.push({x,y,r:Math.random(),j:Math.random(),k:Math.random()})}
+ radio.mode=s.pixels;radio.list=list;radio.size=[c.width,c.height];return list;
+}
+// Types the line into the dialogue strip; returns the time (s) when the whole text is typed.
+function radioLine(full,x,y,w,h){
+ const T=PeninsulaText,role='dialogue';if(full!==radio.text){radio.text=full;radioRestart()}
+ T.record(ctx,full,x,y,w,h,role);
+ const {s,f,ratio,step}=T.metrics(role,fonts),pad=Math.min(s.padding,Math.max(0,Math.floor((w-1)/2))),rows=T.lines(T.text(full),w-pad*2,role,fonts);
+ const total=rows.reduce((n,r)=>n+[...r].length,0),speed=radioSettings().typing,sec=(performance.now()-radio.start)/1000;
+ let left=Math.floor(sec*speed),cx=null,cy=null;
+ clipped(x,y,w,h,()=>rows.forEach((row,i)=>{
+  const chars=[...row],part=chars.slice(0,Math.max(0,left)).join(''),rowX=s.align==='center'?Math.round(x+w/2-T.measure(row,role,fonts,true)/2):x+pad,rowY=y+s.offset+i*step;
+  if(part)T.line(ctx,part,rowX,rowY,role,fonts,'left',true);
+  if(left>=0&&(left<chars.length||i===rows.length-1)&&cx===null){cx=rowX+(part?T.measure(part,role,fonts,true)+s.letterSpacing:0);cy=rowY}
+  left-=chars.length;
+ }));
+ // A block cursor the size of a letter: solid while typing, blinking once the line is complete.
+ const typed=total/speed,blinkOn=sec<typed||Math.floor((sec-typed)*2.5)%2===0;
+ if(cx!==null&&blinkOn){ctx.fillStyle=s.color||'#e4e6e8';ctx.fillRect(Math.round(cx),Math.round(cy),Math.max(2,Math.round((f.glyphs['M']?.w||6)*ratio)),Math.round(s.size))}
+ return typed;
+}
+// The portrait: fades in, then from (typed + offset) its pixels leave one by one, downwind side first,
+// over `vanish` seconds and fly off with the wind. Returns true while anything is still moving.
+function radioPortrait(typed){
+ const list=radioPixels();if(!list||!radio.text)return false;
+ const s=radioSettings(),sec=(performance.now()-radio.start)/1000,[pw,ph]=radio.size,a=s.angle*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a);
+ const begin=Math.max(0,typed+s.offset),appear=Math.min(1,sec/RADIO_FADE_IN),speed=s.wind*1.4;
+ // Downwind pixels go first: order along the wind, a little noise so it crumbles like sand.
+ const proj=p=>((p.x/pw-.5)*dx+(p.y/ph-.5)*dy)/1.42+.5;
+ // Each pixel carries a one-pixel shadow (light pixels a dark one, dark pixels a light one), so the face reads on any road.
+ const ink=s.pixels==='dark'?'#0b0d0e':'#e9eef0',shade=s.pixels==='dark'?'rgba(233,238,240,.45)':'rgba(5,7,8,.6)';let alive=false;
+ clipped(8,23,304,136,()=>{for(const pass of [0,1])for(const p of list){
+  const release=begin+(1-(.75*proj(p)+.25*p.r))*s.vanish,t=sec-release;let px=RADIO_X+p.x,py=RADIO_Y+p.y,alpha=appear;
+  if(t>0){if(t>RADIO_FLY)continue;const v=speed*(.55+p.j*.9),swirl=Math.sin(t*9+p.k*6)*2.2*(s.wind>0?1:0);px+=dx*v*t-dy*swirl;py+=dy*v*t+dx*swirl+(s.wind<5?t*t*20:0);alpha*=1-t/RADIO_FLY}
+  alive=true;ctx.globalAlpha=alpha;ctx.fillStyle=pass?ink:shade;ctx.fillRect(Math.round(px)+(pass?0:1),Math.round(py)+(pass?0:1),1,1);
+ }});ctx.globalAlpha=1;
+ return alive||sec<begin+s.vanish+RADIO_FLY;
+}
 function drawRace(){
  const d=raceData;ctx.imageSmoothingEnabled=false;
  // Keep the shared six-pixel gutters inside the one-pixel outer frame.
@@ -73,8 +125,11 @@ function drawRace(){
  // One row of supplies; the radio messages run along the bottom to the frame edge.
  for(let row=0;row<1;row++)for(let col=0;col<4;col++){const i=row*4+col,x=198+col*29,y=176+row*29;PeninsulaColors.box(ctx,x,y,28,28,'inventory');if(d.inventory?.[i]&&draggedItem?.index!==i)inventoryIcon(i,x,y)}
  PeninsulaColors.box(ctx,7,205,306,28,'dialogue');
- block(raceDialog(d),8,206,304,26,{role:'dialogue'});
+ const typed=radioLine(raceDialog(d),8,206,304,26);
  cockpitRadio(d);
+ const moving=radioPortrait(typed),typing=(performance.now()-radio.start)/1000<typed+1;
+ // When the engine is stopped (finish, pause) the radio keeps animating on its own frames.
+ if((moving||typing)&&performance.now()-radio.engineAt>80&&!radio.raf)radio.raf=requestAnimationFrame(()=>{radio.raf=0;render()});
  if(draggedItem)inventoryIcon(draggedItem.index,draggedItem.x-14,draggedItem.y-14);
  heading(params.get('mode')==='fog'?LT('race.headingFog'):params.get('mode')==='home'?LT('race.headingHome'):LT('race.headingSredny'));
 }
@@ -91,7 +146,7 @@ function startRace(){
  canvas.addEventListener('pointerup',e=>drop(e));canvas.addEventListener('pointercancel',e=>drop(e,true));
  const bg=new Image(),near=new Image();let pending=2;const loaded=()=>{if(--pending)return;
   raceEngine=window.createFogRace({canvas:raceScene,inputSurface:canvas,mode:['fog','home'].includes(params.get('mode'))?params.get('mode'):'sredny',background:bg,nearBackground:near,viewportWidth:304,viewportHeight:136,
-   onRender:d=>{raceData=d;if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?LT('race.btnStart'):d.state==='over'?LT('race.btnRetry'):LT('race.btnOnWay');$('#race-start').disabled=d.state==='drive'||raceFinished;},
+   onRender:d=>{raceData=d;radio.engineAt=performance.now();if(params.get('embed')==='1'&&d.state==='clear'){raceFinished=true;raceEngine?.stop()}render();$('#race-start').textContent=d.state==='title'?LT('race.btnStart'):d.state==='over'?LT('race.btnRetry'):LT('race.btnOnWay');$('#race-start').disabled=d.state==='drive'||raceFinished;},
    onComplete:()=>{if(raceFinished)return;raceFinished=true;raceEngine.stop();render();$('#status').textContent=LT('race.statusArrived');$('#race-start').disabled=true;}
   });raceEngine.start();window.trip=raceEngine;
  };bg.onload=loaded;near.onload=loaded;bg.onerror=near.onerror=()=>{$('#status').textContent=LT('race.loadError')};bg.src='assets/mountains-far.png';near.src='assets/mountains-near-loop.png';
