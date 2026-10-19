@@ -9,7 +9,11 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  ];
  let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],finalAsked=false;
  for(const r of rooms){r.start.x=Math.round(r.start.x*.95);r.start.y=Math.round((r.start.y-23)*.65);r.exitY=Math.round((r.exitY-23)*.65);for(const l of r.ledges){l.x=Math.round(l.x*.95);l.w=Math.round(l.w*.95);l.y=Math.round((l.y-23)*.65)}}
- const speed=82,gravity=450,jumpSpeed=210,radius=5,height=24;
+ const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
+ // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
+ const STRIDE=9;let stride=0;
+ // The background is a little larger than the view and slides against the hero's position in the room.
+ const PARALLAX=.12;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
  function text(s,x,y,c='#dce5ed',align='left'){drawText(s,x,y,8,c,align)}
  function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hits.push({x,y,w,h,fn});}
@@ -25,7 +29,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   jumpBuffer=Math.max(0,jumpBuffer-dt);coyote=p.ground?.1:Math.max(0,coyote-dt);
   const direction=(keys.has('right')?1:0)-(keys.has('left')?1:0);
   if(p.hang){if(keys.has('down')){p.hang=null;p.vy=30;grabCooldown=.4;}else if(keys.has('up')||jumpBuffer>0){const ledge=p.hang;p.x=ledge.side>0?ledge.x+radius+1:ledge.x+ledge.w-radius-1;p.y=ledge.y;p.vy=0;p.ground=true;p.hang=null;jumpBuffer=0;}return;}
-  p.vx=direction*(keys.has('shift')?38:speed);if(direction)p.face=direction;
+  p.vx=direction*(keys.has('shift')?walkSpeed:speed);if(direction)p.face=direction;
   if(jumpBuffer>0&&coyote>0){p.vy=-jumpSpeed;p.ground=false;coyote=0;jumpBuffer=0;}
   const oldX=p.x,oldY=p.y;let nx=p.x+p.vx*dt;p.vy+=gravity*dt;let ny=p.y+p.vy*dt;p.ground=false;
   const ledges=rooms[room].ledges;
@@ -34,6 +38,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.vy>=0){let floor=999;for(const l of ledges)if(nx+radius>l.x+1&&nx-radius<l.x+l.w-1&&oldY<=l.y+1&&ny>=l.y)floor=Math.min(floor,l.y);if(floor<999){ny=floor;p.vy=0;p.ground=true;}}
   // A forgiving automatic catch makes short jumps over rivers manageable.
   if(!p.ground&&p.vy>=0&&direction&&grabCooldown===0){for(const l of ledges){const edge=direction>0?l.x:l.x+l.w,head=ny-height;if(Math.abs(nx-edge)<10&&head<l.y+8&&head>l.y-13&&oldY>l.y+3){p.hang={...l,side:direction};nx=edge-direction*(radius+1);ny=l.y+height-3;p.vy=0;announce(LT('platform5.sayHang'));break}}}
+  if(p.ground)stride+=Math.abs(nx-p.x);
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
   if(room===3){p.x=Math.max(radius,Math.min(134,p.x));if(p.ground&&p.x>=106&&!finalAsked)ask();}
@@ -42,13 +47,14 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.y>148){state='fallen';clearInput();announce(LT('platform5.sayFall'));}
  }
  const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
- function drawHero(){let index=0;if(p.hang)index=6;else if(!p.ground)index=5;else if(Math.abs(p.vx)>1)index=1+Math.floor(time*9)%4;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
+ function drawHero(){let index=0;if(p.hang)index=6;else if(!p.ground)index=5;else if(Math.abs(p.vx)>1)index=1+Math.floor(stride/STRIDE)%4;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT('platform5.heading'));
   currentUI.clip(ctx,8,23,304,136,()=>{ctx.save();ctx.translate(8,23);
-   const im=images['platform_bg'+(room+1)],scale=Math.max(304/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
-   ctx.drawImage(im,Math.round((304-iw)/2),Math.round((136-ih)/2),iw,ih);
+   const im=images['platform_bg'+(room+1)],scale=Math.max(304/im.width,136/im.height)*(1+PARALLAX),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
+   const fx=Math.max(0,Math.min(1,p.x/304)),fy=Math.max(0,Math.min(1,p.y/136));
+   ctx.drawImage(im,Math.round((304-iw)*fx),Math.round((136-ih)*(.5+(fy-.5)*.4)),iw,ih);
    for(const l of rooms[room].ledges){currentUI.clip(ctx,l.x,l.y,l.w,136-l.y,()=>{for(let sy=l.y+6;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y,64,32)});}drawHero();ctx.restore();
   });
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
