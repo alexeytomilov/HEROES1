@@ -57,10 +57,12 @@
     "map": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png",
+        "assets/screens/map-author-water.png",
+        "assets/screens/map-author-water-mask.png"
       ],
       "preview": "assets/screens/previews/map.png",
-      "note": "Изображение местности; маркеры и интерфейс рисуются кодом."
+      "note": "Авторская карта (рендер композиции Map из AE) неподвижна; поверх моря по маске идёт анимированный тайл воды 64×64, 40 кадров (map-water.js). Маркеры и интерфейс рисуются кодом."
     },
     "hero0": {
       "kind": "character",
@@ -342,7 +344,7 @@
     "entry0": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png"
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
@@ -358,7 +360,7 @@
     "entry1": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png"
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
@@ -374,7 +376,7 @@
     "entry2": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png"
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
@@ -390,7 +392,7 @@
     "entry3": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png"
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
@@ -406,7 +408,7 @@
     "entry4": {
       "kind": "map",
       "files": [
-        "assets/screens/map-terrain-expanded.png"
+        "assets/screens/map-author.png"
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
