@@ -11,7 +11,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  for(const r of rooms){r.start.x=Math.round(r.start.x*.95);r.start.y=Math.round((r.start.y-23)*.65);r.exitY=Math.round((r.exitY-23)*.65);for(const l of r.ledges){l.x=Math.round(l.x*.95);l.w=Math.round(l.w*.95);l.y=Math.round((l.y-23)*.65)}}
  const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
- const STRIDE=9;let stride=0;
+ const STRIDE=5;let stride=0;
  // The background is a little larger than the view and slides against the hero's position in the room.
  const PARALLAX=.12;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
@@ -47,7 +47,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.y>148){state='fallen';clearInput();announce(LT('platform5.sayFall'));}
  }
  const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
- function drawHero(){let index=0;if(p.hang)index=6;else if(!p.ground)index=5;else if(Math.abs(p.vx)>1)index=1+Math.floor(stride/STRIDE)%4;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
+ function drawHero(){
+  // Walking: 8 frames (contact, down, passing, up for each leg), drawn at the idle sprite's scale so the body's bob stays visible.
+  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)],b=spriteBounds[0],s=height/b[3];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,0,0,im.width,im.height,-Math.round((b[0]+b[2]/2)*s),-Math.round((b[1]+b[3])*s),Math.round(im.width*s),Math.round(im.height*s));ctx.restore();return}
+  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT('platform5.heading'));
