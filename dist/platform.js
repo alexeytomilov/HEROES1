@@ -22,6 +22,19 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   r.start.x=r.map(r.start.x);r.width=ROOM_W;
  }
  const finalAsk=rooms[3].map(106),finalStop=rooms[3].map(134);
+ // Mario-style props: stone bridges hang above the ground, lens blocks are hit with the head to take a photo.
+ // Every lens hangs within a jump of the ground or of a bridge below it; bridges are 36 px above the ground.
+ const BRIDGE_H=10,LENS=14;
+ const props=[
+  {bridges:[{x:410,y:73,w:96}],lenses:[{x:262,y:61},{x:452,y:25}]},
+  {bridges:[{x:110,y:73,w:96}],lenses:[{x:333,y:44},{x:150,y:25}]},
+  {bridges:[{x:250,y:48,w:64}],lenses:[{x:90,y:24},{x:500,y:23}]},
+  {bridges:[],lenses:[{x:200,y:23}]}
+ ];
+ rooms.forEach((r,i)=>{r.bridges=props[i].bridges;r.lenses=props[i].lenses.map(l=>({...l,used:false,bump:0}))});
+ const solids=()=>[...rooms[room].bridges.map(b=>({...b,h:BRIDGE_H})),...rooms[room].lenses.map(l=>({x:l.x,y:l.y,w:LENS,h:LENS,lens:l}))];
+ let photos=[],photoPending=false,flash=0;
+ function snap(lens){lens.used=true;lens.bump=.15;flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
@@ -38,7 +51,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function ask(){p.vx=0;state='question';choice=0;clearInput();announce(LT('platform5.sayAsk'));render()}
  function jump(){jumpBuffer=.14}
  function update(dt){
-  time+=dt;if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
+  time+=dt;flash=Math.max(0,flash-dt);for(const l of rooms[room].lenses)l.bump=Math.max(0,l.bump-dt);if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
   jumpBuffer=Math.max(0,jumpBuffer-dt);coyote=p.ground?.1:Math.max(0,coyote-dt);
   const direction=(keys.has('right')?1:0)-(keys.has('left')?1:0);
   if(p.hang){if(keys.has('down')){p.hang=null;p.vy=30;grabCooldown=.4;}else if(keys.has('up')||jumpBuffer>0){const ledge=p.hang;p.x=ledge.side>0?ledge.x+radius+1:ledge.x+ledge.w-radius-1;p.y=ledge.y;p.vy=0;p.ground=true;p.hang=null;jumpBuffer=0;}return;}
@@ -49,6 +62,14 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   // Each natural rock ledge is solid below its top surface.
   for(const l of ledges){if(oldY>l.y+1&&oldY-height<H&&nx+radius>l.x&&nx-radius<l.x+l.w){if(oldX+radius<=l.x){nx=l.x-radius;p.vx=0}else if(oldX-radius>=l.x+l.w){nx=l.x+l.w+radius;p.vx=0}}}
   if(p.vy>=0){let floor=999;for(const l of ledges)if(nx+radius>l.x+1&&nx-radius<l.x+l.w-1&&oldY<=l.y+1&&ny>=l.y)floor=Math.min(floor,l.y);if(floor<999){ny=floor;p.vy=0;p.ground=true;}}
+  // Bridges and lens blocks: stand on their tops, stop at their sides, bump the head on their undersides.
+  for(const b of solids()){const top=b.y,bottom=b.y+b.h;
+   if(ny-height<bottom&&ny>top+1&&!(oldX+radius>b.x&&oldX-radius<b.x+b.w)){if(oldX+radius<=b.x&&nx+radius>b.x){nx=b.x-radius;p.vx=0}else if(oldX-radius>=b.x+b.w&&nx-radius<b.x+b.w){nx=b.x+b.w+radius;p.vx=0}}
+   if(nx+radius>b.x&&nx-radius<b.x+b.w){
+    if(p.vy>=0&&oldY<=top+1&&ny>=top){ny=top;p.vy=0;p.ground=true}
+    else if(p.vy<0&&oldY-height>=bottom-1&&ny-height<bottom){ny=bottom+height;p.vy=0;if(b.lens&&!b.lens.used)snap(b.lens)}
+   }
+  }
   // A forgiving automatic catch makes short jumps over rivers manageable.
   if(!p.ground&&p.vy>=0&&direction&&grabCooldown===0){for(const l of ledges){const edge=direction>0?l.x:l.x+l.w,head=ny-height;if(Math.abs(nx-edge)<10&&head<l.y+8&&head>l.y-13&&oldY>l.y+3){p.hang={...l,side:direction};nx=edge-direction*(radius+1);ny=l.y+height-3;p.vy=0;announce(LT('platform5.sayHang'));break}}}
   if(p.ground)stride+=Math.abs(nx-p.x);
@@ -73,12 +94,17 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    ctx.drawImage(im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
    ctx.translate(-camX,0);
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
-   for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}drawHero();ctx.restore();
+   for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y,b.w,BRIDGE_H,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=32)ctx.drawImage(images.platform_bridge,sx,b.y)});
+   for(const l of rooms[room].lenses)ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y-Math.round(Math.sin(l.bump/.15*Math.PI)*3));
+   drawHero();ctx.restore();
+   // A photo is the view at the moment of the hit, before the flash, on a small white print.
+   if(photoPending){photoPending=false;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.fillStyle='#e8e4d8';g.fillRect(0,0,24,24);g.imageSmoothingEnabled=true;g.drawImage(canvas,8,23,304,136,2,2,20,15);photos.push(c)}
+   if(flash>0){ctx.fillStyle='rgba(255,255,255,'+(flash/.18*.8).toFixed(2)+')';ctx.fillRect(8,23,304,136)}
   });
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
   // The line types out and the mage's portrait shows in the corner of the picture (dialogue-fx.js).
   dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:271,y:110},clip:[8,23,304,136],render:()=>render()});
-  dialogueFx.line(p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66);dialogueFx.portrait();currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);
+  dialogueFx.line(p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66);dialogueFx.portrait();currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);photos.slice(0,8).forEach((ph,i)=>ctx.drawImage(ph,200+i%4*29,178+Math.floor(i/4)*29));
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:LT('platform5.askHome'),labels:[LT('platform5.yes'),LT('platform5.no')],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
   }else if(state!=='play'){const b=currentUI.modal(ctx,state==='fallen'?LT('platform5.fallTitle'):LT('platform5.homeTitle'),state==='fallen'?LT('platform5.fallBody'):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);
@@ -89,5 +115,5 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  window.addEventListener('keydown',e=>{if(!active)return;if(e.key==='r'||e.key==='R'){e.preventDefault();retry();return;}const k=keyMap[e.key];if(!k)return;e.preventDefault();if(!e.repeat)press(k);keys.add(k);});
  window.addEventListener('keyup',e=>{if(active)keys.delete(keyMap[e.key]);});window.addEventListener('blur',()=>{if(active)clearInput()});
  inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();h.fn();}});
- return{snapshot:()=>({room,state,player:{...p},rooms}),update,press,start(){active=true;dialogueFx?.levelStart();spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
+ return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
 };
