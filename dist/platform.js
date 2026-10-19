@@ -1,4 +1,4 @@
-// Game 5: four fixed screens through the Khibiny, with a final overlook.
+// Game 5: four rooms through the Khibiny, each twice as wide as the view and scrolling with the hero, with a final overlook.
 window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,drawText,announce,onExit,onComplete=null}){
  const ctx=canvas.getContext('2d'),keys=new Set(),W=304,H=136;
  const rooms=[
@@ -9,11 +9,24 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  ];
  let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],finalAsked=false;
  for(const r of rooms){r.start.x=Math.round(r.start.x*.95);r.start.y=Math.round((r.start.y-23)*.65);r.exitY=Math.round((r.exitY-23)*.65);for(const l of r.ledges){l.x=Math.round(l.x*.95);l.w=Math.round(l.w*.95);l.y=Math.round((l.y-23)*.65)}}
+ // Rooms are twice as wide as the view: stretches with ledges get longer, the gaps between ledges keep their size.
+ const ROOM_W=W*2;
+ for(const r of rooms){
+  const orig=r.ledges.map(l=>({...l}));
+  const edges=[...new Set([0,W,...orig.flatMap(l=>[l.x,Math.min(W,l.x+l.w)])])].filter(x=>x<=W).sort((a,b)=>a-b);
+  const covered=(a,b)=>orig.some(l=>l.x<b&&l.x+l.w>a);
+  let cov=0,gap=0;for(let i=0;i<edges.length-1;i++){const d=edges[i+1]-edges[i];if(covered(edges[i],edges[i+1]))cov+=d;else gap+=d}
+  const k=(ROOM_W-gap)/cov;
+  r.map=x=>{let out=0;for(let i=0;i<edges.length-1;i++){const a=edges[i],b=edges[i+1];if(x<=a)break;const d=Math.min(x,b)-a;out+=covered(a,b)?d*k:d}return Math.round(out+Math.max(0,x-W))};
+  for(const l of r.ledges){const e=r.map(l.x+l.w);l.x=r.map(l.x);l.w=e-l.x}
+  r.start.x=r.map(r.start.x);r.width=ROOM_W;
+ }
+ const finalAsk=rooms[3].map(106),finalStop=rooms[3].map(134);
  const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
- // The background is a little larger than the view and slides against the hero's position in the room.
- const PARALLAX=.12;
+ // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
+ const PARALLAX=.35;let camX=0;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
  function text(s,x,y,c='#dce5ed',align='left'){drawText(s,x,y,8,c,align)}
  function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hits.push({x,y,w,h,fn});}
@@ -41,9 +54,9 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.ground)stride+=Math.abs(nx-p.x);
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
-  if(room===3){p.x=Math.max(radius,Math.min(134,p.x));if(p.ground&&p.x>=106&&!finalAsked)ask();}
-  else if(p.x>W+radius){spawn(room+1);return;}
-  if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=291;p.y=rooms[previous].exitY;p.face=-1;}
+  if(room===3){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked)ask();}
+  else if(p.x>rooms[room].width+radius){spawn(room+1);return;}
+  if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
   if(p.y>148){state='fallen';clearInput();announce(LT('platform5.sayFall'));}
  }
  const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
@@ -55,10 +68,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT('platform5.heading'));
   currentUI.clip(ctx,8,23,304,136,()=>{ctx.save();ctx.translate(8,23);
-   const im=images['platform_bg'+(room+1)],scale=Math.max(304/im.width,136/im.height)*(1+PARALLAX),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
-   const fx=Math.max(0,Math.min(1,p.x/304)),fy=Math.max(0,Math.min(1,p.y/136));
-   ctx.drawImage(im,Math.round((304-iw)*fx),Math.round((136-ih)*(.5+(fy-.5)*.4)),iw,ih);
-   for(const l of rooms[room].ledges){currentUI.clip(ctx,l.x,l.y,l.w,136-l.y,()=>{for(let sy=l.y+6;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y,64,32)});}drawHero();ctx.restore();
+   const im=images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
+   const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
+   ctx.drawImage(im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
+   ctx.translate(-camX,0);
+   // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
+   for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}drawHero();ctx.restore();
   });
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
   // The line types out and the mage's portrait shows in the corner of the picture (dialogue-fx.js).
