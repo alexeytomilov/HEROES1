@@ -24,14 +24,24 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const finalAsk=rooms[3].map(106),finalStop=rooms[3].map(134);
  // Mario-style props: stone bridges hang above the ground, lens blocks are hit with the head to take a photo.
  // Every lens hangs within a jump of the ground or of a bridge below it; bridges are 36 px above the ground.
- const BRIDGE_H=10,LENS=14;
+ // Under each bridge the ground opens into a chasm wider than a jump, with a waterfall: the bridge is the only way over.
+ const BRIDGE_H=12,LENS=14;
  const props=[
-  {bridges:[{x:410,y:73,w:96}],lenses:[{x:262,y:61},{x:452,y:25}]},
-  {bridges:[{x:110,y:73,w:96}],lenses:[{x:333,y:44},{x:150,y:25}]},
-  {bridges:[{x:250,y:48,w:64}],lenses:[{x:90,y:24},{x:500,y:23}]},
+  {bridges:[{x:400,y:73,w:128}],lenses:[{x:262,y:61},{x:457,y:25}]},
+  {bridges:[{x:80,y:73,w:128}],lenses:[{x:333,y:44},{x:137,y:25}]},
+  {bridges:[{x:230,y:48,w:128}],lenses:[{x:90,y:24},{x:500,y:23}]},
   {bridges:[],lenses:[{x:200,y:23}]}
  ];
- rooms.forEach((r,i)=>{r.bridges=props[i].bridges;r.lenses=props[i].lenses.map(l=>({...l,used:false,bump:0}))});
+ rooms.forEach((r,i)=>{r.bridges=props[i].bridges;r.lenses=props[i].lenses.map(l=>({...l,used:false,bump:0}));
+  for(const b of r.bridges){const a=b.x+12,z=b.x+b.w-12;r.ledges=r.ledges.flatMap(l=>l.y<=b.y||l.x>=z||l.x+l.w<=a?[l]:[...(l.x<a?[{...l,w:a-l.x}]:[]),...(l.x+l.w>z?[{...l,x:z,w:l.x+l.w-z}]:[])])}
+  // gaps in the ground, each with a waterfall starting at the higher of its two edges
+  const cover=[...r.ledges].sort((a,b)=>a.x-b.x);r.falls=[];let x=0,lastY=cover[0].y;
+  for(const l of cover){if(l.x>x+1)r.falls.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}
+  if(x<r.width-1)r.falls.push({x,w:r.width-x,y:lastY-2});
+ });
+ // A seamless 32x64 tile of falling water, scrolled downwards every frame.
+ const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
+  for(let x=0;x<32;x++){const phase=(x*37)%64,len=10+(x*13)%14,edge=x%8===0;for(let y=0;y<64;y++){const v=(y+phase)%64;let k=v<len?(v<3?4:3):v<len+8?2:1;if(edge)k=Math.max(0,k-2);g.fillStyle=cols[k];g.fillRect(x,y,1,1)}}return c})();
  const solids=()=>[...rooms[room].bridges.map(b=>({...b,h:BRIDGE_H})),...rooms[room].lenses.map(l=>({x:l.x,y:l.y,w:LENS,h:LENS,lens:l}))];
  let photos=[],photoPending=false,flash=0;
  function snap(lens){lens.used=true;lens.bump=.15;flash=.18;photoPending=true;announce(LT('platform5.photo'))}
@@ -93,8 +103,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
    ctx.drawImage(im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
    ctx.translate(-camX,0);
+   // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
+   for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=f.x;tx<f.x+f.w;tx+=32)ctx.drawImage(fallTile,tx,ty);
+    ctx.fillStyle='#e4f0f4';for(let x=f.x;x<f.x+f.w;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}
+    for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.12+i*.08)+')';ctx.fillRect(f.x,136-24+i*6,f.w,6)}})}
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
-   for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y,b.w,BRIDGE_H,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=32)ctx.drawImage(images.platform_bridge,sx,b.y)});
+   for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
    for(const l of rooms[room].lenses)ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y-Math.round(Math.sin(l.bump/.15*Math.PI)*3));
    drawHero();ctx.restore();
    // A photo is the view at the moment of the hit, before the flash, on a small white print.

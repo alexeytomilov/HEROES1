@@ -1,7 +1,7 @@
 """Draw the platformer's floating props in the colours of the rock ledge: a stone-bridge tile and the lens block.
 
 Usage: py tools/build-platform-props.py <assets dir> <gen dir>
-platform-bridge.png     32x10 tile of two staggered rows of stones with moss on top (repeats sideways)
+platform-bridge.png     48x12 tile of rounded boulders wedged together with moss on top (repeats sideways)
 platform-lens.png       14x14 stone block with a camera lens, hit from below to take a photo
 platform-lens-used.png  the same block once the photo is taken: dull glass, no glint
 """
@@ -26,19 +26,25 @@ def stone(img, x0, y0, w, h, tone=0):
             put(img, x, y, c)
     put(img, x0 + 1, y0, STONE[3])   # a glint on the top edge
 
-# Bridge tile: mortar everywhere, then stones; widths add up to the tile width so it repeats seamlessly.
-bridge = Image.new('RGBA', (32, 10), MORTAR)
-x = 0
-for i, w in enumerate([7, 9, 8, 8]):
-    stone(bridge, x, 2, w - 1, 4, tone=i % 2); x += w
-x = -4
-for i, w in enumerate([8, 9, 7, 8, 4]):
-    if x + w > 0: stone(bridge, max(0, x), 6, min(w - 1, w - 1 + x if x < 0 else w - 1), 4, tone=(i + 1) % 2)
-    x += w
-for x in range(32):  # moss along the top, thicker in tufts
-    put(bridge, x, 1, MOSS[1 if x % 5 else 2])
-    if x % 7 in (2, 3): put(bridge, x, 0, MOSS[0])
-    if x % 9 == 4: put(bridge, x, 2, MOSS[0])
+# Bridge tile: rounded boulders of different sizes and shades wedged together, moss on top, dark gaps
+# between them. Stones stay inside the tile so it repeats sideways without cut stones.
+bridge = Image.new('RGBA', (48, 12), (0, 0, 0, 0))
+from PIL import ImageDraw
+bd = ImageDraw.Draw(bridge)
+bd.rectangle([0, 3, 47, 11], fill=MORTAR)
+ROCKS = [(4, 6, 4, 4, 1), (12, 7, 5, 4, 0), (20, 5, 4, 3, 1), (27, 7, 5, 4, 0), (35, 6, 4, 4, 1), (43, 7, 4, 4, 0),
+         (8, 10, 4, 2, 0), (17, 10, 4, 2, 1), (24, 10, 3, 2, 0), (32, 10, 4, 2, 1), (40, 10, 4, 2, 0)]
+for cx, cy, rx, ry, tone in ROCKS:
+    body, light, dark = STONE[1 + tone], STONE[2 + tone], STONE[0]
+    bd.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=MORTAR[:3])
+    bd.ellipse([cx - rx + 1, cy - ry + 1, cx + rx - 1, cy + ry - 1], fill=dark)
+    bd.ellipse([cx - rx + 1, cy - ry + 1, cx + rx - 2, cy + ry - 2], fill=body)
+    bd.line([(cx - rx + 2, cy - ry + 1), (cx + rx - 3, cy - ry + 1)], fill=light)
+    put(bridge, cx - rx + 2, cy - ry + 2, STONE[3])
+for x in range(48):  # moss creeping over the top of the stones
+    if x % 6 in (1, 2, 3) or x % 11 == 7: put(bridge, x, 2, MOSS[1 if x % 3 else 2])
+    if x % 6 == 2 or x % 13 == 5: put(bridge, x, 1, MOSS[0])
+    if x % 9 == 4: put(bridge, x, 3, MOSS[0])
 
 def lens(used):
     img = Image.new('RGBA', (14, 14), (0, 0, 0, 0))
@@ -61,7 +67,7 @@ def lens(used):
     return img
 
 os.makedirs(gen, exist_ok=True)
-for name, img, genname in [('platform-bridge.png', bridge, 'platform-bridge_stone_32x10.png'),
+for name, img, genname in [('platform-bridge.png', bridge, 'platform-bridge_boulders_48x12.png'),
                            ('platform-lens.png', lens(False), 'platform-lens_block_14x14.png'),
                            ('platform-lens-used.png', lens(True), 'platform-lens_block-used_14x14.png')]:
     img.save(os.path.join(assets, name)); img.save(os.path.join(gen, genname))
