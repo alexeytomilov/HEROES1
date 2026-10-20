@@ -34,10 +34,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  ];
  rooms.forEach((r,i)=>{r.bridges=props[i].bridges;r.lenses=props[i].lenses.map(l=>({...l,used:false,bump:0}));
   for(const b of r.bridges){const a=b.x+12,z=b.x+b.w-12;r.ledges=r.ledges.flatMap(l=>l.y<=b.y||l.x>=z||l.x+l.w<=a?[l]:[...(l.x<a?[{...l,w:a-l.x}]:[]),...(l.x+l.w>z?[{...l,x:z,w:l.x+l.w-z}]:[])])}
-  // gaps in the ground, each with a waterfall starting at the higher of its two edges
+  // gaps between two pieces of ground, each a dark chasm with a waterfall starting at the higher edge;
+  // the open end of the last room is just the view, not a gap
   const cover=[...r.ledges].sort((a,b)=>a.x-b.x);r.falls=[];let x=0,lastY=cover[0].y;
   for(const l of cover){if(l.x>x+1)r.falls.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}
-  if(x<r.width-1)r.falls.push({x,w:r.width-x,y:lastY-2});
  });
  // A seamless 32x64 tile of falling water, scrolled downwards every frame.
  const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
@@ -104,9 +104,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    ctx.drawImage(im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
    ctx.translate(-camX,0);
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
-   for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=f.x;tx<f.x+f.w;tx+=32)ctx.drawImage(fallTile,tx,ty);
-    ctx.fillStyle='#e4f0f4';for(let x=f.x;x<f.x+f.w;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}
-    for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.12+i*.08)+')';ctx.fillRect(f.x,136-24+i*6,f.w,6)}})}
+   for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const g=ctx.createLinearGradient(0,f.y,0,136);g.addColorStop(0,'#2a3034');g.addColorStop(1,'#0c1012');ctx.fillStyle=g;ctx.fillRect(f.x,f.y+4,f.w,132-f.y);
+    // the water is narrower than the chasm, so the dark rock shows on both sides and it reads as a fall, not a wall
+    const wx=f.x+Math.min(8,Math.floor(f.w*.15)),ww=f.w-2*(wx-f.x);currentUI.clip(ctx,wx,f.y,ww,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=wx;tx<wx+ww;tx+=32)ctx.drawImage(fallTile,tx,ty);
+    ctx.fillStyle='rgba(12,16,18,.35)';ctx.fillRect(wx,f.y,2,136-f.y);ctx.fillRect(wx+ww-2,f.y,2,136-f.y);
+    ctx.fillStyle='#e4f0f4';for(let x=wx;x<wx+ww;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}});
+    currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(f.x,136-20+i*5,f.w,5)}})}
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
    for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
    for(const l of rooms[room].lenses)ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y-Math.round(Math.sin(l.bump/.15*Math.PI)*3));
