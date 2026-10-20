@@ -42,7 +42,7 @@ function makeSprite(def, wpx, o){
     const c = mk(wpx, Math.max(1, Math.round(file.height*wpx/file.width))), x = c.getContext('2d');
     x.imageSmoothingEnabled = false;
     if (o.flip){ x.translate(wpx, 0); x.scale(-1, 1); }
-    x.drawImage(file, 0, 0, wpx, c.height);
+    x.drawImage(window.PeninsulaColors ? PeninsulaColors.adjust(file, 'race') : file, 0, 0, wpx, c.height);
     if (o.fog > 0){ x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation = 'source-atop'; x.globalAlpha = o.fog; x.fillStyle = FOG; x.fillRect(0, 0, wpx, c.height); }
     return c;
   }
@@ -87,7 +87,7 @@ function makeSprite(def, wpx, o){
 const spriteCache = new Map();
 function getSprite(def, wpx, o){
   o = o || {};
-  const key = `${def.id}|${wpx}|${o.flip?1:0}|${o.frame||0}|${o.front?1:0}|${o.brake?1:0}|${o.fog||0}|${o.v||''}`;
+  const key = `${def.id}|${wpx}|${o.flip?1:0}|${o.frame||0}|${o.front?1:0}|${o.brake?1:0}|${o.fog||0}|${o.v||''}|${window.PeninsulaColors?.adjustVersion||0}`;
   let c = spriteCache.get(key);
   if (c){ spriteCache.delete(key); spriteCache.set(key, c); return c; }
   c = makeSprite(def, wpx, o);
@@ -1050,14 +1050,15 @@ function render(now){
   if (mtnA > .01){
     ctx.globalAlpha = mtnA;
     const ox = ((-bgOffset*.035) % MTN_W + MTN_W) % MTN_W;
-    ctx.drawImage(MOUNTAINS, Math.round(ox) - MTN_W, HZ - 56); ctx.drawImage(MOUNTAINS, Math.round(ox), HZ - 56);
+    const mtn = window.PeninsulaColors ? PeninsulaColors.adjust(MOUNTAINS, 'race') : MOUNTAINS;
+    ctx.drawImage(mtn, Math.round(ox) - MTN_W, HZ - 56); ctx.drawImage(mtn, Math.round(ox), HZ - 56);
     ctx.globalAlpha = 1;
   }
   ctx.fillStyle = FOG; ctx.fillRect(-4, HZ, W + 8, H - HZ + 4);
   if(coastal && background){
     const bs=W/background.width,by=Math.round(HZ-62*bs);
     // Layers keep the far image's scale; the near strip is a seamless loop of its own width.
-    function layer(image,factor){if(!image)return;const shift=Math.round(-bgOffset*factor),iw=Math.round(image.width*bs),ih=Math.round(image.height*bs),start=((shift%iw)+iw)%iw-iw;for(let x=start;x<W;x+=iw)ctx.drawImage(image,x,by,iw,ih)}
+    function layer(image,factor){if(!image)return;image=window.PeninsulaColors?PeninsulaColors.adjust(image,'race'):image;const shift=Math.round(-bgOffset*factor),iw=Math.round(image.width*bs),ih=Math.round(image.height*bs),start=((shift%iw)+iw)%iw-iw;for(let x=start;x<W;x+=iw)ctx.drawImage(image,x,by,iw,ih)}
     layer(background,.22);layer(nearBackground,.85);
   }
 

@@ -2,14 +2,14 @@
 window.createWalkView=function({images,indoor=false,forest=false,level=null}){
  const w=188,h=136,horizon=45,focal=94,eye=.45,output=document.createElement('canvas');output.width=w;output.height=h;
  const g=output.getContext('2d'),frame=g.createImageData(w,h),cache={};
- function texture(key){if(cache[key])return cache[key];const im=images[key]||window.PeninsulaWalk?.image(key);if(!im)return null;const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.drawImage(im,0,0,128,128);return cache[key]=q.getImageData(0,0,128,128).data;}
- const floor=texture(indoor?'walk_floor':forest?'bear_floor':'shore_ground'),wall=texture(indoor?'walk_wall':forest?'bear_wall':'walk_cliff');
- const sea=texture('shore_west'),sky=texture('shore_north');
+ // Pixels are cached per walk/race adjustment version (color-presets.js), so a change of levels or hue redraws them.
+ let cacheVersion=0;function texture(key){const ver=window.PeninsulaColors?.adjustVersion||0;if(ver!==cacheVersion){for(const k in cache)delete cache[k];cacheVersion=ver}const ck=key;if(cache[ck])return cache[ck];const im=images[key]||window.PeninsulaWalk?.image(key);if(!im)return null;const c=document.createElement('canvas');c.width=128;c.height=128;const q=c.getContext('2d');q.imageSmoothingEnabled=false;q.drawImage(im,0,0,128,128);const data=q.getImageData(0,0,128,128).data;return cache[ck]=window.PeninsulaColors?PeninsulaColors.adjustPixels(data,'walk'):data;}
+ const floorKey=indoor?'walk_floor':forest?'bear_floor':'shore_ground',wallKey=indoor?'walk_wall':forest?'bear_wall':'walk_cliff';
  function sample(data,u,v){return (((v%128+128)%128)*128+(u%128+128)%128)*4}
  // Walk edits (walk-edits.js) choose the floor, a texture per wall cell and sprite replacements for this level.
  const W=window.PeninsulaWalk,edited=k=>level&&W?texture(k):null;
  function render(ctx,view,grid,x,y,dir,objects=[]){
-  const floorTex=edited(W?.floorTexture(level))||floor,skyTex=edited(W?.skyTexture(level))||sky,seaTex=edited(W?.waterTexture(level))||sea,wallAt=(mx,my,face)=>edited(W?.wallTexture(level,mx,my,face))||wall;let hx=0,hy=0,hf='n';
+  const floor=texture(floorKey),wall=texture(wallKey),floorTex=edited(W?.floorTexture(level))||floor,skyTex=edited(W?.skyTexture(level))||texture('shore_north'),seaTex=edited(W?.waterTexture(level))||texture('shore_west'),wallAt=(mx,my,face)=>edited(W?.wallTexture(level,mx,my,face))||wall;let hx=0,hy=0,hf='n';
   const vectors=[[0,-1],[1,0],[0,1],[-1,0]], [fx,fy]=vectors[dir],rx=-fy,ry=fx,px=x+.5,py=y+.5,zbuf=new Float32Array(w).fill(999),d=frame.data;
   const cell=(a,b)=>grid[Math.floor(b)]?.[Math.floor(a)]|| (indoor?'#':'~');
   // Floor texture per cell (walk edits), looked up once per cell for this frame.
