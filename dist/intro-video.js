@@ -9,9 +9,10 @@ window.PeninsulaIntroVideo=(()=>{
  // Each intro lasts exactly as long as its piece of the video.
  const duration=n=>sheets?.[n]?sheets[n].frames/FPS:null;
  // Text sits in the black band under the picture; intro 5 is a full-screen picture without text.
+ // The text comes in line by line, the same way and with the same settings as on story screens and victories.
  function text(ctx,n){
-  if(n===1)currentUI.roleBlock(ctx,LT('ui.firstScreen'),8,182,304,52,'firstScreen');
-  else if(n<5){const body=window.PENINSULA_STORY?.nodes?.['intro'+n]?.body;if(body)currentUI.roleBlock(ctx,body,8,182,304,52,'narrator')}
+  if(n===1)currentUI.revealBlock(ctx,LT('ui.firstScreen'),8,182,304,52,'firstScreen','intro1');
+  else if(n<5){const body=window.PENINSULA_STORY?.nodes?.['intro'+n]?.body;if(body)currentUI.revealBlock(ctx,body,8,182,304,52,'narrator','intro'+n)}
  }
  function motion(n){
   let elapsed=0,last=null,paused=false;
