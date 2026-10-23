@@ -2,6 +2,7 @@
 // type: story — screen with a picture and text (hold = display time, ms); question — Yes/No (next / no);
 // game — a level (game = which level); victory — reward screen; epilogue — the final screen.
 // Special targets: hero — character creation, map — the map, title — intro 1.
+// off — the screen is switched off: nothing leads to it and it is not in the screens list (the text says how to return it).
 window.PENINSULA_STORY = {
   "chapterQuestions": [
     "ПРОДОЛЖИТЬ ПУТЬ?",
@@ -223,9 +224,10 @@ window.PENINSULA_STORY = {
     "platform5": {
       "type": "game",
       "game": "platform",
-      "next": "5.2"
+      "next": "home"
     },
     "5.2": {
+      "off": "Выключен по просьбе автора: после платформера сразу вопрос «Поехать домой?». Чтобы вернуть экран, у platform5 поставить next: 5.2 и убрать off.",
       "type": "story",
       "image": "platform_bg4",
       "body": "Вы собрали множество материалов, должны получиться классные рилзы.",
