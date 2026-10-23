@@ -26,15 +26,21 @@
  function openSettings(kind,role){if(!role)return;const panel=kind==='color'?window.PeninsulaColorSettings:window.PeninsulaTextSettings;if(panel){panel.select(role);if(kind==='color'&&role==='question')window.PeninsulaSettingsFlash(document.querySelector('#scene-settings .popup-size'))}else if(window.parent!==window)window.parent.postMessage({type:'settings-select',kind,role},location.origin)}
  window.PeninsulaSettingsFlash=(...els)=>{for(const el of els){if(!el)continue;el.classList.remove('settings-flash');void el.offsetWidth;el.classList.add('settings-flash');el.scrollIntoView({block:'nearest'})}};
  window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source!==window&&e.source?.parent===window&&e.data?.type==='settings-select')openSettings(e.data.kind,e.data.role)});
+ window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source?.parent===window&&e.data?.type==='text-edit-open'&&typeof e.data.original==='string')open({original:e.data.original},null)});
  function place(el,h){el.style.left=(h.r.left+h.x*h.k)+'px';el.style.top=(h.r.top+h.y*h.k)+'px';el.style.width=(h.w*h.k)+'px';el.style.height=(h.h*h.k)+'px'}
  function close(){editor?.remove();editor=null}
- function open(h,e){close();const panel=document.createElement('div');panel.className='text-edit-panel';
+ // Inside an embedded level the window opens in the full game page, beside the game; the new words reach the
+ // level through the shared browser storage.
+ function open(h,e){if(window.parent!==window){try{if(window.parent.PeninsulaTextEdit){window.parent.postMessage({type:'text-edit-open',original:h.original},location.origin);return}}catch{}}close();const panel=document.createElement('div');panel.className='text-edit-panel';
   panel.innerHTML='<small>Новый текст. Перенос строки — Enter.</small><textarea></textarea><div class="row"><button data-act="save">Сохранить</button><button data-act="reset">Вернуть исходный</button><button data-act="cancel">Отмена</button></div>';
   const area=panel.querySelector('textarea');area.value=T.text(h.original);
   panel.addEventListener('click',ev=>{const act=ev.target.dataset?.act;if(!act)return;if(act==='save')T.setOverride(h.original,area.value);if(act==='reset')T.setOverride(h.original,null);close()});
   panel.addEventListener('keydown',ev=>{if(ev.key==='Escape')close();if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey)){T.setOverride(h.original,area.value);close()}});
   document.body.append(panel);editor=panel;
-  const w=panel.offsetWidth,ht=panel.offsetHeight,left=Math.max(8,Math.min(innerWidth-w-8,e.clientX-w/2)),top=e.clientY+16+ht<innerHeight?e.clientY+16:Math.max(8,e.clientY-ht-16);
+  // The window opens beside the game (right, else left, else below), never over the picture.
+  const w=panel.offsetWidth,ht=panel.offsetHeight,g=(document.querySelector('#frame')||h.r?.c||document.body).getBoundingClientRect?.()||h.r;
+  let left,top=Math.max(8,Math.min(innerHeight-ht-8,g.top));
+  if(g.right+12+w<=innerWidth-8)left=g.right+12;else if(g.left-12-w>=8)left=g.left-12-w;else{left=Math.max(8,Math.min(innerWidth-w-8,g.left));top=Math.min(innerHeight-ht-8,g.bottom+12)}
   panel.style.left=left+'px';panel.style.top=top+'px';area.focus();area.select()}
  const inEditor=e=>editor&&editor.contains(e.target);
  // While editing, clicks on the game only pick text and never reach the game itself.
