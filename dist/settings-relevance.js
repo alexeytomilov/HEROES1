@@ -40,7 +40,10 @@
    const selBtn=textHost.querySelector('[data-preset="'+window.PeninsulaTextSettings?.selected+'"]');if(selBtn?.hidden&&firstVisible)firstVisible.click();
    showBox(textHost,!!firstVisible)}
   // Walk and race editors.
-  for(const sel of ['.walk-sidebar','.minimap-sidebar'])showBox(document.querySelector(sel),!!mode);
+  // On the map the walk column holds only the «Точки на большой карте» panel.
+  const onMap=!mode&&window.journey?.snapshot?.().screen==='map',walkSide=document.querySelector('.walk-sidebar');
+  showBox(walkSide,!!mode||onMap);showBox(document.querySelector('.minimap-sidebar'),!!mode);
+  if(walkSide)for(const el of walkSide.children)if(el.id!=='map-points-settings'){const d=onMap?'none':'';if(el.style.display!==d)el.style.display=d}
  }
  setInterval(update,400);
 })();

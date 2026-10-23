@@ -14,9 +14,10 @@
  window.PeninsulaMapPoints={defaults,get,
   draw(c,x,y,state){const m=get();shape(c,x,y,m.size,m.roundOut,m.ringColor);shape(c,x,y,m.size-2*m.ring,m.roundIn,state==='visited'?m.visited:state==='selected'?m.selected:m.fill)},
   hitSize:()=>Math.max(13,get().size+4)};
- // Panel under the colour settings, only while the map is on screen.
- const after=document.querySelector('#color-settings');if(!after)return;
- const host=document.createElement('section');host.id='map-points-settings';host.setAttribute('aria-label','Точки на большой карте');host.hidden=true;after.after(host);
+ // Panel in the right-hand column next to the game, only while the map is on screen (settings-relevance.js
+ // shows that column on the map and hides the walk and race editors in it).
+ const side=document.querySelector('.walk-sidebar');if(!side)return;
+ const host=document.createElement('section');host.id='map-points-settings';host.setAttribute('aria-label','Точки на большой карте');host.hidden=true;side.prepend(host);
  const num=(k,l,a,b)=>'<label>'+l+'<div class="texture-control"><input data-mp="'+k+'" type="range" min="'+a+'" max="'+b+'" step="1"><input aria-label="'+l+'" data-mp="'+k+'" type="number" min="'+a+'" max="'+b+'" step="1"></div></label>';
  const col=(k,l)=>'<label>'+l+'<input data-mp="'+k+'" type="color"></label>';
  host.innerHTML='<h2>Точки на большой карте</h2>'+num('size','Размер, px',3,25)+num('ring','Толщина ободка, px',0,8)+num('roundOut','Скругление ободка (квадрат — круг)',0,100)+num('roundIn','Скругление точки (квадрат — круг)',0,100)+
