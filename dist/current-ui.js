@@ -3,7 +3,26 @@ window.currentUI={rpgPortraits:{},images:{},glyphs:{},fonts:{},layouts:[],assets
 try{Object.assign(currentUI.settings,JSON.parse(localStorage.getItem('peninsula-layout-settings')||'{}'))}catch{}
 const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>resolve(im);im.onerror=()=>reject(Error(path));im.src=path});
 const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
+// Character selection idle: three native frames, played 1–2–3–2 at the title's wind tempo.
+currentUI.characterSheets={};
+currentUI.characterIdle={
+ key:null,elapsed:0,phase:0,
+ tick(dt,key,playing=true){
+  if(key!==this.key){this.key=key;this.elapsed=0;this.phase=0;return !!key}
+  if(!key||!playing)return false;
+  this.elapsed+=Math.max(0,dt);
+  const next=[0,1,2,1][Math.floor(this.elapsed/.52)%4],changed=next!==this.phase;
+  this.phase=next;return changed;
+ },
+ draw(c,key){
+  const name=key.replace('hero-',''),im=currentUI.characterSheets[name];if(!im)return;
+  const phase=this.key===key?this.phase:0;
+  // Keep the existing 1px portrait border; source and destination use the same pixel grid.
+  currentUI.clip(c,200,23,113,158,()=>c.drawImage(im,phase*115,0,115,160,199,22,115,160));
+ }
+};
 currentUI.ready=Promise.all([
+ ...['wanderer','mage','knight'].map(async name=>currentUI.characterSheets[name]=await uiLoad('assets/characters/idle/'+name+'.webp?r=wind3-v1')),
  PeninsulaVictoryAnimation.ready,
  ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png?v=light-1')),
  ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
@@ -45,6 +64,7 @@ currentUI.layout=(c,key)=>{const layout=currentUI.layouts.find(s=>s.key===key);i
 };
 currentUI.hero=(c,key)=>{
  currentUI.layout(c,key);
+ currentUI.characterIdle.draw(c,key);
  const texts=currentUI.layouts.find(s=>s.key===key).items.filter(n=>n.type==='TEXT'&&n.text),get=s=>texts.find(n=>n.id.endsWith(s));
  // Hero texts come from the level text catalog (heroes.*), keyed by the layout's hero name.
  const hk=key.replace('hero-',''),name={text:LT('heroes.'+hk+'_name')},labels={text:LT('heroes.statLabels')},values={text:LT('heroes.'+hk+'_stats')},ability={text:LT('heroes.'+hk+'_caste')+'\n'+LT('heroes.'+hk+'_ability')},description={text:LT('heroes.'+hk+'_description')};

@@ -114,13 +114,14 @@ function buildPopupControls(append=false){
 function fullIntroAnimate(now){
  trackScreen();levelNext.disabled=!gameScreens.includes(screen);if(levelRestart)levelRestart.disabled=!canRestart();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
+ const heroIdleChanged=currentUI.characterIdle.tick(dt,screen==='hero'?['hero-wanderer','hero-mage','hero-knight'][hero]:null,visible&&!scenePaused);
  const victory1=screen==='story'&&journeyNode==='win1';
  window.PeninsulaVictoryAnimation?.tick(dt,victory1,visible&&!scenePaused);
  for(const [key,motion]of Object.entries(fullIntroMotions))motion.tick(now,visible&&key===id);
  if(id==='intro5')intro5Time+=visible&&!scenePaused?dt:0;document.querySelector('#frame').classList.toggle('cursor-hidden',id==='intro5'&&intro5Time<START_DELAY);
  // Intro 5 does not move on by itself: it waits for «Начать игру».
  if(sceneClock.tick(dt,visible&&!scenePaused)){if(id==='intro1')startJourney();else if(id!=='intro5')advanceStory()}
- else if(fullIntroMotions[id]||victory1)render();
+ else if(fullIntroMotions[id]||victory1||heroIdleChanged)render();
  requestAnimationFrame(fullIntroAnimate);
 }
 // "С начала" resets progress and returns to the first intro, even when it is already shown.
