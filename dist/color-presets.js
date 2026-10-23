@@ -4,16 +4,16 @@
 // The same settings hold the adjustments (levels, hue/saturation) for the textures of the walks and races.
 (()=>{
  const key='peninsula-color-presets-v1';
- const names={heading:'Заголовок',storyImage:'Экран картинка',narrator:'Экран текст',situation:'Ситуация',dialogue:'Диалог',question:'Вопрос',buttons:'Кнопки интерфейса',tabs:'Вкладки',power:'Power',stats:'Характеристики',inventory:'Инвентарь',default:'Дефолт'};
+ const names={heading:'Заголовок',storyImage:'Экран картинка',narrator:'Экран текст',situation:'Ситуация',dialogue:'Диалог',question:'Вопрос',buttons:'Кнопки интерфейса',tabs:'Вкладки',power:'Power',stats:'Характеристики',inventory:'Инвентарь',menu:'Меню',default:'Дефолт'};
  // New zones start from the surface they were drawn with before, so saved colors are kept.
- const inherits={question:'dialogue',tabs:'buttons',power:'default',stats:'default',inventory:'default'};
+ const inherits={question:'dialogue',tabs:'buttons',menu:'buttons',power:'default',stats:'default',inventory:'default'};
  // Texture files in assets/ that can be picked for a layer; uploaded files are added to the state.
  const textures={'latest-stone':'Камень (интерфейс)','stone-granite':'Гранит','stone-slate':'Сланец','walk-wall':'Стена','walk-floor':'Пол','walk-cliff':'Скала','walk-road':'Дорога','bear-wall':'Лес: стена','bear-floor':'Лес: земля','shore-ground':'Берег','ground-tundra':'Тундра','ground-path':'Тропа'};
  const blends={'source-over':'Обычный','multiply':'Умножение','screen':'Экран','overlay':'Перекрытие','soft-light':'Мягкий свет','hard-light':'Жёсткий свет','color-dodge':'Осветление основы','color-burn':'Затемнение основы','darken':'Замена тёмным','lighten':'Замена светлым','hue':'Цветовой тон','saturation':'Насыщенность','color':'Цветность','luminosity':'Яркость'};
  const adjustGroups={walk:'Бродилки',race:'Гонки'};
  const adjustDefaults={hue:0,saturation:0,lightness:0,black:0,white:255,gamma:100};
  const MAX_LAYERS=4;
- const defaults=Object.fromEntries(Object.keys(names).map(id=>[id,{background:['heading','situation'].includes(id)?'#293640':['buttons','tabs'].includes(id)?'#655848':'#11171c',border:'#91a1ad',borderOpacity:100,layers:[],overlay:{color:'#000000',opacity:0,blend:'source-over'},gradient:{a:'#ffffff',b:'#000000',aPos:0,bPos:100,dir:'v',opacity:0,blend:'soft-light'}}]));
+ const defaults=Object.fromEntries(Object.keys(names).map(id=>[id,{background:['heading','situation'].includes(id)?'#293640':['buttons','tabs','menu'].includes(id)?'#655848':'#11171c',border:'#91a1ad',accent:'#e0533d',borderOpacity:100,layers:[],overlay:{color:'#000000',opacity:0,blend:'source-over'},gradient:{a:'#ffffff',b:'#000000',aPos:0,bPos:100,dir:'v',opacity:0,blend:'soft-light'}}]));
  const color=(v,d)=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)?v:d;
  const num=(v,a,b,d)=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Math.round(Math.max(a,Math.min(b,Number(v)))):d;
  const blend=(v,d)=>blends[v]?v:d;
@@ -24,7 +24,7 @@
   const legacy=!Array.isArray(v.layers)&&num(v.textureOpacity,0,100,0)>0?[{file:'latest-stone',opacity:num(v.textureOpacity,0,100,0)}]:[];
   const layers=(Array.isArray(v.layers)?v.layers:legacy).filter(l=>l&&fileOk(l.file)).slice(0,MAX_LAYERS).map(l=>({file:l.file,opacity:num(l.opacity,0,100,100),x:num(l.x,-999,999,0),y:num(l.y,-999,999,0),blend:blend(l.blend,'source-over')}));
   const o=v.overlay||{},g=v.gradient||{};
-  return {background:color(v.background,d.background),border:color(v.border,d.border),borderOpacity:num(v.borderOpacity,0,100,100),layers,
+  return {background:color(v.background,d.background),border:color(v.border,d.border),accent:color(v.accent,d.accent),borderOpacity:num(v.borderOpacity,0,100,100),layers,
    overlay:{color:color(o.color,d.overlay.color),opacity:num(o.opacity,0,100,0),blend:blend(o.blend,'source-over')},
    gradient:{a:color(g.a,d.gradient.a),b:color(g.b,d.gradient.b),aPos:num(g.aPos,0,100,0),bPos:num(g.bPos,0,100,100),dir:g.dir==='h'?'h':'v',opacity:num(g.opacity,0,100,0),blend:blend(g.blend,'soft-light')}};
  }
@@ -103,7 +103,7 @@
    for(const l of s.layers){const im=image(l.file);if(!im||l.opacity<=0)continue;c.globalAlpha=alpha*l.opacity/100;c.globalCompositeOperation=l.blend;const tw=im.naturalWidth,th=im.naturalHeight,sx=x+((l.x%tw)+tw)%tw-tw,sy=y+((l.y%th)+th)%th-th;for(let dy=sy;dy<y+h;dy+=th)for(let dx=sx;dx<x+w;dx+=tw)c.drawImage(im,dx,dy)}
    if(s.overlay.opacity>0){c.globalAlpha=alpha*s.overlay.opacity/100;c.globalCompositeOperation=s.overlay.blend;c.fillStyle=s.overlay.color;c.fillRect(x,y,w,h)}
    const g=s.gradient;if(g.opacity>0){const gr=g.dir==='h'?c.createLinearGradient(x,0,x+w,0):c.createLinearGradient(0,y,0,y+h),a=Math.min(g.aPos,g.bPos),b=Math.max(g.aPos,g.bPos),[ca,cb]=g.aPos<=g.bPos?[g.a,g.b]:[g.b,g.a];gr.addColorStop(a/100,ca);gr.addColorStop(b/100,cb);c.globalAlpha=alpha*g.opacity/100;c.globalCompositeOperation=g.blend;c.fillStyle=gr;c.fillRect(x,y,w,h)}
-   if(role==='buttons')api.emboss(c,x,y,w,h);
+   if(role==='buttons'||role==='menu')api.emboss(c,x,y,w,h);
    c.restore()},
   emboss(c,x,y,w,h){const e=state.emboss;if(!e.light&&!e.dark)return;const n=Math.min(e.width,Math.floor(w/2),Math.floor(h/2)),top=e.dir[0]==='t',left=e.dir[1]==='l',alpha=c.globalAlpha;c.globalCompositeOperation='source-over';
    const band=(light,horizontal,first)=>{const a=light?e.light:e.dark;if(!a)return;c.globalAlpha=alpha*a/100;c.fillStyle=light?'#ffffff':'#000000';for(let i=0;i<n;i++){if(horizontal)c.fillRect(x+i,first?y+i:y+h-1-i,w-2*i,1);else c.fillRect(first?x+i:x+w-1-i,y+i+1,1,h-2*i-2)}};
