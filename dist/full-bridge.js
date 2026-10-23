@@ -61,9 +61,13 @@ function syncScenePanel(id){
   const n=Number(id.slice(5)),s=PeninsulaIntroVideo.sheets?.[n];sceneHost.oninput=null;
   sceneHost.innerHTML='<h2>Заставка '+n+'</h2><p>'+(s?'Видео Intro Main v4, кадры '+s.first+'–'+s.last+' · '+PeninsulaIntroVideo.duration(n).toFixed(2).replace(/\.?0+$/,'')+' с ('+PeninsulaIntroVideo.FPS+' кадров/с)':'Загрузка видео…')+'</p>';if(!s)return;
  }else{
-  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>';
+  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+
+   '<h3>Появление текста</h3>'+[['gap','Пауза между строками, с',0,5,.1],['fade','Проявление строки, с',.05,8,.05],['opacity','Начальная видимость, %',0,100,1],['rise','Подъём строки, px',0,30,1],['dark','Начальное затемнение, %',0,100,1]].map(([k,l,a,b,st])=>'<label class="number">'+l+'<input data-reveal="'+k+'" type="number" min="'+a+'" max="'+b+'" step="'+st+'"></label>').join('')+'<button type="button" data-reveal-replay>Показать ещё раз</button>';
   const input=sceneHost.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
-  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)})};
+  for(const e of sceneHost.querySelectorAll('[data-reveal]'))e.value=PeninsulaScenes.story.reveal[e.dataset.reveal];
+  // A change shows the text coming in again, so the effect is seen at once.
+  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)});const k=e.target.dataset?.reveal;if(k&&e.target.value!==''){PeninsulaScenes.updateStory({reveal:{...PeninsulaScenes.story.reveal,[k]:Number(e.target.value)}});currentUI.resetReveal?.();render()}};
+  sceneHost.onclick=e=>{if(e.target.closest('[data-reveal-replay]')){currentUI.resetReveal?.();render()}};
  }
  scenePanelKey=panelKey;
 }

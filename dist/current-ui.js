@@ -93,7 +93,7 @@ currentUI.roleBlock=(c,s,x,y,w,h,role='narrator')=>PeninsulaText.block(c,s,x,y,w
 let revealKey=null,revealStart=0,revealFrame=0;
 currentUI.revealBlock=(c,s,x,y,w,h,role,key)=>{const now=performance.now();if(key!==revealKey){revealKey=key;revealStart=now}
  const t=window.PeninsulaTextEdit?.on?1e9:(now-revealStart)/1000,rows=PeninsulaText.block(c,s,x,y,w,h,role,currentUI.fonts,t);
- if(t<rows*PeninsulaText.REVEAL_GAP+PeninsulaText.REVEAL_FADE&&!revealFrame)revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(revealKey===key&&typeof window.render==='function')try{window.render()}catch{}})};
+ const R=PeninsulaText.reveal();if(t<rows*R.gap+R.fade&&!revealFrame)revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(revealKey===key&&typeof window.render==='function')try{window.render()}catch{}})};
 currentUI.resetReveal=()=>{revealKey=null};
 currentUI.block=(c,s,x,y,w,h)=>currentUI.roleBlock(c,s,x,y,w,h,'narrator');
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.roleBlock(c,currentUI.case(title),1,2,318,20,'heading')};
