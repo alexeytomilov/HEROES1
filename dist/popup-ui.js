@@ -1,9 +1,10 @@
 // One native-pixel renderer and geometry for every journey question/message.
+// The title menu zone (title-menu.js) keeps its size and place here too: width, height, top, shift from the centre.
 // Button size, gap and a shift of the button row (x, y) are set in the settings panel.
 // The scene behind stays as it is (no dimming), and the chosen button has no extra inner frame.
 (()=>{
- const defaults={width:260,height:150,padding:10,fontSize:13,lineStep:15,buttonWidth:100,buttonHeight:24,gap:8,buttonX:0,buttonY:0};
- const bounds={width:[120,318],height:[60,228],padding:[4,24],lineStep:[13,24],buttonWidth:[50,140],buttonHeight:[12,60],gap:[0,120],buttonX:[-150,150],buttonY:[-220,220]};
+ const defaults={width:260,height:150,padding:10,fontSize:13,lineStep:15,buttonWidth:100,buttonHeight:24,gap:8,buttonX:0,buttonY:0,menuWidth:140,menuHeight:36,menuX:0,menuY:200};
+ const bounds={width:[120,318],height:[60,228],padding:[4,24],lineStep:[13,24],buttonWidth:[50,140],buttonHeight:[12,60],gap:[0,120],buttonX:[-150,150],buttonY:[-220,220],menuWidth:[40,318],menuHeight:[12,120],menuX:[-150,150],menuY:[0,228]};
  // Width and height are set in game pixels and drawn exactly as set.
  // A window saved with the former "small" size keeps its 200×110 look.
  const normalize=v=>{const out={...defaults};if(v?.size==='small')v={...v,width:200,height:110,size:undefined};for(const [k,[a,b]]of Object.entries(bounds))out[k]=Math.round(Math.max(a,Math.min(b,v?.[k]!==undefined&&v[k]!==''&&Number.isFinite(Number(v[k]))?Number(v[k]):defaults[k])));out.fontSize=Number(v?.fontSize)===16?16:13;return out;};
