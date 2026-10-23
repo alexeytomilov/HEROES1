@@ -11,7 +11,7 @@
  const show=showNode;showNode=function(id,...rest){const r=show.call(this,id,...rest);try{if(id&&!/^intro|^hero\d/.test(id))localStorage.setItem(saveKey,JSON.stringify({node:id,hero}))}catch{}return r};
  function loadGame(){const s=save();if(!s)return;if(Number.isInteger(s.hero))hero=s.hero;window.journey?.select?.(s.node)}
  const shown=()=>activeScene()==='intro5'&&intro5Time>=START_DELAY;
- function rows(){const s=PeninsulaText.get('menu'),step=s.size+Math.max(1,s.lineSpacing),top=MENU.y+Math.round((MENU.h-step*items.length)/2)+s.offset;return items.map((it,i)=>({i,x:MENU.x,y:top+i*step,w:MENU.w,h:step}))}
+ function rows(){const s=PeninsulaText.get('menu'),step=Math.max(1,s.size+s.lineSpacing),top=MENU.y+Math.round((MENU.h-step*items.length)/2)+s.offset;return items.map((it,i)=>({i,x:MENU.x,y:top+i*step,w:MENU.w,h:step}))}
  // A line in the accent colour: drawn as usual, then tinted inside its own letters.
  const tint=document.createElement('canvas'),tg=tint.getContext('2d');
  function lineIn(color,label,y,role){tint.width=320;tint.height=40;tg.clearRect(0,0,320,40);PeninsulaText.line(tg,label,160,4,role,currentUI.fonts,'center');tg.globalCompositeOperation='source-in';tg.fillStyle=color;tg.fillRect(0,0,320,40);tg.globalCompositeOperation='source-over';ctx.drawImage(tint,0,y-4)}
