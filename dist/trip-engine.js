@@ -1176,7 +1176,8 @@ function altitude(){
   return Math.round((coastal ? 42 : 1850 + stage*250) + y/50);
 }
 // ---- phone ----
-const PH_W = 54, PH_H = 104;
+// The phone is 54×92: drawn whole at its native pixels between its place under the windscreen and the dashboard.
+const PH_W = 54, PH_H = 92;
 function rrect(c2, x0, y0, w, h, r, col){
   c2.fillStyle = col;
   for (let dy = 0; dy < h; dy++){

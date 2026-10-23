@@ -37,6 +37,8 @@
   out.pictures={};for(const [k,v]of Object.entries(value.pictures||{}))if(/^[\w.-]{1,40}$/.test(k)&&num(v,-100,100,0))out.pictures[k]=num(v,-100,100,0);
   // One saturation for every screen picture; a picture's own value is added on top.
   out.pictureSaturation=num(value.pictureSaturation,-100,100,0);
+  // Settings of the points on the big map (map-points.js checks each value when it draws).
+  if(value.mapPoints&&typeof value.mapPoints==='object')out.mapPoints=JSON.parse(JSON.stringify(value.mapPoints));
   // Emboss on the edge pixels of every button: lighter on the lit sides, darker on the others.
   // Noise laid over every contour pixel (overlay), 0..100 % opacity; one value for the whole game.
   out.borderNoise=num(value.borderNoise,0,100,0);
