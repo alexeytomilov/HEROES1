@@ -44,6 +44,10 @@ currentUI.wrap=(c,s,x,y,w,max=6)=>currentUI.block(c,currentUI.case(s),x,y,w,max*
 currentUI.box=(c,x,y,w,h,fill='#293640',role='default')=>PeninsulaColors.box(c,x,y,w,h,role);
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.text(c,currentUI.case(title),160,2,'center',null,'unifont')};
 currentUI.resource=(c,label,value)=>{currentUI.box(c,198,161,115,14,'#11171c','power');currentUI.roleBlock(c,label+' '+value,199,161,113,13,'data')};
+// What each hero carries on the character creation screen: four items in the four slots under the portrait.
+currentUI.heroItems=[['compass','flask','map','rope'],['socks','book','crystal','thermos'],['shield','whetstone','pot','rusks']];
+currentUI.heroItemImages={};for(const n of currentUI.heroItems.flat())uiLoad('assets/hero-item-'+n+'.png?v=items-1').then(im=>{currentUI.heroItemImages[n]=im;if(typeof render==='function')try{render()}catch{}});
+currentUI.drawHeroItems=(c,hero)=>{(currentUI.heroItems[hero]||[]).forEach((n,i)=>{const im=currentUI.heroItemImages[n];if(im)c.drawImage(im,199+i*29+2,183+2)})};
 currentUI.slots=c=>{for(let i=0;i<8;i++)currentUI.box(c,198+i%4*29,176+Math.floor(i/4)*29,28,28,'#18242b','inventory')};
 currentUI.patterns={left:['00100','01100','11111','01100','00100'],up:['00100','01110','11111','00100','00100'],right:['00100','00110','11111','00110','00100'],down:['00100','00100','11111','01110','00100'],sword:['000001','000011','000110','001100','111000','010000'],eye:['0011100','0100010','1001001','0100010','0011100']};
 currentUI.controls=c=>{for(const [kind,x,y]of [['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]]){currentUI.box(c,x,y,x===172?25:26,21,['eye','sword'].includes(kind)?'#655848':'#293640','buttons');const rows=currentUI.patterns[kind],left=Math.round(x+(26-rows[0].length*2)/2),top=Math.round(y+(21-rows.length*2)/2);c.fillStyle=currentUI.settings.textColor;rows.forEach((r,yy)=>[...r].forEach((v,xx)=>{if(v==='1')c.fillRect(left+xx*2,top+yy*2,2,2)}))}};
