@@ -9,5 +9,5 @@
  host.addEventListener('input',update);assignments.addEventListener('input',update);
  window.addEventListener('text-presets-change',()=>{if(typeof levelFrame!=='undefined'&&!levelFrame.hidden)levelFrame.contentWindow.postMessage({type:'text-presets',settings:api.state},location.origin);if(typeof render==='function')render()});sync();
  // Text edit mode: a click on a text in the game also opens its text type and preset here.
- window.PeninsulaTextSettings={select(role){const preset=api.roles[role]?api.state.assignments[role]:api.names[role]?role:null;if(!preset)return;selected=preset;sync();PeninsulaSettingsFlash(assignments.querySelector('[data-role="'+role+'"]')?.closest('label'),host.querySelector('[data-preset="'+preset+'"]'))}};
+ window.PeninsulaTextSettings={get selected(){return selected},select(role){const preset=api.roles[role]?api.state.assignments[role]:api.names[role]?role:null;if(!preset)return;selected=preset;sync();PeninsulaSettingsFlash(assignments.querySelector('[data-role="'+role+'"]')?.closest('label'),host.querySelector('[data-preset="'+preset+'"]'))}};
 })();
