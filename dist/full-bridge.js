@@ -23,7 +23,8 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
 const gameScreens=['embedded','camp','shop','platform','exchange'];
 const skipLevel=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
 // «Назад» and «Вперёд» step through the list of game screens (the «Экраны игры» list), one screen at a time.
-const stepTarget=d=>{const o=[...chapterSelect.options],i=o.findIndex(x=>x.value===chapterSelect.value);return i<0?null:o[i+d]||null};
+// Screens hidden by the «Раздел» filter (screen-filter.js) are skipped.
+const stepTarget=d=>{const o=[...chapterSelect.options].filter(x=>!x.hidden||x.value===chapterSelect.value),i=o.findIndex(x=>x.value===chapterSelect.value);return i<0?null:o[i+d]||null};
 const canStep=d=>!!stepTarget(d);
 function stepScreen(d){const t=stepTarget(d);if(t)reviewScreen(t.value)}
 levelNext.onclick=()=>stepScreen(1);
