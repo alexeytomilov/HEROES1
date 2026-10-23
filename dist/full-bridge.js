@@ -54,9 +54,21 @@ const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!
 let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
 const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
+// The «Все сюжетные экраны» block: how long a screen stays and how its text comes in. It also shows under the text
+// edit panel, so the text animation can be tuned while editing words. Each control has its own handler.
+function buildStoryControls(append){
+ const html='<div class="story-controls"><h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+
+  '<h3>Появление текста</h3>'+[['gap','Пауза между строками, с',0,5,.1],['fade','Проявление строки, с',.05,8,.05],['opacity','Начальная видимость, %',0,100,1],['rise','Подъём строки, px',0,30,1],['dark','Начальное затемнение, %',0,100,1]].map(([k,l,a,b,st])=>'<label class="number">'+l+'<input data-reveal="'+k+'" type="number" min="'+a+'" max="'+b+'" step="'+st+'"></label>').join('')+'<button type="button" data-reveal-replay>Показать ещё раз</button></div>';
+ if(append)sceneHost.insertAdjacentHTML('beforeend',html);else{sceneHost.innerHTML=html;sceneHost.oninput=null;sceneHost.onclick=null}
+ const box=sceneHost.querySelector('.story-controls'),input=box.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
+ input.oninput=()=>{if(input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)})};
+ // A change shows the text coming in again, so the effect is seen at once.
+ for(const e of box.querySelectorAll('[data-reveal]')){e.value=PeninsulaScenes.story.reveal[e.dataset.reveal];e.oninput=()=>{if(e.value==='')return;PeninsulaScenes.updateStory({reveal:{...PeninsulaScenes.story.reveal,[e.dataset.reveal]:Number(e.value)}});currentUI.resetReveal?.();render()}}
+ box.querySelector('[data-reveal-replay]').onclick=()=>{currentUI.resetReveal?.();render()};
+}
 function syncScenePanel(id){
  if(!sceneHost)return;
- if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const popup=!!window.PeninsulaPopup?.visible&&screen!=='embedded',key='text-edit:'+Object.keys(PeninsulaText.overrides).length+(popup?':popup':'');if(scenePanelKey!==key){buildTextEditPanel();if(popup)buildPopupControls(true);scenePanelKey=key}return}
+ if(window.PeninsulaTextEdit?.on){sceneHost.hidden=false;const popup=!!window.PeninsulaPopup?.visible&&screen!=='embedded',key='text-edit:'+Object.keys(PeninsulaText.overrides).length+(popup?':popup':'');const story=!popup&&PeninsulaScenes.kind(id)==='story',k2=key+(story?':story':'');if(scenePanelKey!==k2){buildTextEditPanel();if(popup)buildPopupControls(true);if(story)buildStoryControls(true);scenePanelKey=k2}return}
  // An open question window takes over the panel with its size switch.
  if(window.PeninsulaPopup?.visible&&screen!=='embedded'){sceneHost.hidden=false;if(scenePanelKey!=='popup'){buildPopupControls();scenePanelKey='popup'}return}
  const kind=PeninsulaScenes.kind(id),panelKey=kind==='story'?'story':id;
@@ -66,13 +78,7 @@ function syncScenePanel(id){
   const n=Number(id.slice(5)),s=PeninsulaIntroVideo.sheets?.[n];sceneHost.oninput=null;
   sceneHost.innerHTML='<h2>Заставка '+n+'</h2><p>'+(s?'Видео Intro Main v4, кадры '+s.first+'–'+s.last+' · '+PeninsulaIntroVideo.duration(n).toFixed(2).replace(/\.?0+$/,'')+' с ('+PeninsulaIntroVideo.FPS+' кадров/с)':'Загрузка видео…')+'</p>';if(!s)return;
  }else{
-  sceneHost.innerHTML='<h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+
-   '<h3>Появление текста</h3>'+[['gap','Пауза между строками, с',0,5,.1],['fade','Проявление строки, с',.05,8,.05],['opacity','Начальная видимость, %',0,100,1],['rise','Подъём строки, px',0,30,1],['dark','Начальное затемнение, %',0,100,1]].map(([k,l,a,b,st])=>'<label class="number">'+l+'<input data-reveal="'+k+'" type="number" min="'+a+'" max="'+b+'" step="'+st+'"></label>').join('')+'<button type="button" data-reveal-replay>Показать ещё раз</button>';
-  const input=sceneHost.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;
-  for(const e of sceneHost.querySelectorAll('[data-reveal]'))e.value=PeninsulaScenes.story.reveal[e.dataset.reveal];
-  // A change shows the text coming in again, so the effect is seen at once.
-  sceneHost.oninput=e=>{if(e.target===input&&input.value!=='')PeninsulaScenes.updateStory({showSeconds:Number(input.value)});const k=e.target.dataset?.reveal;if(k&&e.target.value!==''){PeninsulaScenes.updateStory({reveal:{...PeninsulaScenes.story.reveal,[k]:Number(e.target.value)}});currentUI.resetReveal?.();render()}};
-  sceneHost.onclick=e=>{if(e.target.closest('[data-reveal-replay]')){currentUI.resetReveal?.();render()}};
+  buildStoryControls(false);
  }
  scenePanelKey=panelKey;
 }
