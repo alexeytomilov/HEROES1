@@ -38,12 +38,15 @@
   // One saturation for every screen picture; a picture's own value is added on top.
   out.pictureSaturation=num(value.pictureSaturation,-100,100,0);
   // Emboss on the edge pixels of every button: lighter on the lit sides, darker on the others.
+  // Noise laid over every contour pixel (overlay), 0..100 % opacity; one value for the whole game.
+  out.borderNoise=num(value.borderNoise,0,100,0);
   const em=value.emboss||{};out.emboss={light:num(em.light,0,100,0),dark:num(em.dark,0,100,0),width:num(em.width,1,4,1),dir:['tl','tr','bl','br'].includes(em.dir)?em.dir:'tl'};
   out.adjust=Object.fromEntries(Object.keys(adjustGroups).map(g=>{const a=value.adjust?.[g]||{};return [g,{hue:num(a.hue,-180,180,0),saturation:num(a.saturation,-100,100,0),lightness:num(a.lightness,-100,100,0),black:num(a.black,0,254,0),white:num(a.white,1,255,255),gamma:num(a.gamma,10,300,100)}]}));
   return out;
  }
  let state=normalize(window.PENINSULA_PROJECT_CONFIG?.colors);try{const saved=localStorage.getItem(key);if(saved)state=normalize(JSON.parse(saved))}catch{}
  const changed=()=>window.dispatchEvent(new Event('color-presets-change'));
+ let noise=null;const noiseTile=()=>{if(noise)return noise;noise=document.createElement('canvas');noise.width=noise.height=64;const q=noise.getContext('2d'),d=q.createImageData(64,64);let r=7;for(let i=0;i<d.data.length;i+=4){r=(r*1103515245+12345)&0x7fffffff;const v=r>>23&255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}q.putImageData(d,0,0);return noise};
  const images={};
  function image(file){
   const src=textures[file]?'assets/'+file+'.png':file?.startsWith('up:')&&state.files[file.slice(3)]?.data;if(!src)return null;
@@ -92,7 +95,9 @@
   role(n){const name=n.name||'';if(n.x===1&&n.y===1&&n.w===318&&n.h===152&&(n.fills||[]).some(p=>p.type==='IMAGE'))return 'storyImage';if(/Описание героя/i.test(name))return 'narrator';if(n.w===28&&n.h===28||n.x===197&&n.w===117&&(n.y===175&&n.h===59||n.y===73&&n.h===88))return 'inventory';if(n.x===198&&n.y===161&&n.w===115&&n.h===14)return 'power';if(n.x===6&&n.y===22&&n.w===192&&n.h===140)return 'stats';if(n.w===57&&n.h===16)return 'tabs';if(/Кнопка/i.test(name))return 'buttons';if(n.y<=1&&n.h<=22&&n.w>=300)return 'heading';if(/Ситуация/i.test(name)||n.x===198&&n.y===22&&n.w===115&&n.h===138)return 'situation';if(/Диалог/i.test(name)||n.x<=8&&n.y>=161&&n.w===190&&n.h>=28)return 'dialogue';if(n.x<=1&&n.y>=153&&n.w>=318&&n.h>=80)return 'narrator';if(n.x>=118&&n.x<198&&n.y>=161&&n.h<=22)return 'buttons';return 'default'},
   outline(c,x,y,w,h,role='default',weight=1){const s=api.get(role);[x,y,w,h]=[x,y,w,h].map(Math.round);if(s.borderOpacity<=0)return;c.save();c.globalAlpha*=s.borderOpacity/100;c.fillStyle=s.border;
    // The four sides do not overlap, so a see-through contour has no darker corners.
-   c.fillRect(x,y,w,weight);c.fillRect(x,y+h-weight,w,weight);c.fillRect(x,y+weight,weight,h-2*weight);c.fillRect(x+w-weight,y+weight,weight,h-2*weight);c.restore()},
+   const sides=[[x,y,w,weight],[x,y+h-weight,w,weight],[x,y+weight,weight,h-2*weight],[x+w-weight,y+weight,weight,h-2*weight]];for(const r of sides)c.fillRect(...r);
+   // The noise pattern is fixed to the canvas, so it does not crawl when the picture is redrawn.
+   if(state.borderNoise>0){c.globalAlpha*=state.borderNoise/100;c.globalCompositeOperation='overlay';c.fillStyle=c.createPattern(noiseTile(),'repeat');for(const r of sides)c.fillRect(...r)}c.restore()},
   fill(c,x,y,w,h,role='default'){const s=api.get(role);[x,y,w,h]=[x,y,w,h].map(Math.round);if(w<=0||h<=0)return;if(c?.canvas){if(w>=300&&h>=200){window.PeninsulaText?.forget?.(c.canvas);api.zones=api.zones.filter(z=>z.canvas!==c.canvas)}api.zones.push({canvas:c.canvas,role:names[role]?role:'default',x,y,w,h});if(api.zones.length>600)api.zones.splice(0,api.zones.length-600)}
    c.save();c.imageSmoothingEnabled=false;c.fillStyle=s.background;c.fillRect(x,y,w,h);c.beginPath();c.rect(x,y,w,h);c.clip();const alpha=c.globalAlpha;
    for(const l of s.layers){const im=image(l.file);if(!im||l.opacity<=0)continue;c.globalAlpha=alpha*l.opacity/100;c.globalCompositeOperation=l.blend;const tw=im.naturalWidth,th=im.naturalHeight,sx=x+((l.x%tw)+tw)%tw-tw,sy=y+((l.y%th)+th)%th-th;for(let dy=sy;dy<y+h;dy+=th)for(let dx=sx;dx<x+w;dx+=tw)c.drawImage(im,dx,dy)}
