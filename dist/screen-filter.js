@@ -1,10 +1,10 @@
-// «Раздел» next to the screen list: all screens, or only intros, character creation, questions, story screens,
-// games or victories. The list then shows only that section, «Назад» / «Вперёд» step only through it, and when a
+// «Раздел» next to the screen list: the whole game, or only intros, character creation, questions, story screens
+// (with the epilogue), games, the map (with the entries to each place) or victories. The list then shows only that section, «Назад» / «Вперёд» step only through it, and when a
 // screen ends by itself (an intro runs out, a game is won) the game goes on to the next screen of the same section
 // instead of following the whole story; after the last one it starts the section again.
 (()=>{
  const list=document.querySelector('#chapter-select');if(!list||typeof reviewScreen!=='function')return;
- const sections=[['all','Вся игра',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Экраны',/^Экран/],['game','Игры',/^Игра/],['win','Победы',/^Победа/]];
+ const sections=[['all','Вся игра',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Экраны',/^(Экран|Эпилог)/],['game','Игры',/^Игра/],['map','Карта',/^(Карта|Вход)/],['win','Победы',/^Победа/]];
  const filter=document.createElement('select');filter.id='chapter-filter';filter.setAttribute('aria-label','Раздел игры');
  filter.innerHTML=sections.map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('');
  const row=document.createElement('div');row.className='picker-row';list.before(row);row.append(filter,list);
