@@ -428,10 +428,13 @@ function buildTrackBase(stage){
   const r = rng;
   segments = []; ents = [];
   curCliff = 0;
-  addRoad(0,40,0,0,0);
-  const len = 110 + stage*30;
+  // The fog race is kept very short: a short straight start, a few small bends and a short run-in to the forest
+  // (about 55 segments instead of about 230); the homeward race keeps its length.
+  const short = mode === 'fog';
+  addRoad(0,short?12:40,0,0,0);
+  const len = short ? 20 : 110 + stage*30;
   while (segments.length < len){
-    const n = [10,14,20][r()*3|0];
+    const n = short ? [5,6,8][r()*3|0] : [10,14,20][r()*3|0];
     const curve = (r() < .5 ? -1 : 1) * [14,22,30][r()*3|0];
     const hill = (r() - .3) * [0,20,36][r()*3|0];
     const c = r();
@@ -441,7 +444,7 @@ function buildTrackBase(stage){
     else addRoad(n,n,n,curve,hill);
   }
   curCliff = 0;
-  addRoad(20,20,20,0,10);
+  if (short) addRoad(6,6,6,0,6); else addRoad(20,20,20,0,10);
   finishIndex = segments.length + 10;
   addRoad(0,DRAW+60,0,0,0);
 
@@ -458,7 +461,7 @@ function buildTrackBase(stage){
   }
   // forest at the end, then a meadow and a lake
   const LAKE0 = finishIndex + 1, SHORE = finishIndex + 7;
-  for (let i = finishIndex - 45; i < segments.length; i++){
+  for (let i = Math.max(0, finishIndex - Math.min(45, Math.round(finishIndex*.35))); i < segments.length; i++){
     const s = segments[i];
     s.zone = i >= LAKE0 && i < SHORE ? 'lake' : i >= finishIndex - 4 && i < LAKE0 ? 'meadow' : 'forest';
     s.sprites = s.sprites.filter(sp => sp.def !== BOULDER && sp.def !== TUFT);
@@ -482,6 +485,8 @@ function buildTrackBase(stage){
   guidePath = segments.map((_, i) => clamp(.32*Math.sin(i*.04 + ph[0]) + .22*Math.sin(i*.075 + ph[1]) + .05*Math.sin(i*.16 + ph[2]), -.5, .5));
   for (let i = 0; i < 8; i++) guidePath[i] = lerp(.45, guidePath[8], i/8);
   ents.push({kind:'guide', z: PLAYERZ + 9.5*SEG, x: pathAt(PLAYERZ + 9.5*SEG), vz:0, front:false, w:270, v:'#5a5e66,#3a3c40', anim:0, wait:0});
+  // Half way a stranger in a grey hooded cloak stands at the roadside, facing us, and slowly comes out of the fog.
+  if (mode === 'fog'){ const si = Math.round(finishIndex*.55), side = guidePath[si] > 0 ? -1 : 1; ents.push({kind:'stranger', z: si*SEG, x: side*1.08, w:270, v:'#7a7f87,#4e535b', front:true, anim:0}); }
   // stones and potholes everywhere except the guide's line
   for (let i = 10; i < finishIndex - 4; i++){
     const n = 1 + (r()*2.6|0);
@@ -826,7 +831,7 @@ function update(dt){
         fail(LT('race.holeTitle'), LT('race.hole')); return;
       } else if (closing > BUMP_SPEED){
         if (e.kind === 'guide') fail(LT('race.crashTitle'), LT('race.hitGuide'));
-        else if (e.kind === 'hiker') fail(LT('race.crashTitle'), LT('race.hitTourist'));
+        else if (e.kind === 'hiker' || e.kind === 'stranger') fail(LT('race.crashTitle'), LT('race.hitTourist'));
         else if (e.kind === 'goat') fail(LT('race.crashTitle'), LT('race.hitGoat'));
         else if (e.kind === 'buddy') fail(LT('race.crashTitle'), LT('race.hitJeep'));
         else fail(LT('race.crashTitle'), LT('race.headOn'));
@@ -1094,6 +1099,7 @@ function render(now){
     let def, o = {};
     if (e.kind === 'guide'){ def = HIKER; o = {frame: Math.floor(e.anim*3) % 2, front: e.front, v: e.v}; }
     else if (e.kind === 'hiker'){ def = HIKER; o = {frame: Math.floor(e.anim*3) % 2, front: e.front, v: e.v}; }
+    else if (e.kind === 'stranger'){ def = HIKER; o = {frame: 0, front: true, v: e.v}; }
     else if (e.kind === 'goat'){ def = GOAT; o = {frame: e.vx && e.pause <= 0 ? Math.floor(e.anim*5) % 2 : 0, flip: e.vx < 0}; }
     else if (e.kind === 'car') def = CAR;
     else if (e.kind === 'buddy'){ def = JEEP; o = {brake: e.brake, v:'grey'}; }
@@ -1261,6 +1267,8 @@ function frame(now){
 }
 return {
  phoneImage(){drawPhone();return PH_CV;},
+ // State for checks and bots: where the jeep is, the finish and everything on the road.
+ snapshot(){return {state,position,playerX,speed,finishIndex,SEG,PLAYERZ,safeX:guidePath?pathAt(position+PLAYERZ):0,ents:ents.map(e=>({kind:e.kind,z:e.z,x:e.x}))}},
  start(){if(coastal && state==='clear'){state='title';msg=null;buildTrack(1);position=0;speed=0;playerX=0;}active=true;lastT=performance.now();acc=0;render(lastT);if(onRender)onRender({state,msg,inventory:[...supplies],fuel:Math.ceil(fuel),neededItem,speed:Math.round(kmh()),altitude:altitude(),progress:clamp((position+PLAYERZ)/(finishIndex*SEG),0,1),steer,warning:false});if(actx&&actx.state==='suspended')actx.resume();frameHandle=requestAnimationFrame(frame)},
  stop(){active=false;cancelAnimationFrame(frameHandle);for(const k in keys)keys[k]=false;if(actx)actx.suspend()},
  restart(){startStage()},
