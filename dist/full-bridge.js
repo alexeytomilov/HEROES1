@@ -18,10 +18,15 @@ function syncEmbeddedScale(){levelFrame.style.transform='scale('+parseFloat(docu
 const priorScale=applyDisplayScale;applyDisplayScale=function(){priorScale();syncEmbeddedScale()};
 window.addEventListener('resize',()=>{applyDisplayScale();syncEmbeddedScale()});document.querySelectorAll('[data-scale]').forEach(b=>b.onclick=()=>{displayScale=Number(b.dataset.scale);applyDisplayScale()});
 levelFrame.addEventListener('load',()=>{if(!levelFrame.hidden){levelFrame.contentWindow.postMessage({type:'text-edit',on:!!window.PeninsulaTextEdit?.on},location.origin);levelFrame.contentWindow.postMessage({type:'appearance',settings:currentUI.settings},location.origin);levelFrame.contentWindow.postMessage({type:'text-presets',settings:PeninsulaText.state},location.origin);levelFrame.contentWindow.postMessage({type:'color-presets',settings:PeninsulaColors.state},location.origin);levelFrame.contentWindow.focus()}});
-window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-continue'&&embeddedComplete){levelNext.onclick();return}if(e.data?.type==='level-complete')embeddedComplete=true});
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==levelFrame.contentWindow||screen!=='embedded')return;if(e.data?.type==='level-ready')revealLevel();if(e.data?.type==='level-continue'&&embeddedComplete){skipLevel();return}if(e.data?.type==='level-complete')embeddedComplete=true});
 // "Вперёд" skips the game being played straight to the moment it is won (and continues after a win).
 const gameScreens=['embedded','camp','shop','platform','exchange'];
-levelNext.onclick=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
+const skipLevel=()=>{if(!gameScreens.includes(screen))return;if(journeyActive)gameCompleted();else showNode('map')};
+// «Назад» and «Вперёд» step through the list of game screens (the «Экраны игры» list), one screen at a time.
+const stepTarget=d=>{const o=[...chapterSelect.options],i=o.findIndex(x=>x.value===chapterSelect.value);return i<0?null:o[i+d]||null};
+const canStep=d=>!!stepTarget(d);
+function stepScreen(d){const t=stepTarget(d);if(t)reviewScreen(t.value)}
+levelNext.onclick=()=>stepScreen(1);
 // «Рестарт уровня» launches the open level again from its start (the race page reloads, walks and shops reset).
 const levelRestart=document.querySelector('#level-restart');
 // On a story screen, a question or an intro it plays that screen again from its first moment (timer, picture
@@ -40,7 +45,7 @@ for(let i=0;i<5;i++){
 chapterSelect.innerHTML=selection.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');
 function reviewScreen(id){clearInterval(timer);loading=false;stopGames();journeyStarted=true;journeyActive=true;if(id==='title'){journeyActive=false;setScreen('title')}else if(/^hero[012]$/.test(id)){hero=Number(id.at(-1));setScreen('hero')}else if(id==='map')showNode('map');else if(/^entry[0-4]$/.test(id)){selected=Number(id.at(-1));journeyActive=false;setScreen('map');selectDestination(selected)}else showNode(id);chapterSelect.value=id;}
 chapterSelect.addEventListener('change',()=>reviewScreen(chapterSelect.value));
-const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=!gameScreens.includes(screen);if(levelRestart)levelRestart.disabled=!canRestart();if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
+const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=!canStep(1);const back=document.querySelector('#scene-back');if(back)back.disabled=!canStep(-1);if(levelRestart)levelRestart.disabled=!canRestart();if(screen==='title')chapterSelect.value='title';else if(screen==='hero')chapterSelect.value='hero'+hero;else if(screen==='map')chapterSelect.value=dialog?'entry'+selected:'map';else if(journeyNode)chapterSelect.value=journeyNode};
 {const fogBack=document.querySelector('#fog-back');if(fogBack)fogBack.onclick=()=>{stopGames();showNode('map')}}
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
@@ -85,8 +90,8 @@ const syncHotspotsBase=syncHotspots;syncHotspots=function(){if(activeScene()==='
 const advanceStoryAnyTime=advanceStory;advanceStory=function(){if(activeScene()==='intro5'&&intro5Time<START_DELAY)return;advanceStoryAnyTime()};
 // "Назад" walks back through the screens shown in this session, one at a time.
 const screenHistory=[],sceneBack=document.querySelector('#scene-back');
-function trackScreen(){const id=chapterSelect.value;if(id&&screenHistory.at(-1)!==id){screenHistory.push(id);if(screenHistory.length>200)screenHistory.shift()}if(sceneBack)sceneBack.disabled=screenHistory.length<2}
-if(sceneBack)sceneBack.onclick=()=>{if(screenHistory.length<2)return;screenHistory.pop();reviewScreen(screenHistory.at(-1));trackScreen()};
+function trackScreen(){const id=chapterSelect.value;if(id&&screenHistory.at(-1)!==id){screenHistory.push(id);if(screenHistory.length>200)screenHistory.shift()}if(sceneBack)sceneBack.disabled=!canStep(-1)}
+if(sceneBack)sceneBack.onclick=()=>{stepScreen(-1);trackScreen()};
 // Pause freezes the automatic show timer and parallax; click, Enter and Space still advance manually.
 const scenePause=document.querySelector('#scene-pause');
 function setScenePaused(value){scenePaused=!!value;for(const motion of Object.values(fullIntroMotions))motion.setPaused?.(scenePaused);if(scenePause){scenePause.textContent=scenePaused?'Продолжить показ':'Пауза';scenePause.setAttribute('aria-pressed',String(scenePaused))}}
@@ -112,7 +117,7 @@ function buildPopupControls(append=false){
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
 function fullIntroAnimate(now){
- trackScreen();levelNext.disabled=!gameScreens.includes(screen);if(levelRestart)levelRestart.disabled=!canRestart();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
+ trackScreen();levelNext.disabled=!canStep(1);if(levelRestart)levelRestart.disabled=!canRestart();const id=activeScene();sceneClock.select(id);syncScenePanel(id);if(id!==sceneShown){fullIntroMotions[id]?.reset();sceneShown=id;intro5Time=0}
  const visible=!document.hidden,dt=sceneLastTime===null?0:(now-sceneLastTime)/1000;sceneLastTime=now;
  const heroIdleChanged=currentUI.characterIdle.tick(dt,screen==='hero'?['hero-wanderer','hero-mage','hero-knight'][hero]:null,visible&&!scenePaused);
  const victory1=screen==='story'&&journeyNode==='win1';
