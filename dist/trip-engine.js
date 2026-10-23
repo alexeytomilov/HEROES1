@@ -1230,7 +1230,8 @@ function drawPhone(){
   const p = PH_CV.getContext('2d');
   p.globalCompositeOperation = 'source-over';
   p.clearRect(0, 0, PH_W, PH_H);
-  const sc = Math.floor(position/SEG*.8) % MAP_H;
+  // The map creeps along ten times slower than it used to; it mostly turns with the road.
+  const sc = Math.floor(position/SEG*.08) % MAP_H;
   // our position on the track
   const ay = 46, my = ((ay - 3 - sc) % MAP_H + MAP_H) % MAP_H, ax = 3 + trackX(my) + 1;
   // The map turns with the road: in a bend it leans against the turn around our dot, and comes back on the straight.
