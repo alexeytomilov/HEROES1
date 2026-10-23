@@ -40,9 +40,11 @@
   else if(e.key==='Enter'||e.key===' '){(items[usable.includes(selected)?selected:0][1])()}else return;
   e.preventDefault();e.stopImmediatePropagation()},true);
  // The «Меню» block (size and place of the zone) is added under the intro 5 settings in the panel below the game.
+ // Up/down is a shift from the zone's usual top (200 px), like left/right is a shift from the centre; minus is up.
+ const MENU_TOP=200;
  if(typeof syncScenePanel==='function'){const base=syncScenePanel;syncScenePanel=function(id){base(id);if(id!=='intro5'||!sceneHost||sceneHost.hidden||sceneHost.querySelector('.menu-size'))return;
   const b=PeninsulaPopup.bounds,f=(k,l)=>'<label class="number">'+l+'<input data-menu-field="'+k+'" type="number" min="'+b[k][0]+'" max="'+b[k][1]+'" step="1"></label>';
-  sceneHost.insertAdjacentHTML('beforeend','<div class="popup-size menu-size"><h2>Меню</h2>'+f('menuWidth','Ширина, px')+f('menuHeight','Высота, px')+f('menuY','Сверху, px')+f('menuX','Сдвиг влево / вправо, px')+'</div>');
-  for(const e of sceneHost.querySelectorAll('[data-menu-field]'))e.value=PeninsulaPopup.settings[e.dataset.menuField]}
-  sceneHost?.addEventListener('input',e=>{const k=e.target.dataset?.menuField;if(!k||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[k]:Number(e.target.value)});render()})}
+  sceneHost.insertAdjacentHTML('beforeend','<div class="popup-size menu-size"><h2>Меню</h2>'+f('menuWidth','Ширина, px')+f('menuHeight','Высота, px')+f('menuX','Сдвиг влево / вправо, px')+'<label class="number">Сдвиг вверх / вниз, px<input data-menu-field="menuShiftY" type="number" min="'+(b.menuY[0]-MENU_TOP)+'" max="'+(b.menuY[1]-MENU_TOP)+'" step="1"></label>'+'</div>');
+  for(const e of sceneHost.querySelectorAll('[data-menu-field]'))e.value=e.dataset.menuField==='menuShiftY'?PeninsulaPopup.settings.menuY-MENU_TOP:PeninsulaPopup.settings[e.dataset.menuField]}
+  sceneHost?.addEventListener('input',e=>{const k=e.target.dataset?.menuField;if(!k||e.target.value==='')return;const v=Number(e.target.value);PeninsulaPopup.update({...PeninsulaPopup.settings,...(k==='menuShiftY'?{menuY:MENU_TOP+v}:{[k]:v})});render()})}
 })();
