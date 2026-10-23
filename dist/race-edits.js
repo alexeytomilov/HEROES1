@@ -15,8 +15,12 @@
  const sprites={jeep:'Джип',hiker:'Турист',goat:'Козёл',car:'Машина',pine:'Ель',birch:'Берёза',ypine:'Ёлочка',hole:'Яма',rock:'Камень',boulder:'Валун',tuft:'Трава',bollard:'Столбик',hut:'Домик'};
  const clampN=(v,a,b)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Math.round(Number(v)))):0;
  const hex=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
+ // The two points on the phone map: size, rim width, rounding of the rim and of the inner point, colours of each.
+ const markerDefaults={size:9,ring:3,roundIn:0,roundOut:100,points:[{ring:'#fafaf7',fill:'#5a5e66'},{ring:'#d8303a',fill:'#ffffff'}]};
  function normalize(v={}){
   v=v&&typeof v==='object'?v:{};const out={modes:{},colors:{},sprites:{}};
+  const m=v.markers||{},n=(x,a,b,d)=>Number.isFinite(Number(x))?Math.max(a,Math.min(b,Math.round(Number(x)))):d;
+  out.markers={size:n(m.size,3,21,markerDefaults.size),ring:n(m.ring,0,8,markerDefaults.ring),roundIn:n(m.roundIn,0,100,markerDefaults.roundIn),roundOut:n(m.roundOut,0,100,markerDefaults.roundOut),points:markerDefaults.points.map((d,i)=>({ring:hex(m.points?.[i]?.ring)?m.points[i].ring:d.ring,fill:hex(m.points?.[i]?.fill)?m.points[i].fill:d.fill}))};
   for(const m of Object.keys(modes)){const p=v.modes?.[m]?.profile;out.modes[m]={profile:p&&Array.isArray(p.curve)&&Array.isArray(p.hill)?{curve:Array.from({length:COLUMNS},(_,i)=>clampN(p.curve[i],-30,30)),hill:Array.from({length:COLUMNS},(_,i)=>clampN(p.hill[i],-10,10))}:null}}
   for(const [k,c]of Object.entries(v.colors||{}))if(colors[k]&&hex(c))out.colors[k]=c;
   for(const [k,s]of Object.entries(v.sprites||{}))if(sprites[k]&&typeof s==='string'&&(/^asset:[\w.-]+$/.test(s)||/^data:image\/(png|gif|webp);base64,/.test(s)))out.sprites[k]=s;
@@ -33,7 +37,7 @@
   if(!images[s]){const im=new Image;im.onload=changed;im.src=s.startsWith('asset:')?'assets/'+s.slice(6):s;images[s]=im}
   return images[s].complete&&images[s].naturalWidth?images[s]:null;
  }
- window.PeninsulaRace={key,COLUMNS,modes,colors,sprites,normalize,update,spriteImage,
+ window.PeninsulaRace={key,COLUMNS,modes,colors,sprites,normalize,update,spriteImage,markerDefaults,markers:()=>state.markers,
   get state(){return state},
   color:(k,light=false)=>{const c=state.colors[k]||colors[k][1];return light?shade(c,1.04):c},
   profile:m=>state.modes[m]?.profile||null};

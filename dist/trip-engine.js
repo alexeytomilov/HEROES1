@@ -461,7 +461,8 @@ function buildTrackBase(stage){
   }
   // forest at the end, then a meadow and a lake
   const LAKE0 = finishIndex + 1, SHORE = finishIndex + 7;
-  for (let i = Math.max(0, finishIndex - Math.min(45, Math.round(finishIndex*.35))); i < segments.length; i++){
+  // On the short fog track the forest starts only a few segments before the end.
+  for (let i = Math.max(0, finishIndex - (short ? 8 : 45)); i < segments.length; i++){
     const s = segments[i];
     s.zone = i >= LAKE0 && i < SHORE ? 'lake' : i >= finishIndex - 4 && i < LAKE0 ? 'meadow' : 'forest';
     s.sprites = s.sprites.filter(sp => sp.def !== BOULDER && sp.def !== TUFT);
@@ -696,7 +697,8 @@ function updateEnts(dt){
 function update(dt){
   clock += dt;
   visM = clamp(visBase + 9*Math.sin(clock*.13) + 5*Math.sin(clock*.41 + 1), 1, 30);
-  { const endF = clamp(((position + PLAYERZ)/SEG - (finishIndex - 30))/26, 0, 1); visM = lerp(visM, 30, endF*.9); }
+  // The fog lifts towards the end; on the short fog track only over the last stretch, so the forest is not seen early.
+  { const lift = mode === 'fog' && finishIndex < 100 ? 10 : 30, endF = clamp(((position + PLAYERZ)/SEG - (finishIndex - lift))/(lift*.87), 0, 1); visM = lerp(visM, 30, endF*.9); }
   vis = coastal ? DRAW : PLAYERZ/SEG + visM/4;
   mtnA = .6*clamp((visM - 3)/12, 0, 1)*clamp(.45 + .8*Math.sin(clock*.045 + .5) + .3*Math.sin(clock*.17), 0, 1);
   if (hornT > 0) hornT -= dt;
@@ -1115,7 +1117,10 @@ function render(now){
     const sx = lerp(s.p1.screen.x, s.p2.screen.x, it.pct) + sc*it.x*ROADW*W/2;
     const sy = lerp(s.p1.screen.y, s.p2.screen.y, it.pct);
     const d = (it.z - position)/SEG;
-    let f = it.shore ? Math.min(fogAt(d), .72) : fogAt(d);
+    // The far treeline by the lake shows through the fog; on the short fog track only on the final approach.
+    let f = it.shore && !(mode === 'fog' && finishIndex < 100 && d > 16) ? Math.min(fogAt(d), .72) : fogAt(d);
+    // On the short fog track no tree shows from further than 14 segments: the forest appears right before the end.
+    if (mode === 'fog' && finishIndex < 100 && d > 14 && (it.def === PINE || it.def === BIRCH || it.def === YPINE)) f = 1;
     // the guide stays readable through the fog and only fades out far away
     if (it.guide){ const ah = d - PLAYERZ/SEG; f = Math.round(clamp((ah - 1)/((vis - PLAYERZ/SEG)*2.5 + 7), 0, 1)*.75*10)/10; if (ah > (vis - PLAYERZ/SEG)*2.5 + 8) f = 1; }
     let box = null;
@@ -1180,25 +1185,34 @@ function rrect(c2, x0, y0, w, h, r, col){
     c2.fillRect(x0 + ins, y0 + dy, w - 2*ins, 1);
   }
 }
+// A square of side d centred on (cx, cy) whose corners are rounded by round % (100 = a circle), drawn in whole pixels.
+function roundShape(c2, cx, cy, d, round, col){
+  if (d < 1) return;
+  const h = d/2, r = clamp(round, 0, 100)/100*h, x0 = Math.round(cx - h + .5), y0 = Math.round(cy - h + .5);
+  c2.fillStyle = col;
+  for (let j = 0; j < d; j++){ let a = -1, b = -1; for (let i = 0; i < d; i++){ const dx = Math.max(0, Math.abs(i + .5 - h) - (h - r)), dy = Math.max(0, Math.abs(j + .5 - h) - (h - r)); if (dx*dx + dy*dy <= r*r + .01){ if (a < 0) a = i; b = i; } } if (a >= 0) c2.fillRect(x0 + a, y0 + j, b - a + 1, 1); }
+}
 function disc2(c2, cx, cy, r, col){
   c2.fillStyle = col;
   for (let dy = -r; dy <= r; dy++){ const hw = Math.floor(Math.sqrt((r + .5)**2 - dy*dy)); c2.fillRect(cx - hw, cy + dy, hw*2 + 1, 1); }
 }
 const MAP_H = 256, MAP_W = PH_W - 6;
 const trackX = y => Math.round(MAP_W/2 + 7*Math.sin(y/MAP_H*Math.PI*4) + 3*Math.sin(y/MAP_H*Math.PI*10 + 1));
+// The map is wider than the phone screen, so it can turn with the road without showing empty corners.
+const MAP_PAD = 18;
 const MAP = (() => {
-  const c = mk(MAP_W, MAP_H), x = c.getContext('2d');
+  const c = mk(MAP_W + 2*MAP_PAD, MAP_H), x = c.getContext('2d');
   const pal = ['#5d7c44','#78944e','#9fa25e','#c09a5c','#b97a4e','#a8603e','#d6c49c'];
   const T = Math.PI*2/MAP_H;
   const hgt = (px, py) => .5*Math.sin(2*T*py + px*.13) + .35*Math.sin(3*T*py - px*.21 + 1.3) + .25*Math.sin(5*T*py + px*.07 + Math.sin(px*.3)) + .15*Math.sin(7*T*py + px*.4);
   const band = (px, py) => clamp(Math.floor((hgt(px, py) + 1.25)*2.6), 0, pal.length - 1);
-  for (let py = 0; py < MAP_H; py++) for (let px = 0; px < MAP_W; px++){
+  for (let py = 0; py < MAP_H; py++) for (let px = -MAP_PAD; px < MAP_W + MAP_PAD; px++){
     const b = band(px, py);
     x.fillStyle = (b !== band(px + 1, py) || b !== band(px, (py + 1) % MAP_H)) ? '#6a4a30' : pal[b];
-    x.fillRect(px, py, 1, 1);
+    x.fillRect(px + MAP_PAD, py, 1, 1);
   }
   x.fillStyle = '#2f6fe0';
-  for (let py = 0; py < MAP_H; py += 3) x.fillRect(trackX(py), py, 2, 2);
+  for (let py = 0; py < MAP_H; py += 3) x.fillRect(trackX(py) + MAP_PAD, py, 2, 2);
   return c;
 })();
 const PH_FRAME = (() => {
@@ -1211,17 +1225,23 @@ const PH_FRAME = (() => {
 })();
 const PH_MASK = (() => { const c = mk(PH_W, PH_H); rrect(c.getContext('2d'), 3, 3, PH_W - 6, PH_H - 6, 6, '#fff'); return c; })();
 const PH_CV = mk(PH_W, PH_H);
+let mapAngle = 0;
 function drawPhone(){
   const p = PH_CV.getContext('2d');
   p.globalCompositeOperation = 'source-over';
   p.clearRect(0, 0, PH_W, PH_H);
   const sc = Math.floor(position/SEG*.8) % MAP_H;
-  p.drawImage(MAP, 3, 3 + sc - MAP_H); p.drawImage(MAP, 3, 3 + sc);
+  // our position on the track
+  const ay = 46, my = ((ay - 3 - sc) % MAP_H + MAP_H) % MAP_H, ax = 3 + trackX(my) + 1;
+  // The map turns with the road: in a bend it leans against the turn around our dot, and comes back on the straight.
+  const seg = segments.length ? segAt(position + PLAYERZ) : null;
+  mapAngle += ((seg ? -seg.curve*.012 : 0) - mapAngle)*.06;
+  p.save(); p.imageSmoothingEnabled = false; p.translate(ax, ay); p.rotate(Math.round(mapAngle*40)/40); p.translate(-ax, -ay);
+  for (const k of [-1, 0, 1]) p.drawImage(MAP, 3 - MAP_PAD, 3 + sc + k*MAP_H);
+  p.restore();
   p.globalCompositeOperation = 'destination-in';
   p.drawImage(PH_MASK, 0, 0);
   p.globalCompositeOperation = 'source-over';
-  // our position on the track
-  const ay = 46, my = ((ay - 3 - sc) % MAP_H + MAP_H) % MAP_H, ax = 3 + trackX(my) + 1;
   disc2(p, ax, ay, 4, '#ffffff'); disc2(p, ax, ay, 3, '#2f6fe0');
   p.fillStyle = '#ffffff'; p.fillRect(ax, ay - 2, 1, 1); p.fillRect(ax - 1, ay - 1, 3, 1); p.fillRect(ax, ay, 1, 2);
   // status bar & island
@@ -1230,8 +1250,9 @@ function drawPhone(){
   // altitude pill
   rrect(p, 5, 11, PH_W - 10, 11, 3, 'rgba(250,250,247,.92)');
   // map buttons
-  for (const by of [56]){ disc2(p, PH_W - 10, by, 4, 'rgba(250,250,247,.92)'); p.fillStyle = '#5a5e66'; p.fillRect(PH_W - 11, by - 1, 3, 3); }
-  disc2(p, PH_W - 10, 68, 4, '#d8303a'); p.fillStyle = '#ffffff'; p.fillRect(PH_W - 11, 67, 3, 3);
+  // Size, rounding, rim width and colours of the two points come from the race settings («Точки на карте телефона»).
+  const mk2 = window.PeninsulaRace?.markers?.() || {size:9, ring:3, roundIn:0, roundOut:100, points:[{ring:'#fafaf7', fill:'#5a5e66'}, {ring:'#d8303a', fill:'#ffffff'}]};
+  mk2.points.forEach((pt, i) => { const cx = PH_W - 10, cy = 56 + i*Math.max(12, mk2.size + 3); roundShape(p, cx, cy, mk2.size, mk2.roundOut, pt.ring); roundShape(p, cx, cy, mk2.size - 2*mk2.ring, mk2.roundIn, pt.fill); });
   p.drawImage(PH_FRAME, 0, 0);
   // Dark built-in pixel font: readable on the light pill and has the ↑ glyph.
   const t=getText('↑'+altitude()+' М',{color:NAVY});p.drawImage(t.img,27-Math.floor((t.img.width-t.pad*2)/2)-t.pad,13-t.pad);

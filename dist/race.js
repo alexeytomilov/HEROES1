@@ -63,8 +63,9 @@ function drawRace(){
  PeninsulaColors.fill(ctx,7,22,306,212);
  clipped(8,23,304,136,()=>ctx.drawImage(raceScene,8,23));border(7,22,306,138);
  cockpitPanel(d);
- // The phone is drawn at its native 54×104 pixels so the altitude text stays sharp.
- if(raceEngine)ctx.drawImage(raceEngine.phoneImage(),12,64);
+ // The phone is drawn at its native 54×104 pixels so the altitude text stays sharp. It sits low, and its bottom
+ // goes under the lower edge of the cockpit (row 160) instead of covering the radio text.
+ if(raceEngine)clipped(8,23,304,138,()=>ctx.drawImage(raceEngine.phoneImage(),12,79));
  PeninsulaColors.box(ctx,198,161,115,14,'power');
  resourceText({text:LT('race.power'),align:'LEFT'});resourceText({text:(d.fuel??80)+'%',align:'RIGHT'});
  // One row of supplies; the radio messages run along the bottom to the frame edge.
