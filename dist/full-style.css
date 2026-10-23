@@ -120,3 +120,4 @@ main{gap:16px}
 .texture-layer{border-left:2px solid #425873;padding-left:8px;margin-bottom:12px}.texture-layer-head{display:flex;justify-content:space-between;align-items:center;font:12px monospace;color:#9fb2c8;margin-bottom:8px}.texture-layer-head button{background:#172231;color:#c6cfda;border:1px solid #425873;width:24px;height:22px;cursor:pointer}
 .color-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.add-layer{width:100%;background:#172231;color:#b8c7d9;border:1px dashed #425873;padding:8px;font:12px monospace;margin-bottom:12px;cursor:pointer}
 #color-settings .adjust-title{margin-top:24px}.adjust-note{font:11px monospace;color:#8ea0b5;margin:0 0 12px}
+#scene-settings h3{font:600 13px monospace;margin:14px 0 10px;color:#d4dfec}

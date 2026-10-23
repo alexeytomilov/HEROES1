@@ -99,7 +99,7 @@ document.querySelectorAll('.toolbar button').forEach(b=>b.addEventListener('clic
 // Entering an intro always replays it from its first frame.
 function buildPopupControls(append=false){
  const b=PeninsulaPopup.bounds,field=(key,label)=>'<label class="number">'+label+'<input data-popup-field="'+key+'" type="number" min="'+b[key][0]+'" max="'+b[key][1]+'" step="1"></label>';
- const html='<h2>Окно вопроса</h2>'+field('width','Ширина, px')+field('height','Высота, px');if(append)sceneHost.insertAdjacentHTML('beforeend','<div class="popup-size">'+html+'</div>');else sceneHost.innerHTML=html;
+ const html='<h2>Окно вопроса</h2>'+field('width','Ширина, px')+field('height','Высота, px')+'<h3>Кнопки</h3>'+field('buttonWidth','Ширина кнопки, px')+field('buttonHeight','Высота кнопки, px')+field('gap','Расстояние между кнопками, px')+field('buttonX','Сдвиг влево / вправо, px')+field('buttonY','Сдвиг вверх / вниз, px');if(append)sceneHost.insertAdjacentHTML('beforeend','<div class="popup-size">'+html+'</div>');else sceneHost.innerHTML=html;
  for(const e of sceneHost.querySelectorAll('[data-popup-field]'))e.value=PeninsulaPopup.settings[e.dataset.popupField];
  sceneHost.oninput=e=>{const key=e.target.dataset.popupField;if(!key||e.target.value==='')return;PeninsulaPopup.update({...PeninsulaPopup.settings,[key]:Number(e.target.value)});render()};
 }
