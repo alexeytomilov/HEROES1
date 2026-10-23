@@ -5,7 +5,7 @@ const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=(
 const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
 currentUI.ready=Promise.all([
  PeninsulaVictoryAnimation.ready,
- ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png')),
+ ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png?v=light-1')),
  ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
  ...['cozette','unifont'].map(async name=>{const [image,rows]=await Promise.all([uiLoad('assets/'+name+'.png'),fetch('assets/'+name+'.json').then(r=>r.json())]);currentUI.fonts[name]={image,height:name==='unifont'?16:13,glyphs:Object.fromEntries(rows.map(g=>[g.ch,g]))}}),
  fetch('assets/current/native-text.json').then(r=>r.json()).then(r=>currentUI.rows=r),

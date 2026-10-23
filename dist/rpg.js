@@ -3,7 +3,7 @@ let rpgDialogueFx=null;
 let rpgGame=null;
 async function startRPG(){
  const files=['shore_ground','shore_north','shore_west','shore_wet','shore_tourists','walk_cliff','camp_tent','camp_tent_pitched','camp_bottle','camp_wrapper','rpg_portrait_knight','rpg_portrait_wanderer','rpg_portrait_mage'];
- const art=Object.fromEntries(await Promise.all(files.map(async key=>[key,await load('assets/'+key.replaceAll('_','-')+'.png?v=tent-1')])));
+ const art=Object.fromEntries(await Promise.all(files.map(async key=>[key,await load('assets/'+key.replaceAll('_','-')+'.png?v=light-1')])));
  const renderer=window.createWalkView({images:art,level:'coast'});
  const map=await json('rpg-map.json?v=2'),cells=map.grid.map(row=>[...row]);
  const candidates=[];
