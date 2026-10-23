@@ -101,7 +101,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   currentUI.clip(ctx,8,23,304,136,()=>{ctx.save();ctx.translate(8,23);
    const im=images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
-   ctx.drawImage(im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
+   ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
    ctx.translate(-camX,0);
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
    for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const g=ctx.createLinearGradient(0,f.y,0,136);g.addColorStop(0,'#2a3034');g.addColorStop(1,'#0c1012');ctx.fillStyle=g;ctx.fillRect(f.x,f.y+4,f.w,132-f.y);

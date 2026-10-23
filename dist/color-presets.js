@@ -35,6 +35,8 @@
   out.files=files;
   // Saturation per screen picture (key of the screen), -100 grey .. +100 twice as vivid.
   out.pictures={};for(const [k,v]of Object.entries(value.pictures||{}))if(/^[\w.-]{1,40}$/.test(k)&&num(v,-100,100,0))out.pictures[k]=num(v,-100,100,0);
+  // One saturation for every screen picture; a picture's own value is added on top.
+  out.pictureSaturation=num(value.pictureSaturation,-100,100,0);
   out.adjust=Object.fromEntries(Object.keys(adjustGroups).map(g=>{const a=value.adjust?.[g]||{};return [g,{hue:num(a.hue,-180,180,0),saturation:num(a.saturation,-100,100,0),lightness:num(a.lightness,-100,100,0),black:num(a.black,0,254,0),white:num(a.white,1,255,255),gamma:num(a.gamma,10,300,100)}]}));
   return out;
  }
@@ -78,7 +80,11 @@
    const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.drawImage(img,0,0);try{const data=q.getImageData(0,0,w,h);adjustData(data.data,a);q.putImageData(data,0,0)}catch{return img}
    adjusted.set(img,{group,version:adjustVersion,canvas:c});return c},
   // A screen picture with its own saturation; remembers which picture is on screen for the settings panel.
-  currentPicture:null,picture(img,pictureKey){api.currentPicture=pictureKey;const v=state.pictures[pictureKey]||0;if(!img||!v)return img;const hit=pictures.get(pictureKey);if(hit&&hit.img===img&&hit.v===v)return hit.canvas;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.drawImage(img,0,0);try{const d=q.getImageData(0,0,w,h);adjustData(d.data,{...adjustDefaults,saturation:v});q.putImageData(d,0,0)}catch{return img}pictures.set(pictureKey,{img,v,canvas:c});return c},
+  // Pictures also count as the «Экран картинка» zone, so its settings show on screens that draw one.
+  pictureValue:k=>Math.max(-100,Math.min(100,state.pictureSaturation+(state.pictures[k]||0))),
+  // The same saturation as a canvas filter, for animated layers such as the sea on the map.
+  pictureFilter:k=>{const v=api.pictureValue(k);return v?'saturate('+(1+v/100)+')':'none'},
+  currentPicture:null,picture(img,pictureKey){api.currentPicture=pictureKey;used.storyImage=epoch();const v=api.pictureValue(pictureKey);if(!img||!v)return img;const hit=pictures.get(pictureKey);if(hit&&hit.img===img&&hit.v===v)return hit.canvas;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.drawImage(img,0,0);try{const d=q.getImageData(0,0,w,h);adjustData(d.data,{...adjustDefaults,saturation:v});q.putImageData(d,0,0)}catch{return img}pictures.set(pictureKey,{img,v,canvas:c});return c},
   adjustPixels(data,group){const a=state.adjust[group];if(a&&!isNeutral(a))adjustData(data,a);return data},
   // Geometry is a fallback for exported layout nodes without semantic names.
   role(n){const name=n.name||'';if(n.x===1&&n.y===1&&n.w===318&&n.h===152&&(n.fills||[]).some(p=>p.type==='IMAGE'))return 'storyImage';if(/Описание героя/i.test(name))return 'narrator';if(n.w===28&&n.h===28||n.x===197&&n.w===117&&(n.y===175&&n.h===59||n.y===73&&n.h===88))return 'inventory';if(n.x===198&&n.y===161&&n.w===115&&n.h===14)return 'power';if(n.x===6&&n.y===22&&n.w===192&&n.h===140)return 'stats';if(n.w===57&&n.h===16)return 'tabs';if(/Кнопка/i.test(name))return 'buttons';if(n.y<=1&&n.h<=22&&n.w>=300)return 'heading';if(/Ситуация/i.test(name)||n.x===198&&n.y===22&&n.w===115&&n.h===138)return 'situation';if(/Диалог/i.test(name)||n.x<=8&&n.y>=161&&n.w===190&&n.h>=28)return 'dialogue';if(n.x<=1&&n.y>=153&&n.w>=318&&n.h>=80)return 'narrator';if(n.x>=118&&n.x<198&&n.y>=161&&n.h<=22)return 'buttons';return 'default'},
