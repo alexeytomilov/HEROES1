@@ -1,8 +1,10 @@
 // «Раздел» next to the screen list: all screens, or only intros, character creation, questions, story screens,
-// games or victories. The list then shows only that section, and «Назад» / «Вперёд» step only through it.
+// games or victories. The list then shows only that section, «Назад» / «Вперёд» step only through it, and when a
+// screen ends by itself (an intro runs out, a game is won) the game goes on to the next screen of the same section
+// instead of following the whole story; after the last one it starts the section again.
 (()=>{
  const list=document.querySelector('#chapter-select');if(!list||typeof reviewScreen!=='function')return;
- const sections=[['all','Все экраны',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Экраны',/^Экран/],['game','Игры',/^Игра/],['win','Победы',/^Победа/]];
+ const sections=[['all','Вся игра',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Экраны',/^Экран/],['game','Игры',/^Игра/],['win','Победы',/^Победа/]];
  const filter=document.createElement('select');filter.id='chapter-filter';filter.setAttribute('aria-label','Раздел игры');
  filter.innerHTML=sections.map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('');
  const row=document.createElement('div');row.className='picker-row';list.before(row);row.append(filter,list);
@@ -13,4 +15,7 @@
  filter.addEventListener('change',()=>{apply(true);filter.blur()});
  try{const v=localStorage.getItem(key);if(v&&sections.some(s=>s[0]===v))filter.value=v}catch{}
  apply(false);
+ let last=list.value;
+ setInterval(()=>{if(filter.value==='all'){last=list.value;return}const cur=list.options[list.selectedIndex];if(!cur)return;if(!cur.hidden){last=cur.value;return}
+  const shown=[...list.options].filter(o=>!o.hidden);if(!shown.length)return;const i=shown.findIndex(o=>o.value===last);const next=shown[i+1]||shown[0];last=next.value;reviewScreen(next.value)},150);
 })();
