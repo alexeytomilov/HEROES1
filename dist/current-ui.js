@@ -76,7 +76,9 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  // Story nodes without exported text rows still get their frame and script text.
  const isStory=rows.some(r=>r.y>=150&&r.w>280)&&!['platform5','drive1','fog4','traffic5','map'].includes(key)||!rows.length&&window.PENINSULA_STORY?.nodes?.[key]?.type==='story';
  // Image and text blocks share one 1px divider at row 152 instead of stacking two outlines.
- if(isStory){PeninsulaColors.box(c,1,1,318,152,'storyImage');if(background)currentUI.clip(c,2,2,316,150,()=>c.drawImage(PeninsulaColors.picture(currentUI.backgrounds[key],key),0,0));if(key==='win1')PeninsulaVictoryAnimation.draw(c);currentUI.box(c,1,152,318,87,'#11171c','narrator');// Screen text comes from the journey script (dist/story.js); the Figma export is only a fallback.
+ if(isStory){PeninsulaColors.box(c,1,1,318,152,'storyImage');if(background)currentUI.clip(c,2,2,316,150,()=>c.drawImage(PeninsulaColors.picture(currentUI.backgrounds[key],key),0,0));if(key==='win1')PeninsulaVictoryAnimation.draw(c);currentUI.box(c,1,152,318,87,'#11171c','narrator');
+ // The picture's frame is drawn last, so the text field below never covers its bottom line.
+ PeninsulaColors.outline(c,1,1,318,152,'storyImage');// Screen text comes from the journey script (dist/story.js); the Figma export is only a fallback.
  const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');currentUI.roleBlock(c,body,8,164,304,69,'narrator')}
  for(const r of rows){if(isStory&&r.y>=150&&r.w>280)continue;if(r.y<22&&r.w>200){currentUI.header(c,r.text);continue}const align=(r.align||'LEFT').toLowerCase();currentUI.roleBlock(c,currentUI.case(r.text),Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.max(13,Math.round(r.h)),r.x>=198&&r.y>=161&&r.y<176?'data':r.x>=198&&r.y>=40&&r.y<160?'situation':r.y>=160?'dialogue':'technical')}
  PeninsulaColors.outline(c,0,0,320,240);
