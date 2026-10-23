@@ -79,7 +79,7 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  if(isStory){PeninsulaColors.box(c,1,1,318,152,'storyImage');if(background)currentUI.clip(c,2,2,316,150,()=>c.drawImage(PeninsulaColors.picture(currentUI.backgrounds[key],key),0,0));if(key==='win1')PeninsulaVictoryAnimation.draw(c);currentUI.box(c,1,152,318,87,'#11171c','narrator');
  // The picture's frame is drawn last, so the text field below never covers its bottom line.
  PeninsulaColors.outline(c,1,1,318,152,'storyImage');// Screen text comes from the journey script (dist/story.js); the Figma export is only a fallback.
- const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');currentUI.roleBlock(c,body,8,164,304,69,'narrator')}
+ const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');currentUI.revealBlock(c,body,8,164,304,69,'narrator',key)}
  for(const r of rows){if(isStory&&r.y>=150&&r.w>280)continue;if(r.y<22&&r.w>200){currentUI.header(c,r.text);continue}const align=(r.align||'LEFT').toLowerCase();currentUI.roleBlock(c,currentUI.case(r.text),Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.max(13,Math.round(r.h)),r.x>=198&&r.y>=161&&r.y<176?'data':r.x>=198&&r.y>=40&&r.y<160?'situation':r.y>=160?'dialogue':'technical')}
  PeninsulaColors.outline(c,0,0,320,240);
 };
@@ -88,5 +88,12 @@ currentUI.bag=(c,items,images)=>items.slice(0,8).forEach((id,i)=>{if(images[id])
 
 // Semantic blocks share the four user-editable text presets.
 currentUI.roleBlock=(c,s,x,y,w,h,role='narrator')=>PeninsulaText.block(c,s,x,y,w,h,role,currentUI.fonts);
+// Screen text comes in line by line: lines float up and fade in one after another each time a screen opens
+// (all at once in the text edit mode). While lines are still coming the screen keeps redrawing itself.
+let revealKey=null,revealStart=0,revealFrame=0;
+currentUI.revealBlock=(c,s,x,y,w,h,role,key)=>{const now=performance.now();if(key!==revealKey){revealKey=key;revealStart=now}
+ const t=window.PeninsulaTextEdit?.on?1e9:(now-revealStart)/1000,rows=PeninsulaText.block(c,s,x,y,w,h,role,currentUI.fonts,t);
+ if(t<rows*PeninsulaText.REVEAL_GAP+PeninsulaText.REVEAL_FADE&&!revealFrame)revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(revealKey===key&&typeof window.render==='function')try{window.render()}catch{}})};
+currentUI.resetReveal=()=>{revealKey=null};
 currentUI.block=(c,s,x,y,w,h)=>currentUI.roleBlock(c,s,x,y,w,h,'narrator');
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.roleBlock(c,currentUI.case(title),1,2,318,20,'heading')};

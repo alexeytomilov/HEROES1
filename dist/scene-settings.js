@@ -10,7 +10,8 @@
    interval:n===2?clamp(value.interval,0,(showSeconds-.01)/2,.25):0,
    frames:Array.from({length:n===2?3:1},(_,i)=>{const f=value.frames?.[i]||{};return {direction:directions.includes(f.direction)?f.direction:['left','up','right'][i],speed:clamp(f.speed,0,100,speed),multiplier:clamp(f.multiplier,-4,4,[.35,.5,.25][i]),thirdMultiplier:clamp(f.thirdMultiplier,-4,4,0)}})};
  }
- const normalizeStory=v=>({showSeconds:clamp(v?.showSeconds,.1,120,7)});
+ // Story screens stay twice as long as before (14 s instead of 7); a value saved earlier is doubled once.
+ const normalizeStory=v=>({showSeconds:Math.min(120,clamp(v?.showSeconds,.1,120,7)*(v?.longer?1:2)),longer:true});
  const read=(k,fallback)=>{try{const saved=localStorage.getItem(k);return saved?JSON.parse(saved):fallback}catch{return fallback}};
  let intros=Object.fromEntries([1,2,3,4,5].map(n=>[n,normalizeIntro(n,read(key(n),window.PENINSULA_PROJECT_CONFIG?.intros?.[n]))])),story=normalizeStory(read(storyKey,window.PENINSULA_PROJECT_CONFIG?.story));
  const changed=()=>window.dispatchEvent?.(new Event('scene-settings-change'));
