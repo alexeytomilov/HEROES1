@@ -4,8 +4,8 @@ window.PeninsulaIntroVideo=(()=>{
  // SHEETS names the render the sprite sheets come from, so browsers never reuse sheets from an older render.
  const FPS=10,SHEETS='v4',base=PeninsulaScreenAssets.introVideo,images={};let sheets=null;
  // Art corrections and the four-phase idle loop share the native pixel grid.
- const loadArt=(key,file)=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[key]=im;resolve()};im.onerror=()=>reject(Error(file));im.src=base+file+'?r=coast-wind-v2'});
- const ready=Promise.all([loadArt('intro5Panels','intro5-coast-stone-panels.png'),loadArt('intro5Wind','intro5-wind.webp')]).then(()=>fetch(base+'sheets.json?r='+SHEETS).then(r=>{if(!r.ok)throw Error('intro video');return r.json()}).then(m=>Promise.all(Object.entries(m).map(([n,s])=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(s.src));im.src=base+s.src+'?r='+SHEETS}))).then(()=>{sheets=m})));
+ const loadArt=(key,file)=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[key]=im;resolve()};im.onerror=()=>reject(Error(file));im.src=base+file+'?r=coast-idle-v1'});
+ const ready=Promise.all([loadArt('intro5Panels','intro5-coast-stone-panels.png'),loadArt('intro5Wind','intro5-wind.webp'),loadArt('story11','../idle/1.1.webp'),loadArt('story12','../idle/1.2.webp')]).then(()=>fetch(base+'sheets.json?r='+SHEETS).then(r=>{if(!r.ok)throw Error('intro video');return r.json()}).then(m=>Promise.all(Object.entries(m).map(([n,s])=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(s.src));im.src=base+s.src+'?r='+SHEETS}))).then(()=>{sheets=m})));
  // Each intro lasts exactly as long as its piece of the video.
  const duration=n=>sheets?.[n]?sheets[n].frames/FPS:null;
  // Text sits in the black band under the picture; intro 5 is a full-screen picture without text.
@@ -22,5 +22,16 @@ window.PeninsulaIntroVideo=(()=>{
    draw(ctx){const s=sheets[n],i=Math.min(s.frames-1,Math.floor(elapsed*FPS));ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(images[n],i%s.columns*s.width,Math.floor(i/s.columns)*s.height,s.width,s.height,1,1,s.width,s.height);if(n===5){ctx.drawImage(images.intro5Panels,1,1);if(i===s.frames-1){const phase=[0,1,2,3,2,1][Math.floor(Math.max(0,elapsed-(s.frames-1)/FPS)/.52)%6];ctx.drawImage(images.intro5Wind,phase*244,0,244,119,37,79,244,119)}}ctx.restore();text(ctx,n)}
   };
  }
- return {FPS,ready,duration,motion,get sheets(){return sheets}};
+
+ // Story illustrations use the same pause/reset clock and draw at native resolution.
+ function storyMotion(key){
+  const imageKey={'1.1':'story11','1.2':'story12'}[key];let elapsed=0,last=null,paused=false;
+  return {
+   reset(){elapsed=0;last=null},
+   setPaused(value){paused=!!value},
+   tick(now,visible=true){if(last!==null&&visible&&!paused)elapsed+=Math.max(0,(now-last)/1000);last=now},
+   draw(ctx){const phase=Math.floor(elapsed/.52)%2,art=window.PeninsulaColors?.picture(images[imageKey],key)||images[imageKey];ctx.save();ctx.imageSmoothingEnabled=false;ctx.beginPath();ctx.rect(2,2,316,150);ctx.clip();ctx.drawImage(art,phase*318,0,318,152,1,1,318,152);ctx.restore()}
+  };
+ }
+ return {FPS,ready,duration,motion,storyMotion,get sheets(){return sheets}};
 })();

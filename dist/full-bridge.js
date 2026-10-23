@@ -118,7 +118,7 @@ function fullIntroAnimate(now){
 // "С начала" resets progress and returns to the first intro, even when it is already shown.
 document.querySelector('#demo-start').onclick=()=>{startJourney();showNode('title');sceneShown=null;sceneClock.restart();render()};
 Promise.all([currentUI.ready,PeninsulaIntroVideo.ready]).then(()=>{
- fullIntroMotions=Object.fromEntries([1,2,3,4,5].map(n=>['intro'+n,PeninsulaIntroVideo.motion(n)]));setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
+ fullIntroMotions=Object.fromEntries([...([1,2,3,4,5].map(n=>['intro'+n,PeninsulaIntroVideo.motion(n)])),...(['1.1','1.2'].map(key=>[key,PeninsulaIntroVideo.storyMotion(key)]))]);setScenePaused(scenePaused);scenePanelKey=null;sceneLastTime=null;render();requestAnimationFrame(fullIntroAnimate);
 }).catch(e=>{if(sceneHost){sceneHost.hidden=false;sceneHost.innerHTML='<p>Не удалось загрузить видео заставок. Обновите страницу.</p>'}console.error(e)});
 const renderBeforeParallax=render;render=function(){
  if(window.PeninsulaPopup)PeninsulaPopup.visible=false;renderBeforeParallax();const id=activeScene();sceneClock.select(id);syncScenePanel(id);
