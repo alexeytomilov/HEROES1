@@ -2,7 +2,7 @@
 // Shown on levels with a dialogue strip; the shop and the wanderer have their own hero screen and no portrait.
 (()=>{
  const D=window.PeninsulaDialogue,host=document.querySelector('#dialogue-fx-settings');if(!D||!host)return;
- const levels=['drive1','fog4','traffic5','camp1','bear2','house2','village3','platform5'];
+ const levels=['drive1','fog4','traffic5','bear2','house2','village3','platform5'];  // not camp1: game 1.2 has no radio
  const fields=[['sound','Громкость звука рации (0 — без звука)',1],['firstDelay','Первая реплика уровня через, с',.1],['typing','Текст: скорость печати, букв/с',1],['textHold','Текст: держится после печати, с',.1],['textFade','Текст: буква гаснет за, с',.05],['textNoise','Текст: шум — разброс букв по времени',1],['textDust','Текст: сколько пикселей сдувает',1],['appear','Портрет: мелькание при появлении, с',.05],['offset','Портрет: начало ухода после текста, с',.1],['flickerOut','Портрет: мелькание при уходе, с',.05],['vanish','Портрет: песок, распад длится, с',.1],['wind','Ветер (портрет и текст): сила',1],['angle','Ветер: направление, ° (0 — вправо, 90 — вниз)',1]];
  host.innerHTML='<h2>Текст и портрет в диалоге</h2><p class="walk-hint">Звучит рация, реплика печатается по буквам с мигающим курсором, в рамке мелькая появляется чёрно-белый портрет мага; когда текст допечатан, портрет уходит — мельканием, песком по ветру или и тем, и другим, а через какое-то время гаснет и сам текст: каждая буква в своё время, ветер сдувает с неё пиксели. Первая реплика уровня ждёт, чтобы сначала была видна картинка. Любое изменение сразу проигрывает текущую реплику заново.</p>'+
   '<label>Видны пиксели портрета<select data-fx="pixels"><option value="light">Светлые</option><option value="dark">Тёмные</option></select></label>'+

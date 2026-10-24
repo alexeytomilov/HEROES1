@@ -92,9 +92,8 @@ async function startRPG(){
   const icons=[['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]];
   for(const [kind,bx,by]of icons){const w=bx===172?25:26;PeninsulaColors.box(ctx,bx,by,w,21,'buttons');controlIcon(kind,bx,by);}
   PeninsulaColors.box(ctx,7,205,190,28,'dialogue');
-  // The line types out and the mage's portrait shows in the corner of the view (dialogue-fx.js).
-  rpgDialogueFx=rpgDialogueFx||PeninsulaDialogueFX.create({ctx,fonts,portrait:{x:155,y:110},clip:[8,23,188,136],render:()=>render()});
-  rpgDialogueFx.line(window.PeninsulaDialogue?.evaluate('walk:coast',{x,y,dir,grid})||message,8,206,188,26);rpgDialogueFx.portrait();
+  // Game 1.2 has no radio: no messages type out in the strip and no mage portrait or radio sound (asked by the author).
+  // To bring them back, restore the dialogue-fx calls: PeninsulaDialogueFX.create(...), .line(PeninsulaDialogue.evaluate('walk:coast', …)), .portrait().
   heading(LT('camp1.heading'));
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
   drawMouseArrow();
