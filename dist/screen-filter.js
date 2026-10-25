@@ -4,7 +4,7 @@
 // instead of following the whole story; after the last one it starts the section again.
 (()=>{
  const list=document.querySelector('#chapter-select');if(!list||typeof reviewScreen!=='function')return;
- const sections=[['all','Вся игра',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Экраны',/^(Экран|Эпилог)/],['game','Игры',/^Игра/],['map','Карта',/^(Карта|Вход)/],['win','Победы',/^Победа/]];
+ const sections=[['all','Вся игра',null],['intro','Заставки',/^Заставка/],['hero','Создание персонажа',/^Создание персонажа/],['question','Вопросы',/^Вопрос/],['story','Истории',/^(История|Эпилог)/],['game','Игры',/^Игра/],['map','Карта',/^(Карта|Вход)/],['win','Победы',/^Победа/]];
  const filter=document.createElement('select');filter.id='chapter-filter';filter.setAttribute('aria-label','Раздел игры');
  filter.innerHTML=sections.map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('');
  const row=document.createElement('div');row.className='picker-row';list.before(row);row.append(filter,list);

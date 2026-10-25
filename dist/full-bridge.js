@@ -36,13 +36,13 @@ const canRestart=()=>!!journeyNodes[journeyNode]&&(gameScreens.includes(screen)|
 if(levelRestart)levelRestart.onclick=()=>{if(!canRestart())return;showNode(journeyNode);if(gameScreens.includes(screen))return;
  const id=activeScene();sceneClock.restart();sceneLastTime=null;fullIntroMotions[id]?.reset();sceneShown=null;intro5Time=0;currentUI.resetReveal?.();if(typeof scenePaused!=='undefined'&&scenePaused)document.querySelector('#scene-pause')?.click();render()};
 document.querySelectorAll('[data-level-action]').forEach(b=>b.onclick=()=>levelFrame.contentWindow.postMessage({type:'race-action',action:b.dataset.levelAction},location.origin));
-const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['0','Экран 0'],['map','Карта']];
+const selection=[['title','Заставка 1'],['intro2','Заставка 2'],['intro3','Заставка 3'],['intro4','Заставка 4'],['hero0','Создание персонажа · Странник'],['hero1','Создание персонажа · Маг'],['hero2','Создание персонажа · Рыцарь'],['intro5','Заставка 5'],['0','История 0'],['map','Карта']];
 for(let i=0;i<5;i++){
  journeyNodes['q'+i]={type:'question',body:chapterQuestions[i],next:(i+1)+'.1',no:i===3?'4.1':'map'};
  selection.push(['entry'+i,'Вход · '+points[i].full],['q'+i,'Вопрос '+(i+1)+'-1']);
  const ids=[['1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1'],['2.1','bear2','2.2','2.3','ruin','house2','win2'],['3.1','village3','3.2','shop3','win3'],['4.1','fog4','4.2','exchange4','win4'],['5.1','platform5','5.2','home','traffic5','win5']][i];
  // Screens switched off in the story ("off") are left out of the list.
- for(const id of ids.filter(id=>!journeyNodes[id]?.off))selection.push([id,({drive1:'Игра 1.1 · Гонка',camp1:'Игра 1.2 · Лагерь',bear2:'Игра 2.1 · Медведь',house2:'Игра 2.2 · Заброшка',village3:'Игра 3.1 · Поиск лавки',shop3:'Игра 3.2 · Торговец',fog4:'Игра 4.1 · Туманная гонка',exchange4:'Игра 4.2 · Странник',platform5:'Игра 5.1 · Платформер',traffic5:'Игра 5.2 · Дорога домой',sleep:'Вопрос 1-2 · Спать?',ruin:'Вопрос 2-2 · Руина',home:'Вопрос 5-2 · Домой?'})[id]||(/^win/.test(id)?'Победа '+id.at(-1):'Экран '+id)]);
+ for(const id of ids.filter(id=>!journeyNodes[id]?.off))selection.push([id,({drive1:'Игра 1.1 · Гонка',camp1:'Игра 1.2 · Лагерь',bear2:'Игра 2.1 · Медведь',house2:'Игра 2.2 · Заброшка',village3:'Игра 3.1 · Поиск лавки',shop3:'Игра 3.2 · Торговец',fog4:'Игра 4.1 · Туманная гонка',exchange4:'Игра 4.2 · Странник',platform5:'Игра 5.1 · Платформер',traffic5:'Игра 5.2 · Дорога домой',sleep:'Вопрос 1-2 · Спать?',ruin:'Вопрос 2-2 · Руина',home:'Вопрос 5-2 · Домой?'})[id]||(/^win/.test(id)?'Победа '+id.at(-1):'История '+id)]);
 }selection.push(['epilogue','Эпилог']);
 chapterSelect.innerHTML=selection.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');
 function reviewScreen(id){clearInterval(timer);loading=false;stopGames();journeyStarted=true;journeyActive=true;if(id==='title'){journeyActive=false;setScreen('title')}else if(/^hero[012]$/.test(id)){hero=Number(id.at(-1));setScreen('hero')}else if(id==='map')showNode('map');else if(/^entry[0-4]$/.test(id)){selected=Number(id.at(-1));journeyActive=false;setScreen('map');selectDestination(selected)}else showNode(id);chapterSelect.value=id;}
@@ -56,10 +56,10 @@ const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!
 let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
 const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');
 function activeScene(){return screen==='title'?'intro1':screen==='story'&&PeninsulaScenes.kind(journeyNode)?journeyNode:null}
-// The «Все сюжетные экраны» block: how long a screen stays and how its text comes in. It also shows under the text
+// The «Все истории» block: how long a screen stays and how its text comes in. It also shows under the text
 // edit panel, so the text animation can be tuned while editing words. Each control has its own handler.
 function buildStoryControls(append){
- const html='<div class="story-controls"><h2>Все сюжетные экраны</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+
+ const html='<div class="story-controls"><h2>Все истории</h2><label class="number">Длительность показа, с<input data-story-seconds type="number" min="0.1" max="120" step="0.1"></label>'+
   '<h3>Появление текста</h3>'+[['gap','Пауза между строками, с',0,5,.1],['fade','Проявление строки, с',.05,8,.05],['opacity','Начальная видимость, %',0,100,1],['rise','Подъём строки, px',0,30,1],['dark','Начальное затемнение, %',0,100,1]].map(([k,l,a,b,st])=>'<label class="number">'+l+'<input data-reveal="'+k+'" type="number" min="'+a+'" max="'+b+'" step="'+st+'"></label>').join('')+'<button type="button" data-reveal-replay>Показать ещё раз</button></div>';
  if(append)sceneHost.insertAdjacentHTML('beforeend',html);else{sceneHost.innerHTML=html;sceneHost.oninput=null;sceneHost.onclick=null}
  const box=sceneHost.querySelector('.story-controls'),input=box.querySelector('[data-story-seconds]');input.value=PeninsulaScenes.story.showSeconds;

@@ -4,7 +4,7 @@
 // The same settings hold the adjustments (levels, hue/saturation) for the textures of the walks and races.
 (()=>{
  const key='peninsula-color-presets-v1';
- const names={heading:'Заголовок',storyImage:'Экран картинка',narrator:'Экран текст',situation:'Ситуация',dialogue:'Диалог',question:'Вопрос',buttons:'Кнопки интерфейса',tabs:'Вкладки',power:'Power',stats:'Характеристики',inventory:'Инвентарь',menu:'Меню',default:'Дефолт'};
+ const names={heading:'Заголовок',storyImage:'Картинка истории',narrator:'Текст истории',situation:'Ситуация',dialogue:'Диалог',question:'Вопрос',buttons:'Кнопки интерфейса',tabs:'Вкладки',power:'Power',stats:'Характеристики',inventory:'Инвентарь',menu:'Меню',default:'Дефолт'};
  // New zones start from the surface they were drawn with before, so saved colors are kept.
  const inherits={question:'dialogue',tabs:'buttons',menu:'buttons',power:'default',stats:'default',inventory:'default'};
  // Texture files in assets/ that can be picked for a layer; uploaded files are added to the state.
@@ -87,7 +87,7 @@
    const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.drawImage(img,0,0);try{const data=q.getImageData(0,0,w,h);adjustData(data.data,a);q.putImageData(data,0,0)}catch{return img}
    adjusted.set(img,{group,version:adjustVersion,canvas:c});return c},
   // A screen picture with its own saturation; remembers which picture is on screen for the settings panel.
-  // Pictures also count as the «Экран картинка» zone, so its settings show on screens that draw one.
+  // Pictures also count as the «Картинка истории» zone, so its settings show on screens that draw one.
   pictureValue:k=>Math.max(-100,Math.min(100,state.pictureSaturation+(state.pictures[k]||0))),
   // The same saturation as a canvas filter, for animated layers such as the sea on the map.
   pictureFilter:k=>{const v=api.pictureValue(k);return v?'saturate('+(1+v/100)+')':'none'},
