@@ -28,7 +28,7 @@ currentUI.ready=Promise.all([
  ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
  ...['cozette','unifont'].map(async name=>{const [image,rows]=await Promise.all([uiLoad('assets/'+name+'.png'),fetch('assets/'+name+'.json').then(r=>r.json())]);currentUI.fonts[name]={image,height:name==='unifont'?16:13,glyphs:Object.fromEntries(rows.map(g=>[g.ch,g]))}}),
  fetch('assets/current/native-text.json').then(r=>r.json()).then(r=>currentUI.rows=r),
- fetch('figma-layouts.json').then(r=>r.json()).then(async layouts=>{currentUI.layouts=layouts;const hashes=[...new Set(layouts.flatMap(s=>s.items.flatMap(n=>(n.fills||[]).filter(p=>p.type==='IMAGE').map(p=>p.hash))))];await Promise.all(hashes.map(async hash=>currentUI.assets[hash]=await uiLoad('assets/'+hash+'.png')))}),
+ fetch('figma-layouts.json?v=hero-nav-1').then(r=>r.json()).then(async layouts=>{currentUI.layouts=layouts;const hashes=[...new Set(layouts.flatMap(s=>s.items.flatMap(n=>(n.fills||[]).filter(p=>p.type==='IMAGE').map(p=>p.hash))))];await Promise.all(hashes.map(async hash=>currentUI.assets[hash]=await uiLoad('assets/'+hash+'.png')))}),
  uiLoad(PeninsulaScreenAssets.intro5).then(im=>currentUI.intro5Full=im),
  uiLoad('assets/latest-stone.png').then(im=>currentUI.stone=im)
 ]).then(()=>currentUI.tint());
