@@ -157,3 +157,6 @@ window.addEventListener('scene-settings-change',()=>{
 document.addEventListener('visibilitychange',()=>{sceneLastTime=null;for(const motion of Object.values(fullIntroMotions))motion.tick(performance.now(),false)});
 
 PeninsulaPopup.onchange=()=>{if(screen!=="embedded")render()};
+
+// The pressed button is drawn last, over every layer the screens add on top of the base render.
+{const renderBeforePress=render;render=function(){renderBeforePress();if(!['platform','shop','camp','embedded'].includes(screen))drawPressedButton()}}

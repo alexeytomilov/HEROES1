@@ -24,7 +24,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   {name:LT('platform5.room3'),start:{x:18,y:134},exitY:132,ledges:[{x:0,y:134,w:82},{x:110,y:152,w:78},{x:220,y:132,w:100}]},
   {name:LT('platform5.room4'),start:{x:18,y:132},exitY:132,ledges:[{x:0,y:132,w:148}]}
  ];
- let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],finalAsked=false;
+ let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],pressedHit=null,finalAsked=false;
  if(!MW)for(const r of rooms){r.start.x=Math.round(r.start.x*.95);r.start.y=Math.round((r.start.y-23)*.65);r.exitY=Math.round((r.exitY-23)*.65);for(const l of r.ledges){l.x=Math.round(l.x*.95);l.w=Math.round(l.w*.95);l.y=Math.round((l.y-23)*.65)}}
  // Rooms are twice as wide as the view: stretches with ledges get longer, the gaps between ledges keep their size.
  const ROOM_W=W*2;
@@ -203,13 +203,16 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   dialogueFx.line(p.hang?LT('platform5.hang'):LT('platform5.walkHelp',{room:rooms[room].name}),8,166,188,66);dialogueFx.portrait();currentUI.resource(ctx,LT('platform5.power'),'80%');currentUI.slots(ctx);photos.slice(0,8).forEach((ph,i)=>ctx.drawImage(ph,200+i%4*29,178+Math.floor(i/4)*29));}
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:LT('platform5.askHome'),labels:[LT('platform5.yes'),LT('platform5.no')],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
-  }else if(state!=='play'&&state!=='done'){const b=currentUI.modal(ctx,state==='fallen'?LT(TX+'.fallTitle'):LT('platform5.homeTitle'),state==='fallen'?LT(TX+'.fallBody'):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);
+  }else if(state!=='play'&&state!=='done'){const b=currentUI.modal(ctx,state==='fallen'?LT(TX+'.fallTitle'):LT('platform5.homeTitle'),state==='fallen'?LT(TX+'.fallBody'):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}
+  // a pressed button sinks a pixel and darkens for a moment before it acts
+  if(pressedHit){const b=pressedHit;ctx.drawImage(canvas,b.x,b.y,b.w-1,b.h-1,b.x+1,b.y+1,b.w-1,b.h-1);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(b.x,b.y,b.w,1);ctx.fillRect(b.x,b.y,1,b.h)}
+  drawGameBorder(ctx);
  }
  function tick(now){if(!active)return;const dt=last?Math.min(.1,(now-last)/1000):0;last=now;acc+=dt;while(acc>=1/60&&active){update(1/60);acc-=1/60;}render();if(active)frame=requestAnimationFrame(tick);}
  function press(k){if(state==='question'){if(k==='left'||k==='right'){choice=1-choice;render()}if(k==='jump'||k==='enter'){choice===0?home():keepWalking()}return;}if(state==='fallen'){if(k==='jump'||k==='enter'){if(MW){lives--;if(lives<=0){lives=3;score=0;finds=[];for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);render();return}}retry()}return;}if(state==='home'){if(k==='enter'||k==='jump')onExit();return;}if(!MW&&k==='enter'&&room===3&&p.ground)ask();else if(k==='jump')jump();}
  const keyMap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',Shift:'shift',' ':'jump',Enter:'enter'};
  window.addEventListener('keydown',e=>{if(!active)return;if(e.key==='r'||e.key==='R'){e.preventDefault();retry();return;}const k=keyMap[e.key];if(!k)return;e.preventDefault();if(!e.repeat)press(k);keys.add(k);});
  window.addEventListener('keyup',e=>{if(active)keys.delete(keyMap[e.key]);});window.addEventListener('blur',()=>{if(active)clearInput()});
- inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();h.fn();}});
+ inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();if(pressedHit)return;pressedHit=h;render();setTimeout(()=>{pressedHit=null;h.fn();render()},170)}});
  return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;clock=400;lives=3;for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
 };
