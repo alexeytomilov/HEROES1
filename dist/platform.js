@@ -7,7 +7,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall rooms are given in final coordinates: banks (wide ledges) and boulder steps (22 px wide) over the fall.
  const WF_STEP=22,wfSteps=(list)=>list.map(([x,y])=>({x:x-WF_STEP/2,y,w:WF_STEP,stone:true}));
  const rooms=WF?[
-  {name:LT('waterfall.room1'),start:{x:30,y:124},exitY:124,width:608,ledges:[{x:0,y:124,w:82},...wfSteps([[110,116],[150,106],[190,96],[230,106],[270,116],[312,108],[354,98],[396,108],[438,118]]),{x:478,y:124,w:130}]},
+  {name:LT('waterfall.room1'),start:{x:30,y:124},exitY:124,width:608,ledges:[{x:0,y:124,w:82},...wfSteps([[110,116],[150,106],[190,96],[230,106]]),{x:252,y:112,w:120,stone:'path'},...wfSteps([[396,108],[438,118]]),{x:478,y:124,w:130}]},
   {name:LT('waterfall.room2'),start:{x:20,y:124},exitY:124,width:608,ledges:[{x:0,y:124,w:64},...wfSteps([[92,116],[134,104],[176,94],[218,104],[260,114],[302,104],[344,94],[386,104],[428,116]]),{x:466,y:124,w:142}]}
  ]:[
   {name:LT('platform5.room1'),start:{x:36,y:116},exitY:190,ledges:[{x:0,y:116,w:104},{x:0,y:190,w:158},{x:196,y:190,w:124}]},
@@ -36,7 +36,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const BRIDGE_H=12,LENS=14;
  // Waterfall blocks hang within a jump from the ground (the ground is at y 108 there).
  const props=WF?[
-  {bridges:[],lenses:[{x:143,y:62},{x:223,y:62},{x:347,y:54},{x:520,y:80}]},
+  {bridges:[{x:262,y:88,w:22},{x:292,y:72,w:22},{x:322,y:56,w:22}],lenses:[{x:223,y:62},{x:326,y:16},{x:520,y:80}]},
   {bridges:[],lenses:[{x:127,y:60},{x:211,y:60},{x:337,y:50},{x:530,y:80}]}
  ]:[
   {bridges:[{x:400,y:73,w:128}],lenses:[{x:262,y:61},{x:457,y:25}]},
@@ -45,7 +45,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   {bridges:[],lenses:[{x:200,y:23}]}
  ];
  rooms.forEach((r,i)=>{r.bridges=props[i].bridges;r.lenses=props[i].lenses.map(l=>({...l,used:false,bump:0}));
-  for(const b of r.bridges){const a=b.x+12,z=b.x+b.w-12;r.ledges=r.ledges.flatMap(l=>l.y<=b.y||l.x>=z||l.x+l.w<=a?[l]:[...(l.x<a?[{...l,w:a-l.x}]:[]),...(l.x+l.w>z?[{...l,x:z,w:l.x+l.w-z}]:[])])}
+  if(!WF)for(const b of r.bridges){const a=b.x+12,z=b.x+b.w-12;r.ledges=r.ledges.flatMap(l=>l.y<=b.y||l.x>=z||l.x+l.w<=a?[l]:[...(l.x<a?[{...l,w:a-l.x}]:[]),...(l.x+l.w>z?[{...l,x:z,w:l.x+l.w-z}]:[])])}
   // gaps between two pieces of ground, each a dark chasm with a waterfall starting at the higher edge;
   // the open end of the last room is just the view, not a gap
   const cover=[...r.ledges].sort((a,b)=>a.x-b.x);r.falls=[];let x=0,lastY=cover[0].y;
@@ -58,13 +58,13 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  let photos=[],photoPending=false,flash=0;
  function snap(lens){lens.used=true;lens.bump=.15;if(WF){find(lens);return}flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
- const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400;
+ const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
  const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
- const PARALLAX=.35;let camX=0;
+ const PARALLAX=.35,HILLS=.3,LEAVES=1.35;let camX=0;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
  // waterfall block: a warm stone block with a carved question mark, flat and grey once hit
  function drawBlock(x,y,used){rect(x,y,LENS,LENS,'#1b1e23');rect(x+1,y+1,LENS-2,LENS-2,used?'#4a4640':'#a0703a');if(used)return;rect(x+1,y+1,LENS-2,1,'#d8a45a');rect(x+1,y+1,1,LENS-2,'#d8a45a');rect(x+2,y+LENS-2,LENS-3,1,'#6a4520');rect(x+LENS-2,y+2,1,LENS-3,'#6a4520');
@@ -118,7 +118,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT(TX+'.heading'));
   currentUI.clip(ctx,8,23,304,H,()=>{ctx.save();ctx.translate(8,23);
-   if(WF){ctx.drawImage(images.platform_wf_sky,0,0);ctx.drawImage(images.platform_wf_hills,0,0)}
+   if(WF){ctx.drawImage(images.platform_wf_sky,0,0);const hx=Math.round(Math.max(0,Math.min(rooms[room].width-W,Math.round(p.x-W/2)))*HILLS);
+    for(let k=Math.floor(hx/W);k*W<hx+W;k++){const x=k*W-hx;if(k%2){ctx.save();ctx.translate(x+W,0);ctx.scale(-1,1);ctx.drawImage(images.platform_wf_hills,0,0);ctx.restore()}else ctx.drawImage(images.platform_wf_hills,x,0)}}
    const im=WF?images.platform_wf_sky:images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
    if(!WF)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
@@ -133,19 +134,21 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
    if(WF){// boulders stand in the river, banks are the mossy ledge over rock; the fall runs in front of the boulders' feet
     for(const l of rooms[room].ledges){if(l.x+l.w<camX-8||l.x>camX+W+8)continue;
-     if(l.stone){const b=l.y<=104?images.platform_wf_boulder_tall:images.platform_wf_boulder_low;ctx.drawImage(b,Math.round(l.x+l.w/2-b.width/2),l.y)}}
+     if(l.stone==='path'){for(let sx=l.x-3;sx<l.x+l.w;sx+=20)ctx.drawImage(images.platform_wf_boulder_low,sx,l.y)}
+     else if(l.stone){const b=l.y<=104?images.platform_wf_boulder_tall:images.platform_wf_boulder_low;ctx.drawImage(b,Math.round(l.x+l.w/2-b.width/2),l.y)}}
+    for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x-3,b.y,b.w+6,12,()=>ctx.drawImage(images.platform_wf_boulder_low,b.x-3,b.y));
     // the fall: the same falling water as the Khibiny chasms, across the whole room, foam on the lip, mist at the foot
     currentUI.clip(ctx,camX,128,W,H-128,()=>{const off=Math.floor(time*90)%64;for(let ty=128-64+off;ty<H;ty+=64)for(let tx=Math.floor(camX/32)*32;tx<camX+W;tx+=32)ctx.drawImage(fallTile,tx,ty);
      ctx.fillStyle='#e4f0f4';for(let x=Math.floor(camX);x<camX+W;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,128,1,h)}
      for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(camX,H-20+i*5,W,5)}});
     for(const l of rooms[room].ledges){if(l.stone||l.x+l.w<camX-8||l.x>camX+W+8)continue;
-     currentUI.clip(ctx,l.x,l.y-1,l.w,H-l.y+1,()=>{for(let sy=l.y+20;sy<H;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_rock,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_ledge,sx,l.y-1)})}}
+     currentUI.clip(ctx,l.x,l.y-1,l.w,H-l.y+1,()=>{for(let sy=l.y+4;sy<H;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_rock,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_ledge,sx,l.y-1)})}}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(WF)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // a find hops out of its block, its points float higher
    for(const q of pops){const im=currentUI.heroItemImages[q.name],u=Math.min(1,q.t/.5),hop=Math.round(Math.sin(u*Math.PI)*18+u*4);if(im&&q.t<.6)ctx.drawImage(im,Math.round(q.x-8),Math.round(q.y-14-hop),16,16);drawText('100',Math.round(q.x),Math.round(q.y-26-q.t*22),8,'#fff4c2','center')}
    drawHero();ctx.restore();
-   if(WF){ctx.drawImage(images.platform_wf_leaves_left,8,23);ctx.drawImage(images.platform_wf_leaves_right,8,23)}
+   if(WF){const lx=Math.round(camX*LEAVES)%W;currentUI.clip(ctx,8,23,W,H,()=>{for(let k=0;k<2;k++){const x=8+k*W-lx;ctx.drawImage(images.platform_wf_leaves_left,x,23);ctx.drawImage(images.platform_wf_leaves_right,x,23)}})}
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
    if(photoPending){photoPending=false;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.fillStyle='#e8e4d8';g.fillRect(0,0,24,24);g.imageSmoothingEnabled=true;g.drawImage(canvas,8,23,304,136,2,2,20,15);photos.push(c)}
    if(WF){// the score line over the picture, like the top line of a console platformer
@@ -156,7 +159,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
      const tint=col=>{const d=document.createElement('canvas');d.width=W;d.height=20;const h=d.getContext('2d');h.drawImage(c,0,0);h.globalCompositeOperation='source-in';h.fillStyle=col;h.fillRect(0,0,W,20);return d};
      const ox=a==='right'?x-(W-2):x-2;ctx.drawImage(tint('#11171c'),ox+1,25);ctx.drawImage(tint('#f4f1e6'),ox,24)};
     label(LT('waterfall.score'),14,'left');big(String(score).padStart(6,'0'),14,38,'left');
-    label(LT('waterfall.time'),306,'right');big(String(Math.ceil(clock)),306,38,'right')}
+    label(LT('waterfall.lives'),306,'right');big(String(lives),306,38,'right')}
    if(flash>0){ctx.fillStyle='rgba(255,255,255,'+(flash/.18*.8).toFixed(2)+')';ctx.fillRect(8,23,304,H)}
   });
   if(WF){// one line on the left and one row of four slots; the lower strip stays plain
@@ -172,10 +175,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   }else if(state!=='play'&&state!=='done'){const b=currentUI.modal(ctx,state==='fallen'?LT(TX+'.fallTitle'):LT('platform5.homeTitle'),state==='fallen'?LT(TX+'.fallBody'):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}drawGameBorder(ctx);
  }
  function tick(now){if(!active)return;const dt=last?Math.min(.1,(now-last)/1000):0;last=now;acc+=dt;while(acc>=1/60&&active){update(1/60);acc-=1/60;}render();if(active)frame=requestAnimationFrame(tick);}
- function press(k){if(state==='question'){if(k==='left'||k==='right'){choice=1-choice;render()}if(k==='jump'||k==='enter'){choice===0?home():keepWalking()}return;}if(state==='fallen'){if(k==='jump'||k==='enter')retry();return;}if(state==='home'){if(k==='enter'||k==='jump')onExit();return;}if(!WF&&k==='enter'&&room===3&&p.ground)ask();else if(k==='jump')jump();}
+ function press(k){if(state==='question'){if(k==='left'||k==='right'){choice=1-choice;render()}if(k==='jump'||k==='enter'){choice===0?home():keepWalking()}return;}if(state==='fallen'){if(k==='jump'||k==='enter'){if(WF){lives--;if(lives<=0){lives=3;score=0;finds=[];for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);render();return}}retry()}return;}if(state==='home'){if(k==='enter'||k==='jump')onExit();return;}if(!WF&&k==='enter'&&room===3&&p.ground)ask();else if(k==='jump')jump();}
  const keyMap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',Shift:'shift',' ':'jump',Enter:'enter'};
  window.addEventListener('keydown',e=>{if(!active)return;if(e.key==='r'||e.key==='R'){e.preventDefault();retry();return;}const k=keyMap[e.key];if(!k)return;e.preventDefault();if(!e.repeat)press(k);keys.add(k);});
  window.addEventListener('keyup',e=>{if(active)keys.delete(keyMap[e.key]);});window.addEventListener('blur',()=>{if(active)clearInput()});
  inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();h.fn();}});
- return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;clock=400;for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
+ return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;clock=400;lives=3;for(const r of rooms)for(const l of r.lenses){l.used=false;l.bump=0}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
 };
