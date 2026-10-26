@@ -5,11 +5,18 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const WF=level==='waterfall',TX=WF?'waterfall':'platform5';
  const ctx=canvas.getContext('2d'),keys=new Set(),W=304,H=WF?174:136;
  // Waterfall rooms are given in final coordinates: banks (wide ledges) and boulder steps (22 px wide) over the fall.
- const WF_STEP=22,wfSteps=(list)=>list.map(([x,y])=>({x:x-WF_STEP/2,y,w:WF_STEP,stone:true}));
+ // Waterfall = World 1-1 of Super Mario Bros., tile for tile: T px tiles, row 13 is the top of the ground (y GY).
+ // ground spans, ? blocks and stone bricks as [column,row], pipes as [column,height], stairs as [column,height].
+ const T=16,GY=142,ty=r=>GY-(13-r)*T,WFL={
+  ground:[[0,69],[71,86],[89,153],[155,212]],
+  q:[[16,9],[21,9],[23,9],[22,5],[78,9],[94,5],[106,9],[109,9],[109,5],[112,9],[129,5],[130,5],[170,9]],
+  bricks:[[20,9],[22,9],[24,9],[77,9],[79,9],...[80,81,82,83,84,85,86,87].map(c=>[c,5]),[91,5],[92,5],[93,5],[94,9],[100,9],[101,9],[118,9],[121,5],[122,5],[123,5],[128,5],[131,5],[129,9],[130,9],[168,9],[169,9],[171,9]],
+  pipes:[[28,2],[38,3],[46,4],[57,4],[163,2],[179,2]],
+  stairs:[[134,1],[135,2],[136,3],[137,4],[140,4],[141,3],[142,2],[143,1],[148,1],[149,2],[150,3],[151,4],[152,4],[155,4],[156,3],[157,2],[158,1],[181,1],[182,2],[183,3],[184,4],[185,5],[186,6],[187,7],[188,8],[189,8]],
+  flag:198};
+ const wfLedges=()=>[...WFL.ground.map(([a,b])=>({x:a*T,y:GY,w:(b-a)*T,kind:'ground'})),...WFL.pipes.map(([c,h])=>({x:c*T,y:GY-h*T,w:2*T,kind:'pipe'})),...WFL.stairs.map(([c,h])=>({x:c*T,y:GY-h*T,w:T,kind:'stair'}))];
  const rooms=WF?[
-  {name:LT('waterfall.room1'),start:{x:30,y:124},exitY:124,width:608,ledges:[{x:0,y:124,w:82},...wfSteps([[110,116],[150,106],[190,96],[230,106]]),{x:252,y:112,w:120,stone:'path'},...wfSteps([[396,108],[438,118]]),{x:478,y:124,w:130}]},
-  {name:LT('waterfall.room2'),start:{x:20,y:124},exitY:124,width:608,ledges:[{x:0,y:124,w:64},...wfSteps([[92,116],[134,104],[176,94],[218,104],[260,114],[302,104],[344,94],[386,104],[428,116]]),{x:466,y:124,w:142}]}
- ]:[
+  {name:LT('waterfall.room1'),start:{x:40,y:GY},exitY:GY,width:212*T,ledges:wfLedges()} ]:[
   {name:LT('platform5.room1'),start:{x:36,y:116},exitY:190,ledges:[{x:0,y:116,w:104},{x:0,y:190,w:158},{x:196,y:190,w:124}]},
   {name:LT('platform5.room2'),start:{x:18,y:190},exitY:134,ledges:[{x:0,y:190,w:110},{x:140,y:164,w:72},{x:244,y:134,w:76}]},
   {name:LT('platform5.room3'),start:{x:18,y:134},exitY:132,ledges:[{x:0,y:134,w:82},{x:110,y:152,w:78},{x:220,y:132,w:100}]},
@@ -33,12 +40,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Mario-style props: stone bridges hang above the ground, lens blocks are hit with the head to take a photo.
  // Every lens hangs within a jump of the ground or of a bridge below it; bridges are 36 px above the ground.
  // Under each bridge the ground opens into a chasm wider than a jump, with a waterfall: the bridge is the only way over.
- const BRIDGE_H=12,LENS=14;
+ const BRIDGE_H=WF?16:12,LENS=WF?16:14;
  // Waterfall blocks hang within a jump from the ground (the ground is at y 108 there).
  const props=WF?[
-  {bridges:[{x:262,y:88,w:22},{x:292,y:72,w:22},{x:322,y:56,w:22}],lenses:[{x:223,y:62},{x:326,y:16},{x:520,y:80}]},
-  {bridges:[],lenses:[{x:127,y:60},{x:211,y:60},{x:337,y:50},{x:530,y:80}]}
- ]:[
+  {bridges:WFL.bricks.map(([c,r])=>({x:c*T,y:ty(r),w:T})),lenses:WFL.q.map(([c,r])=>({x:c*T,y:ty(r)}))} ]:[
   {bridges:[{x:400,y:73,w:128}],lenses:[{x:262,y:61},{x:457,y:25}]},
   {bridges:[{x:80,y:73,w:128}],lenses:[{x:333,y:44},{x:137,y:25}]},
   {bridges:[{x:230,y:48,w:128}],lenses:[{x:90,y:24},{x:500,y:23}]},
@@ -60,12 +65,25 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
- const speed=82,walkSpeed=38,gravity=450,jumpSpeed=210,radius=5,height=24;
+ const speed=82,walkSpeed=38,gravity=450,jumpSpeed=WF?285:210,radius=5,height=24;
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
- const PARALLAX=.35,HILLS=.3,LEAVES=1.35;let camX=0;
+ // the hills stand on the ground line of the Mario level (their picture ends about 12 px above it)
+ const PARALLAX=.35,HILLS=.3,LEAVES=1.35,HY=WF?12:0;let camX=0;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
+ // waterfall tiles: stone in the boulders' greys. cap = the top row of the ground, brick = a row block, stair = a bevelled block
+ const ST=['#2a2c30','#4a4e54','#6c7076','#909498','#b6b8ba'];
+ function stoneTile(x,y,kind){rect(x,y,T,T,ST[0]);
+  if(kind==='brick'){rect(x,y,T,T,ST[1]);for(const [bx,by,bw] of [[0,1,7],[8,1,8],[0,9,3],[4,9,8],[13,9,3]]){rect(x+bx,y+by,bw,6,ST[2]);rect(x+bx,y+by,bw,1,ST[3])}return}
+  rect(x+1,y+1,T-2,T-2,ST[2]);rect(x+1,y+1,T-2,2,ST[4]);rect(x+1,y+1,2,T-2,ST[3]);rect(x+2,y+T-3,T-3,2,ST[1]);rect(x+T-3,y+2,2,T-3,ST[1]);
+  if(kind==='cap'){rect(x,y,T,1,ST[4]);if((x/T)%3===0)rect(x+6,y+6,3,2,ST[1])}}
+ // metal pipe: a steel body with a wider rim, lit from the left
+ function drawPipe(x,y){const STEEL=['#1b1e23','#4b5560','#7d8894','#aab4bf','#d9dfe6'],h=GY-y;
+  rect(x+2,y+8,T*2-4,h-8,STEEL[0]);for(let i=0;i<T*2-6;i++)rect(x+3+i,y+8,1,h-8,STEEL[i<4?3:i<8?4:i<16?2:1]);
+  rect(x,y,T*2,9,STEEL[0]);for(let i=0;i<T*2-2;i++)rect(x+1+i,y+1,1,7,STEEL[i<4?3:i<8?4:i<18?2:1]);rect(x+1,y+1,T*2-2,1,STEEL[4])}
+ // flagpole: a thin steel pole with a ball on top and a flag
+ function drawFlag(x){rect(x-1,ty(3),2,GY-ty(3),'#aab4bf');rect(x-3,ty(3)-5,6,6,'#d9dfe6');rect(x-T,ty(3)+6,T-1,10,'#3c6e46');rect(x-T,ty(3)+6,T-1,2,'#5e9a68');stoneTile(x-T/2,GY-T,'stair')}
  // waterfall block: a warm stone block with a carved question mark, flat and grey once hit
  function drawBlock(x,y,used){rect(x,y,LENS,LENS,'#1b1e23');rect(x+1,y+1,LENS-2,LENS-2,used?'#4a4640':'#a0703a');if(used)return;rect(x+1,y+1,LENS-2,1,'#d8a45a');rect(x+1,y+1,1,LENS-2,'#d8a45a');rect(x+2,y+LENS-2,LENS-3,1,'#6a4520');rect(x+LENS-2,y+2,1,LENS-3,'#6a4520');
   for(const [dx,dy] of [[5,3],[6,3],[7,3],[8,3],[4,4],[9,4],[9,5],[8,6],[7,6],[6,7],[6,8],[6,10]])rect(x+dx,y+dy,1,1,'#fff1c8')}
@@ -103,7 +121,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.ground)stride+=Math.abs(nx-p.x);
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
-  if(WF&&room===LAST&&p.x>rooms[room].width-radius-2){p.x=rooms[room].width-radius-2;if(!finalAsked){finalAsked=true;state='done';clearInput();if(onComplete)onComplete();return}}
+  if(WF&&p.x>WFL.flag*T+T/2){p.x=WFL.flag*T+T/2;if(!finalAsked){finalAsked=true;state='done';clearInput();if(onComplete)onComplete();return}}
   else if(!WF&&room===3){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked)ask();}
   else if(p.x>rooms[room].width+radius){spawn(room+1);return;}
   if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
@@ -119,7 +137,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT(TX+'.heading'));
   currentUI.clip(ctx,8,23,304,H,()=>{ctx.save();ctx.translate(8,23);
    if(WF){ctx.drawImage(images.platform_wf_sky,0,0);const hx=Math.round(Math.max(0,Math.min(rooms[room].width-W,Math.round(p.x-W/2)))*HILLS);
-    for(let k=Math.floor(hx/W);k*W<hx+W;k++){const x=k*W-hx;if(k%2){ctx.save();ctx.translate(x+W,0);ctx.scale(-1,1);ctx.drawImage(images.platform_wf_hills,0,0);ctx.restore()}else ctx.drawImage(images.platform_wf_hills,x,0)}}
+    for(let k=Math.floor(hx/W);k*W<hx+W;k++){const x=k*W-hx;if(k%2){ctx.save();ctx.translate(x+W,HY);ctx.scale(-1,1);ctx.drawImage(images.platform_wf_hills,0,0);ctx.restore()}else ctx.drawImage(images.platform_wf_hills,x,HY)}}
    const im=WF?images.platform_wf_sky:images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,136/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
    if(!WF)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((136-ih)/2),iw,ih);
@@ -132,18 +150,19 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     ctx.fillStyle='#e4f0f4';for(let x=wx;x<wx+ww;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}});
     currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(f.x,136-20+i*5,f.w,5)}})}
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
-   if(WF){// boulders stand in the river, banks are the mossy ledge over rock; the fall runs in front of the boulders' feet
-    for(const l of rooms[room].ledges){if(l.x+l.w<camX-8||l.x>camX+W+8)continue;
-     if(l.stone==='path'){for(let sx=l.x-3;sx<l.x+l.w;sx+=20)ctx.drawImage(images.platform_wf_boulder_low,sx,l.y)}
-     else if(l.stone){const b=l.y<=104?images.platform_wf_boulder_tall:images.platform_wf_boulder_low;ctx.drawImage(b,Math.round(l.x+l.w/2-b.width/2),l.y)}}
-    for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x-3,b.y,b.w+6,12,()=>ctx.drawImage(images.platform_wf_boulder_low,b.x-3,b.y));
-    // the fall: the same falling water as the Khibiny chasms, across the whole room, foam on the lip, mist at the foot
-    currentUI.clip(ctx,camX,128,W,H-128,()=>{const off=Math.floor(time*90)%64;for(let ty=128-64+off;ty<H;ty+=64)for(let tx=Math.floor(camX/32)*32;tx<camX+W;tx+=32)ctx.drawImage(fallTile,tx,ty);
-     ctx.fillStyle='#e4f0f4';for(let x=Math.floor(camX);x<camX+W;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,128,1,h)}
-     for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(camX,H-20+i*5,W,5)}});
-    for(const l of rooms[room].ledges){if(l.stone||l.x+l.w<camX-8||l.x>camX+W+8)continue;
-     currentUI.clip(ctx,l.x,l.y-1,l.w,H-l.y+1,()=>{for(let sy=l.y+4;sy<H;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_rock,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_ledge,sx,l.y-1)})}}
-   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
+   if(WF){const vis=(x,w)=>x+w>=camX-4&&x<=camX+W+4;
+    // the pits between the ground spans are the fall: running water, foam on the lip, mist at the foot
+    for(let k=0;k<WFL.ground.length-1;k++){const x=WFL.ground[k][1]*T,w=WFL.ground[k+1][0]*T-x;if(!vis(x,w))continue;
+     currentUI.clip(ctx,x,GY,w,H-GY,()=>{const off=Math.floor(time*90)%64;for(let yy=GY-64+off;yy<H;yy+=64)for(let tx=x;tx<x+w;tx+=32)ctx.drawImage(fallTile,tx,yy);
+      ctx.fillStyle='#e4f0f4';for(let xx=x;xx<x+w;xx++)ctx.fillRect(xx,GY,1,1+((xx*7+Math.floor(time*12))%3));
+      for(let q=0;q<4;q++){ctx.fillStyle='rgba(220,236,242,'+(.10+q*.07)+')';ctx.fillRect(x,H-20+q*5,w,5)}})}
+    for(const l of rooms[room].ledges){if(!vis(l.x,l.w))continue;
+     if(l.kind==='ground')currentUI.clip(ctx,l.x,l.y,l.w,H-l.y,()=>{for(let sy=l.y;sy<H;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_rock,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=T)stoneTile(sx,l.y,'cap')});
+     else if(l.kind==='pipe')drawPipe(l.x,l.y);
+     else for(let sy=l.y;sy<GY;sy+=T)stoneTile(l.x,sy,'stair')}
+    for(const b of rooms[room].bridges)if(vis(b.x,T))stoneTile(b.x,b.y,'brick');
+    if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
+   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}if(!WF)for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(WF)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // a find hops out of its block, its points float higher
    for(const q of pops){const im=currentUI.heroItemImages[q.name],u=Math.min(1,q.t/.5),hop=Math.round(Math.sin(u*Math.PI)*18+u*4);if(im&&q.t<.6)ctx.drawImage(im,Math.round(q.x-8),Math.round(q.y-14-hop),16,16);drawText('100',Math.round(q.x),Math.round(q.y-26-q.t*22),8,'#fff4c2','center')}
