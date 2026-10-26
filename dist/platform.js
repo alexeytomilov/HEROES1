@@ -73,12 +73,18 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // the hills stand on the ground line of the Mario level (their picture ends about 12 px above it)
  const PARALLAX=.35,HILLS=.3,LEAVES=1.35,HY=WF?12:0;let camX=0;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
- // waterfall tiles: stone in the boulders' greys. cap = the top row of the ground, brick = a row block, stair = a bevelled block
- const ST=['#2a2c30','#4a4e54','#6c7076','#909498','#b6b8ba'];
- function stoneTile(x,y,kind){rect(x,y,T,T,ST[0]);
-  if(kind==='brick'){rect(x,y,T,T,ST[1]);for(const [bx,by,bw] of [[0,1,7],[8,1,8],[0,9,3],[4,9,8],[13,9,3]]){rect(x+bx,y+by,bw,6,ST[2]);rect(x+bx,y+by,bw,1,ST[3])}return}
-  rect(x+1,y+1,T-2,T-2,ST[2]);rect(x+1,y+1,T-2,2,ST[4]);rect(x+1,y+1,2,T-2,ST[3]);rect(x+2,y+T-3,T-3,2,ST[1]);rect(x+T-3,y+2,2,T-3,ST[1]);
-  if(kind==='cap'){rect(x,y,T,1,ST[4]);if((x/T)%3===0)rect(x+6,y+6,3,2,ST[1])}}
+ // waterfall tiles: dark natural stones, one texture for the ground's top row, the block rows and the stairs.
+ // Six 16x16 variants are drawn once: one to three rounded boulders each, lit from the top left, dark gaps between.
+ const STONE_TILES=(()=>{let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const ramps=[['#25282c','#33373c','#454a50','#5b6168','#757b82'],['#28272a','#38363a','#4b484c','#625e61','#7b7679'],['#23272a','#31373b','#434a4f','#596167','#727a80']];
+  const shapes=[[[8,8,8,8]],[[5,8,5,8],[12,8,4,8]],[[8,5,8,5],[8,12,8,4]],[[5,5,5,5],[12,6,4,6],[8,13,8,3]],[[7,9,7,7],[14,4,3,4]],[[4,10,4,6],[11,7,5,7]]];
+  return shapes.map(sh=>{const c=document.createElement('canvas');c.width=c.height=T;const g=c.getContext('2d');g.fillStyle='#15171a';g.fillRect(0,0,T,T);
+   for(const [cx,cy,rx,ry] of sh){const ramp=ramps[Math.floor(rnd()*ramps.length)],wob=[rnd(),rnd(),rnd()];
+    for(let y=0;y<T;y++)for(let x=0;x<T;x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry,a=Math.atan2(dy,dx),r=Math.hypot(dx,dy),edge=.92+.08*Math.sin(a*3+wob[0]*6)+.05*Math.sin(a*5+wob[1]*6);
+     if(r>edge)continue;const light=-dx*.55-dy*.85+(rnd()-.5)*.35;let k=light>.55?4:light>.15?3:light>-.3?2:1;if(r>edge-.18&&light<0)k=Math.max(0,k-1);
+     g.fillStyle=ramp[k];g.fillRect(x,y,1,1)}}
+   return c})})();
+ function stoneTile(x,y){const v=((Math.floor(x/T)*73856093)^(Math.floor(y/T)*19349663))>>>0;ctx.drawImage(STONE_TILES[v%STONE_TILES.length],x,y)}
  // metal pipe: a steel body with a wider rim, lit from the left
  function drawPipe(x,y){const STEEL=['#1b1e23','#4b5560','#7d8894','#aab4bf','#d9dfe6'],h=GY-y;
   rect(x+2,y+8,T*2-4,h-8,STEEL[0]);for(let i=0;i<T*2-6;i++)rect(x+3+i,y+8,1,h-8,STEEL[i<4?3:i<8?4:i<16?2:1]);
