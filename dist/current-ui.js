@@ -41,6 +41,7 @@ currentUI.lines=(s,w)=>{const result=[];for(const para of String(s).split('\n'))
 currentUI.clip=(c,x,y,w,h,fn)=>{c.save();c.beginPath();c.rect(x,y,w,h);c.clip();fn();c.restore()};
 currentUI.block=(c,s,x,y,w,h,align='left',offset=0)=>{const pad=align==='center'?0:currentUI.settings.padding;const rows=currentUI.lines(s,w-pad*2);currentUI.clip(c,x,y,w,h,()=>rows.forEach((line,i)=>currentUI.text(c,line,align==='center'?x+w/2:align==='right'?x+w-pad:x+pad,y+offset+i*currentUI.settings.lineStep,align)))};
 currentUI.wrap=(c,s,x,y,w,max=6)=>currentUI.block(c,currentUI.case(s),x,y,w,max*currentUI.settings.lineStep);
+currentUI.pressFx=(c,b)=>{if(!b)return;c.drawImage(c.canvas,b.x,b.y,b.w-1,b.h-1,b.x+1,b.y+1,b.w-1,b.h-1);c.fillStyle='rgba(0,0,0,.3)';c.fillRect(b.x,b.y,b.w,b.h);c.fillStyle='rgba(0,0,0,.6)';c.fillRect(b.x,b.y,b.w,1);c.fillRect(b.x,b.y,1,b.h)};
 currentUI.box=(c,x,y,w,h,fill='#293640',role='default')=>PeninsulaColors.box(c,x,y,w,h,role);
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.text(c,currentUI.case(title),160,2,'center',null,'unifont')};
 currentUI.resource=(c,label,value)=>{currentUI.box(c,198,161,115,14,'#11171c','power');currentUI.roleBlock(c,label+' '+value,199,161,113,13,'data')};

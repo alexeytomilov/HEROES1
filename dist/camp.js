@@ -112,6 +112,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     }window.PeninsulaWalk?.decorateMinimap(ctx,201,94,108,64);rect(252,123,6,6,currentUI.settings.textColor);rect(254+vectors[dir][0]*2,125+vectors[dir][1]*2,2,2,'#11171c');});
   }
   let dialogueFx=null;
+  let pressedHit=null;
   function render(){PeninsulaPopup.visible=false;
     if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];
     currentUI.base(ctx,indoor?'house2':village?'village3':bear?'bear2':'camp1');drawScene();
@@ -127,7 +128,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     dialogueFx=dialogueFx||PeninsulaDialogueFX.create({ctx,fonts:currentUI.fonts,portrait:{x:155,y:110},clip:[8,23,188,136],render:()=>render()});
     dialogueFx.line(window.PeninsulaDialogue?.evaluate('walk:'+walkLevel,{x,y,dir,grid})||lastMessage||LT('walk.dialogDefault'),8,206,188,26);dialogueFx.portrait();
     if(intro||won||failed){const popupButton=currentUI.modal(ctx,failed?LT('bear2.popupFailTitle'):won?village?LT('village3.popupTitle'):indoor?LT('house2.popupTitle'):LT('bear2.popupWonTitle'):'',failed?LT('bear2.popupFailBody'):lastMessage);hits=[];hit(popupButton.label,popupButton.x,popupButton.y,popupButton.w,popupButton.h,()=>{if(failed)restartBear();else if(won)onExit();else{intro=false;describe()}})}
-    drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);drawGameBorder(ctx);
+    drawMouseArrow();if(drag)item(bear?bearItems.find(o=>o.id===drag.kind).asset:'camp_tent',drag.x-13,drag.y-13,26,26);currentUI.pressFx(ctx,pressedHit);drawGameBorder(ctx);
   }
   let pointer=null;
   function mouseAction(p){if(!p||intro||won||failed||showMap||drag||(bear&&chosen)||!contains(p,view)||hits.some(h=>contains(p,h)))return null;const u=(p.x-view.x)/view.w;return u<.28?'left':u>.72?'right':'forward';}
@@ -138,7 +139,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
     if(!active||e.button!==0)return;e.preventDefault();const p=point(e);
     if(bear&&!intro&&!won&&!failed){const i=bearItems.findIndex((o,i)=>contains(p,{x:198+i*29,y:176,w:28,h:28}));if(i>=0){chosen=bearItems[i];drag={kind:chosen.id,id:e.pointerId,x:p.x,y:p.y,startX:p.x,startY:p.y,moved:false};inputSurface.setPointerCapture(e.pointerId);message(LT('bear2.selectedDrag',{item:chosen.name}));return}if(chosen&&contains(p,view)&&!showMap){install();return}}
     if(!bear&&!indoor&&!village&&!intro&&!won&&contains(p,bag)){drag={kind:'tent',id:e.pointerId,x:p.x,y:p.y};inputSurface.setPointerCapture(e.pointerId);render();return}
-    const b=hits.find(h=>contains(p,h));if(b){b.fn();return}const action=mouseAction(p);if(action==='forward')step(1);if(action==='left')turn(-1);if(action==='right')turn(1);
+    const b=hits.find(h=>contains(p,h));if(b){if(pressedHit)return;pressedHit=b;render();setTimeout(()=>{pressedHit=null;b.fn();render()},170);return}const action=mouseAction(p);if(action==='forward')step(1);if(action==='left')turn(-1);if(action==='right')turn(1);
   });
   inputSurface.addEventListener('pointermove',e=>{if(!active)return;const p=point(e);if(drag){if(drag.id!==e.pointerId)return;drag.x=p.x;drag.y=p.y;if(bear&&Math.hypot(p.x-drag.startX,p.y-drag.startY)>2)drag.moved=true}else pointer=p;render()});
   inputSurface.addEventListener('pointerleave',()=>{if(active){pointer=null;render()}});

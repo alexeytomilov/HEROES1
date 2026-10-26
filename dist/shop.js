@@ -35,6 +35,7 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   hovered=null;speak(LT('shop3.refund',{item:item.name,price:item.price}));
  }
  function icon(id,x,y,size=24){const item=catalog.flatMap(c=>c.items).find(p=>p.id===id);ctx.drawImage(images['shop_'+(item?.icon||id)],Math.round(x),Math.round(y),size,size)}
+ let pressedHit=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;ctx.imageSmoothingEnabled=false;hits=[];currentUI.base(ctx,'shop3');
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?(window.PeninsulaDialogue?.itemText('shop:teriberka','hover',hovered.id)||LT('shop3.price',{item:hovered.name,price:hovered.price})+(money<hovered.price?'\n'+LT('shop3.priceShort'):'')):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
@@ -42,13 +43,13 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
   catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+2,y+2,24);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
   for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)PeninsulaText.line(ctx,String(item.count),x+25,y+16,'data',currentUI.fonts,'right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
-  if(won){const b=currentUI.modal(ctx,LT('shop3.popupTitle'),LT('shop3.popupBody'));hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-12,drag.y-12,24);drawGameBorder(ctx);
+  if(won){const b=currentUI.modal(ctx,LT('shop3.popupTitle'),LT('shop3.popupBody'));hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-12,drag.y-12,24);currentUI.pressFx(ctx,pressedHit);drawGameBorder(ctx);
  }
  const contains=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;
  function point(e){const b=inputSurface.getBoundingClientRect();return{x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*240/b.height}}
  inputSurface.addEventListener('pointerdown',e=>{
   if(!active||e.button!==0)return;e.preventDefault();const p=point(e),target=hits.find(h=>contains(p,h));if(!target)return;
-  if(target.product){selected=target.product;hovered=target.product;drag={id:e.pointerId,product:target.product,x:p.x,y:p.y};inputSurface.setPointerCapture(e.pointerId);render()}else target.fn();
+  if(target.product){selected=target.product;hovered=target.product;drag={id:e.pointerId,product:target.product,x:p.x,y:p.y};inputSurface.setPointerCapture(e.pointerId);render()}else{if(pressedHit)return;pressedHit=target;render();setTimeout(()=>{pressedHit=null;target.fn();render()},170)}
  });
  inputSurface.addEventListener('pointermove',e=>{if(!active)return;const p=point(e);if(drag){if(drag.id!==e.pointerId)return;drag.x=p.x;drag.y=p.y;render();return}const product=won?null:hits.find(h=>h.product&&contains(p,h))?.product||null;if(product?.id!==hovered?.id){hovered=product;render();}});
  inputSurface.addEventListener('pointerleave',()=>{if(active&&!drag&&hovered){hovered=null;render();}});

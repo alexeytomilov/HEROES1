@@ -96,7 +96,7 @@ async function startRPG(){
   // To bring them back, restore the dialogue-fx calls: PeninsulaDialogueFX.create(...), .line(PeninsulaDialogue.evaluate('walk:coast', …)), .portrait().
   heading(LT('camp1.heading'));
   if(drag)clipped(1,22,318,211,()=>icon('camp_tent',drag.x-12,drag.y-12));
-  drawMouseArrow();
+  drawMouseArrow();if(pressedRect){const b=pressedRect;ctx.drawImage(canvas,b.x,b.y,b.w-1,b.h-1,b.x+1,b.y+1,b.w-1,b.h-1);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(b.x,b.y,b.w,1);ctx.fillRect(b.x,b.y,1,b.h)}
  }
  // Inside the view the cursor is a pixel arrow for the move a click makes; over trash it becomes a hand.
  const buttonsArea=[{x:118,y:161,w:80,h:43},{x:198,y:176,w:28,h:28}];
@@ -104,7 +104,10 @@ async function startRPG(){
  function mouseAction(p){if(!p||won||drag||!inside(p,view)||overTrash(p))return null;const u=(p.x-view.x)/view.w;return u<.28?'left':u>.72?'right':'forward';}
  function drawMouseArrow(){const action=mouseAction(pointer);canvas.style.cursor=action?'none':overTrash(pointer)||pointer&&buttonsArea.some(r=>inside(pointer,r))?'var(--px-hand,pointer)':'var(--px-arrow,default)';if(!action)return;const ax=Math.round(pointer.x),ay=Math.round(pointer.y);ctx.save();ctx.beginPath();ctx.rect(view.x,view.y,view.w,view.h);ctx.clip();const mask=['00100','01110','11111','00100','00100','00100','00100'];for(let pass=0;pass<2;pass++)for(let yy=0;yy<7;yy++)for(let xx=0;xx<5;xx++)if(mask[yy][xx]==='1'){const ux=(xx-2)*2,uy=(yy-3)*2,dx=action==='left'?uy:action==='right'?-uy:ux,dy=action==='forward'?uy:ux;rect(ax+dx-(pass?0:1),ay+dy-(pass?0:1),pass?2:4,pass?2:4,pass?'#f1d39a':'#07101a');}ctx.restore();}
  const point=e=>{const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*320/r.width,y:(e.clientY-r.top)*240/r.height}};
- function click(p){
+ let pressedRect=null;
+ const CONTROLS=[{x:118,y:161,w:26,h:21},{x:145,y:161,w:26,h:21},{x:172,y:161,w:26,h:21},{x:118,y:183,w:26,h:21},{x:145,y:183,w:26,h:21},{x:172,y:183,w:26,h:21}];
+ function click(p,now){
+  const cb=!now&&CONTROLS.find(r=>inside(p,r));if(cb){if(pressedRect)return;pressedRect=cb;render();setTimeout(()=>{pressedRect=null;click(p,true);render()},170);return}
   if(inside(p,{x:118,y:161,w:26,h:21}))return turn(-1);
   if(inside(p,{x:145,y:161,w:26,h:21}))return step();
   if(inside(p,{x:172,y:161,w:26,h:21}))return turn(1);
