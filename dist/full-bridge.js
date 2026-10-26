@@ -42,7 +42,7 @@ for(let i=0;i<5;i++){
  selection.push(['entry'+i,'Вход · '+points[i].full],['q'+i,'Вопрос '+(i+1)+'-1']);
  const ids=[['1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1'],['2.1','bear2','2.2','2.3','ruin','house2','win2'],['3.1','village3','3.2','shop3','win3'],['4.1','fog4','4.2','exchange4','win4'],['5.1','platform5','5.2','home','traffic5','win5']][i];
  // Screens switched off in the story ("off") are left out of the list.
- for(const id of ids.filter(id=>!journeyNodes[id]?.off))selection.push([id,({drive1:'Игра 1.1 · Гонка',camp1:'Игра 1.2 · Лагерь',bear2:'Игра 2.1 · Медведь',house2:'Игра 2.2 · Заброшка',village3:'Игра 3.1 · Поиск лавки',shop3:'Игра 3.2 · Торговец',fog4:'Игра 4.1 · Туманная гонка',exchange4:'Игра 4.2 · Странник',platform5:'Игра 5.1 · Платформер',traffic5:'Игра 5.2 · Дорога домой',sleep:'Вопрос 1-2 · Спать?',ruin:'Вопрос 2-2 · Руина',home:'Вопрос 5-2 · Домой?'})[id]||(/^win/.test(id)?'Победа '+id.at(-1):'История '+id)]);
+ for(const id of ids.filter(id=>!journeyNodes[id]?.off))selection.push([id,({platform0:'Игра 0.1 · Водопад',drive1:'Игра 1.1 · Гонка',camp1:'Игра 1.2 · Лагерь',bear2:'Игра 2.1 · Медведь',house2:'Игра 2.2 · Заброшка',village3:'Игра 3.1 · Поиск лавки',shop3:'Игра 3.2 · Торговец',fog4:'Игра 4.1 · Туманная гонка',exchange4:'Игра 4.2 · Странник',platform5:'Игра 5.1 · Платформер',traffic5:'Игра 5.2 · Дорога домой',sleep:'Вопрос 1-2 · Спать?',ruin:'Вопрос 2-2 · Руина',home:'Вопрос 5-2 · Домой?'})[id]||(/^win/.test(id)?'Победа '+id.at(-1):'История '+id)]);
 }selection.push(['epilogue','Эпилог']);
 chapterSelect.innerHTML=selection.map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');
 function reviewScreen(id){clearInterval(timer);loading=false;stopGames();journeyStarted=true;journeyActive=true;if(id==='title'){journeyActive=false;setScreen('title')}else if(/^hero[012]$/.test(id)){hero=Number(id.at(-1));setScreen('hero')}else if(id==='map')showNode('map');else if(/^entry[0-4]$/.test(id)){selected=Number(id.at(-1));journeyActive=false;setScreen('map');selectDestination(selected)}else showNode(id);chapterSelect.value=id;}
@@ -51,7 +51,7 @@ const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=
 {const fogBack=document.querySelector('#fog-back');if(fogBack)fogBack.onclick=()=>{stopGames();showNode('map')}}
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
-const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!=='1-1')currentUI.ready.then(()=>setTimeout(()=>reviewScreen(({'1-2':'camp1','2-1':'bear2','2-2':'house2','3-1':'village3','3-2':'shop3','4-1':'fog4','4-2':'exchange4','5-1':'platform5','5-2':'traffic5'})[direct]||direct),0));
+const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!=='1-1'&&direct!=='0-1')currentUI.ready.then(()=>setTimeout(()=>reviewScreen(({'1-2':'camp1','2-1':'bear2','2-2':'house2','3-1':'village3','3-2':'shop3','4-1':'fog4','4-2':'exchange4','5-1':'platform5','5-2':'traffic5'})[direct]||direct),0));
 // The current screen owns its timer; changing screens cancels the old clock.
 let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
 const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');
