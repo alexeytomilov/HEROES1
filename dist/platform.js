@@ -9,7 +9,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // ground spans, ? blocks and stone bricks as [column,row], pipes as [column,height], stairs as [column,height].
  const T=16,GY=142,ty=r=>GY-(13-r)*T,WFL={
   // World 1-1's three pits plus more on the open stretches, each a fall to jump over
-  ground:[[0,12],[14,33],[36,42],[44,51],[54,62],[65,69],[71,86],[89,97],[99,114],[117,124],[127,145],[147,153],[155,165],[168,173],[176,192],[195,212]],
+  ground:[[0,6],[8,12],[14,33],[36,42],[44,51],[54,62],[65,69],[71,86],[89,97],[99,103],[105,114],[117,124],[127,145],[147,153],[155,165],[168,192],[195,212]],
   q:[[16,9],[21,9],[23,9],[22,5],[78,9],[94,5],[106,9],[109,9],[109,5],[112,9],[129,5],[130,5],[170,9]],
   bricks:[[20,9],[22,9],[24,9],[77,9],[79,9],...[80,81,82,83,84,85,86,87].map(c=>[c,5]),[91,5],[92,5],[93,5],[94,9],[100,9],[101,9],[118,9],[121,5],[122,5],[123,5],[128,5],[131,5],[129,9],[130,9],[168,9],[169,9],[171,9]],
   pipes:[[28,2],[38,3],[46,4],[57,4],[163,2],[179,2]],
@@ -66,7 +66,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
- const speed=82,walkSpeed=38,gravity=450,jumpSpeed=WF?285:210,radius=5,height=24;
+ const speed=82,walkSpeed=38,gravity=450,jumpSpeed=WF?285:210,radius=WF?9:5,height=WF?48:24;  // on the waterfall the hero is twice as large, two tiles like big Mario
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
@@ -74,21 +74,26 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const PARALLAX=.35,HILLS=.3,LEAVES=1.35,HY=WF?12:0;let camX=0;
  function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
  // waterfall tiles: dark natural stones, one texture for the ground's top row, the block rows and the stairs.
- // Six 16x16 variants are drawn once: one to three rounded boulders each, lit from the top left, dark gaps between.
+ // Six variants are drawn once: one to three uneven boulders each, a little larger than the tile so the rows get a ragged
+ // outline, lit from the top left, each with a dark rim; between them the background shows through.
  const STONE_TILES=(()=>{let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const ramps=[['#25282c','#33373c','#454a50','#5b6168','#757b82'],['#28272a','#38363a','#4b484c','#625e61','#7b7679'],['#23272a','#31373b','#434a4f','#596167','#727a80']];
   const shapes=[[[8,8,8,8]],[[5,8,5,8],[12,8,4,8]],[[8,5,8,5],[8,12,8,4]],[[5,5,5,5],[12,6,4,6],[8,13,8,3]],[[7,9,7,7],[14,4,3,4]],[[4,10,4,6],[11,7,5,7]]];
-  return shapes.map(sh=>{const c=document.createElement('canvas');c.width=c.height=T;const g=c.getContext('2d');g.fillStyle='#15171a';g.fillRect(0,0,T,T);
+  return shapes.map(sh=>{const c=document.createElement('canvas');c.width=c.height=T+4;const g=c.getContext('2d');
    for(const [cx,cy,rx,ry] of sh){const ramp=ramps[Math.floor(rnd()*ramps.length)],wob=[rnd(),rnd(),rnd()];
-    for(let y=0;y<T;y++)for(let x=0;x<T;x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry,a=Math.atan2(dy,dx),r=Math.hypot(dx,dy),edge=.92+.08*Math.sin(a*3+wob[0]*6)+.05*Math.sin(a*5+wob[1]*6);
-     if(r>edge)continue;const light=-dx*.55-dy*.85+(rnd()-.5)*.35;let k=light>.55?4:light>.15?3:light>-.3?2:1;if(r>edge-.18&&light<0)k=Math.max(0,k-1);
+    for(let y=0;y<T+4;y++)for(let x=0;x<T+4;x++){const dx=(x+.5-cx-2)/(rx+1.5),dy=(y+.5-cy-2)/(ry+1.5),a=Math.atan2(dy,dx),r=Math.hypot(dx,dy),edge=.92+.08*Math.sin(a*3+wob[0]*6)+.05*Math.sin(a*5+wob[1]*6);
+     if(r>edge+.16)continue;if(r>edge){g.fillStyle='#15171a';g.fillRect(x,y,1,1);continue}const light=-dx*.55-dy*.85+(rnd()-.5)*.35;let k=light>.55?4:light>.15?3:light>-.3?2:1;if(r>edge-.18&&light<0)k=Math.max(0,k-1);
      g.fillStyle=ramp[k];g.fillRect(x,y,1,1)}}
    return c})})();
- function stoneTile(x,y){const v=((Math.floor(x/T)*73856093)^(Math.floor(y/T)*19349663))>>>0;ctx.drawImage(STONE_TILES[v%STONE_TILES.length],x,y)}
- // metal pipe: a steel body with a wider rim, lit from the left
- function drawPipe(x,y){const STEEL=['#1b1e23','#4b5560','#7d8894','#aab4bf','#d9dfe6'],h=GY-y;
-  rect(x+2,y+8,T*2-4,h-8,STEEL[0]);for(let i=0;i<T*2-6;i++)rect(x+3+i,y+8,1,h-8,STEEL[i<4?3:i<8?4:i<16?2:1]);
-  rect(x,y,T*2,9,STEEL[0]);for(let i=0;i<T*2-2;i++)rect(x+1+i,y+1,1,7,STEEL[i<4?3:i<8?4:i<18?2:1]);rect(x+1,y+1,T*2-2,1,STEEL[4])}
+ function stoneTile(x,y){const v=((Math.floor(x/T)*73856093)^(Math.floor(y/T)*19349663))>>>0;ctx.drawImage(STONE_TILES[v%STONE_TILES.length],x-2,y-2)}
+ // rusty pipe: an old steel pipe gone orange-brown, lit from the left, with darker rust patches and streaks down
+ function drawPipe(x,y){const RUST=['#1d130e','#4a2a19','#7a4325','#a45d32','#c97f48'],h=GY-y;
+  rect(x+2,y+8,T*2-4,h-8,RUST[0]);rect(x,y,T*2,9,RUST[0]);
+  const shade=i=>i<3?3:i<7?4:i<15?2:1;
+  for(let yy=0;yy<h;yy++){const rim=yy<9,x0=rim?1:3,w=rim?T*2-2:T*2-6;if(rim&&(yy===0||yy===8))continue;
+   for(let i=0;i<w;i++){let k=shade(i);const n=((x+i)*928371+(y+yy)*1237)%97;if(n<9)k=Math.max(1,k-1);else if(n>90&&k<4)k++;
+    if(!rim&&((x+i)*31%11===0)&&((y+yy)%7<4))k=Math.max(1,k-1);ctx.fillStyle=RUST[k];ctx.fillRect(x+x0+i,y+yy,1,1)}}
+  rect(x+1,y+1,T*2-2,1,RUST[4])}
  // flagpole: a thin steel pole with a ball on top and a flag
  function drawFlag(x){rect(x-1,ty(3),2,GY-ty(3),'#aab4bf');rect(x-3,ty(3)-5,6,6,'#d9dfe6');rect(x-T,ty(3)+6,T-1,10,'#3c6e46');rect(x-T,ty(3)+6,T-1,2,'#5e9a68');stoneTile(x-T/2,GY-T,'stair')}
  // waterfall block: a warm stone block with a carved question mark, flat and grey once hit
