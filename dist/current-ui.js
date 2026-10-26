@@ -2,7 +2,7 @@
 window.currentUI={rpgPortraits:{},images:{},glyphs:{},fonts:{},layouts:[],assets:{},settings:{textColor:'#bec4c9',lineColor:'#91a1ad',headingBackground:'#293640',headingColor:'#bec4c9',lineStep:13,padding:5,resourcePadding:5,narratorOffset:0,resourceOffset:1}};
 try{Object.assign(currentUI.settings,JSON.parse(localStorage.getItem('peninsula-layout-settings')||'{}'))}catch{}
 const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=()=>resolve(im);im.onerror=()=>reject(Error(path));im.src=path});
-const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
+const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','2.4','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
 // Character selection idle: three native frames, played 1–2–3–2 at the title's wind tempo.
 currentUI.characterSheets={};
 currentUI.characterIdle={

@@ -137,8 +137,15 @@ window.PENINSULA_STORY = {
       "type": "question",
       "image": "walk_wall",
       "body": "Зайти в руину?",
-      "next": "house2",
+      "next": "2.4",
       "no": "map"
+    },
+    "2.4": {
+      "type": "story",
+      "image": "ruin_house",
+      "body": "Странник решил заглянуть в заброшенный дом. Что ждёт его внутри?",
+      "next": "house2",
+      "hold": 6500
     },
     "house2": {
       "type": "game",

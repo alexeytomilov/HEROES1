@@ -412,6 +412,13 @@
       ],
       "preview": "assets/screens/previews/map.png",
       "note": "Выбор локации на карте; окно рисуется кодом."
+    },
+    "2.4": {
+      "kind": "story",
+      "files": [
+        "assets/screens/layouts/2.4-bg.png"
+      ],
+      "preview": "assets/screens/layouts/2.4-bg.png"
     }
   }
 }
