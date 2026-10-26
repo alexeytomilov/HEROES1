@@ -134,7 +134,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    if(WF){// boulders stand in the river, banks are the mossy ledge over rock; the fall runs in front of the boulders' feet
     for(const l of rooms[room].ledges){if(l.x+l.w<camX-8||l.x>camX+W+8)continue;
      if(l.stone){const b=l.y<=104?images.platform_wf_boulder_tall:images.platform_wf_boulder_low;ctx.drawImage(b,Math.round(l.x+l.w/2-b.width/2),l.y)}}
-    const wy=Math.floor(time*24)%2;for(let x=Math.floor(camX/W)*W;x<camX+W;x+=W)ctx.drawImage(images.platform_wf_water,0,128,W,46,x,128+wy,W,46);
+    // the fall: the same falling water as the Khibiny chasms, across the whole room, foam on the lip, mist at the foot
+    currentUI.clip(ctx,camX,128,W,H-128,()=>{const off=Math.floor(time*90)%64;for(let ty=128-64+off;ty<H;ty+=64)for(let tx=Math.floor(camX/32)*32;tx<camX+W;tx+=32)ctx.drawImage(fallTile,tx,ty);
+     ctx.fillStyle='#e4f0f4';for(let x=Math.floor(camX);x<camX+W;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,128,1,h)}
+     for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(camX,H-20+i*5,W,5)}});
     for(const l of rooms[room].ledges){if(l.stone||l.x+l.w<camX-8||l.x>camX+W+8)continue;
      currentUI.clip(ctx,l.x,l.y-1,l.w,H-l.y+1,()=>{for(let sy=l.y+20;sy<H;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_rock,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_wf_bank_ledge,sx,l.y-1)})}}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff,sx,sy,64,64);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
