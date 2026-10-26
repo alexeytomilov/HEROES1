@@ -40,9 +40,9 @@ window.createTeriberkaShop=function({canvas,inputSurface,images,drawPanel,drawTe
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');currentUI.roleBlock(ctx,hovered?(window.PeninsulaDialogue?.itemText('shop:teriberka','hover',hovered.id)||LT('shop3.price',{item:hovered.name,price:hovered.price})+(money<hovered.price?'\n'+LT('shop3.priceShort'):'')):comment.replace(/(?<=[.!?])\s+/g,'\n'),8,166,188,66,'dialogue');
   rect(269,162,40,12,'#11171c');currentUI.resource(ctx,LT('shop3.cash'),money.toLocaleString('ru-RU'));
   catalog.forEach((cat,i)=>{const x=198+(i%2)*58,y=40+Math.floor(i/2)*17;hit(cat.name,x,y,57,16,()=>changeCategory(i));if(category===i){ctx.strokeStyle='#e5c695';ctx.strokeRect(x+.5,y+.5,56,15)}});
-  catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+3,y+3,22);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
+  catalog[category].items.forEach((product,i)=>{const x=198+(i%4)*29,y=74+Math.floor(i/4)*29;if(selected?.id===product.id||hovered?.id===product.id)rect(x+1,y+1,26,26,'#635443');icon(product.id,x+2,y+2,24);hit(product.name+' — '+product.price+' рублей',x,y,28,28,()=>{});hits[hits.length-1].product=product;});
   for(let i=0;i<8;i++){const x=198+(i%4)*29,y=176+Math.floor(i/4)*29;const item=inventory[i];if(item){icon(item.id,x+2,y+2,24);if(item.count>1)PeninsulaText.line(ctx,String(item.count),x+25,y+16,'data',currentUI.fonts,'right');hit('Вернуть '+item.name,x,y,28,28,()=>refund(item))}}
-  if(won){const b=currentUI.modal(ctx,LT('shop3.popupTitle'),LT('shop3.popupBody'));hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-13,drag.y-13,26);drawGameBorder(ctx);
+  if(won){const b=currentUI.modal(ctx,LT('shop3.popupTitle'),LT('shop3.popupBody'));hits=[];hit(b.label,b.x,b.y,b.w,b.h,onExit)}if(drag)icon(drag.product.id,drag.x-12,drag.y-12,24);drawGameBorder(ctx);
  }
  const contains=(p,r)=>p.x>=r.x&&p.x<r.x+r.w&&p.y>=r.y&&p.y<r.y+r.h;
  function point(e){const b=inputSurface.getBoundingClientRect();return{x:(e.clientX-b.left)*320/b.width,y:(e.clientY-b.top)*240/b.height}}

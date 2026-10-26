@@ -39,7 +39,7 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
   function install(id=chosen?.id){if(village)return false;if(indoor)return false;if(bear){const why=reason();if(why){chosen=null;message(why);return false}if(!id){message(LT('bear2.chooseItem'));return false}chosen=null;if(id==='repeller'){won=true;showMap=false;message(LT('bear2.won'));return true}if(id==='dagger'){failed=true;showMap=false;message(LT('bear2.dagger'));return false}message(LT('bear2.food'));return false}const why=reason();if(why){message(why);return false}won=true;drag=null;showMap=false;message('Лагерь установлен.\nМусор заберём с собой.');return true}
   function inspect(){if(objective&&indoor){if(x>=8&&y<=3){won=true;showMap=false;message(LT('house2.found'));}else message(LT('house2.farHall'));return}if(village){if(x===5&&y===1){won=true;showMap=false;message(LT('village3.found'));}else message(LT('village3.hint'));return}if(bear){message(reason()||LT('bear2.glade'));return}if(indoor){message(LT('house2.empty'));return}const why=reason();message(why||'Сухо, тихо, чисто и красивый вид. Перетащите палатку сюда.')}
   function collect(id){if(tile()!=='c'||collected.has(id)||won)return;collected.add(id);message('Спасибо, что вы убрали мусор! '+(collected.size===2?'Теперь здесь чисто.':'Заберите и оставшийся мусор.'))}
-  function item(asset,a,b,w=26,h=26){ctx.drawImage(images[asset],Math.round(a),Math.round(b),w,h)}
+  function item(asset,a,b,w=24,h=24){ctx.drawImage(images[asset],Math.round(a),Math.round(b),w,h)}
   function drawScene(){
     drawPanel(4,24,192,132);
     let objects;
@@ -80,11 +80,11 @@ window.createCampSearch = function({canvas,inputSurface,images,drawPanel,drawTex
   function drawBag(){
     drawPanel(199,159,117,53);text('ИНВЕНТАРЬ',257,161,'#a9b9cd','center');
     for(let i=0;i<3;i++){const a=202+i*36;drawPanel(a,173,32,30,'ui_button');}
-    if(bear){bearItems.forEach((o,i)=>{const a=202+i*36;if(chosen?.id===o.id)rect(a+4,177,24,22,'#2b4059');if(!(won&&o.id==='repeller')&&drag?.kind!==o.id)item(o.asset,a+3,175,26,26);if(!won&&!failed)hit(o.name,a,173,32,30,()=>{});});return}
-    if(!indoor&&!village&&!won && !(drag&&drag.kind==='tent'))item('camp_tent',bag.x+3,bag.y+2,26,26);
+    if(bear){bearItems.forEach((o,i)=>{const a=202+i*36;if(chosen?.id===o.id)rect(a+4,177,24,22,'#2b4059');if(!(won&&o.id==='repeller')&&drag?.kind!==o.id)item(o.asset,a+4,176,24,24);if(!won&&!failed)hit(o.name,a,173,32,30,()=>{});});return}
+    if(!indoor&&!village&&!won && !(drag&&drag.kind==='tent'))item('camp_tent',bag.x+4,bag.y+3,24,24);
     if(!indoor&&!village&&!won)hit('Палатка — перетащите на площадку',bag.x,bag.y,bag.w,bag.h,()=>{});
-    if(collected.has('bottle'))item('camp_bottle',241,175,26,26);
-    if(collected.has('wrapper'))item('camp_wrapper',277,175,26,26);
+    if(collected.has('bottle'))item('camp_bottle',242,176,24,24);
+    if(collected.has('wrapper'))item('camp_wrapper',278,176,24,24);
   }
   function mapOverlay(){
     rect(8,28,184,124,'#060d16ee');text(indoor?'ЗАЛЫ И ПРОХОДЫ':bear?'ЛЕС И ПОЛЯНА':'ТРОПЫ И ПЛОЩАДКИ',100,32,'#e5c695','center');
