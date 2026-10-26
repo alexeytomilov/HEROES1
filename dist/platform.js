@@ -8,7 +8,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall = World 1-1 of Super Mario Bros., tile for tile: T px tiles, row 13 is the top of the ground (y GY).
  // ground spans, ? blocks and stone bricks as [column,row], pipes as [column,height], stairs as [column,height].
  const T=16,GY=142,ty=r=>GY-(13-r)*T,WFL={
-  ground:[[0,69],[71,86],[89,153],[155,212]],
+  // World 1-1's three pits plus more on the open stretches, each a fall to jump over
+  ground:[[0,12],[14,33],[36,42],[44,51],[54,62],[65,69],[71,86],[89,97],[99,114],[117,124],[127,145],[147,153],[155,165],[168,173],[176,192],[195,212]],
   q:[[16,9],[21,9],[23,9],[22,5],[78,9],[94,5],[106,9],[109,9],[109,5],[112,9],[129,5],[130,5],[170,9]],
   bricks:[[20,9],[22,9],[24,9],[77,9],[79,9],...[80,81,82,83,84,85,86,87].map(c=>[c,5]),[91,5],[92,5],[93,5],[94,9],[100,9],[101,9],[118,9],[121,5],[122,5],[123,5],[128,5],[131,5],[129,9],[130,9],[168,9],[169,9],[171,9]],
   pipes:[[28,2],[38,3],[46,4],[57,4],[163,2],[179,2]],
@@ -167,7 +168,6 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    // a find hops out of its block, its points float higher
    for(const q of pops){const im=currentUI.heroItemImages[q.name],u=Math.min(1,q.t/.5),hop=Math.round(Math.sin(u*Math.PI)*18+u*4);if(im&&q.t<.6)ctx.drawImage(im,Math.round(q.x-8),Math.round(q.y-14-hop),16,16);drawText('100',Math.round(q.x),Math.round(q.y-26-q.t*22),8,'#fff4c2','center')}
    drawHero();ctx.restore();
-   if(WF){const lx=Math.round(camX*LEAVES)%W;currentUI.clip(ctx,8,23,W,H,()=>{for(let k=0;k<2;k++){const x=8+k*W-lx;ctx.drawImage(images.platform_wf_leaves_left,x,23);ctx.drawImage(images.platform_wf_leaves_right,x,23)}})}
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
    if(photoPending){photoPending=false;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.fillStyle='#e8e4d8';g.fillRect(0,0,24,24);g.imageSmoothingEnabled=true;g.drawImage(canvas,8,23,304,136,2,2,20,15);photos.push(c)}
    if(WF){// the score line over the picture, like the top line of a console platformer
