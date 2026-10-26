@@ -66,7 +66,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
- const speed=82,walkSpeed=38,gravity=450,jumpSpeed=WF?285:210,radius=WF?9:5,height=WF?48:24;  // on the waterfall the hero is twice as large, two tiles like big Mario
+ const speed=WF?103:82,walkSpeed=WF?48:38,gravity=WF?703:450,jumpSpeed=WF?356:210,radius=WF?7:5,height=WF?36:24;  // on the waterfall the hero is twice as large, two tiles like big Mario
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
