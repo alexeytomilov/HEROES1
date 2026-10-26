@@ -47,6 +47,11 @@ window.PENINSULA_STORY = {
       "next": "map",
       "hold": 6000
     },
+    "platform0": {
+      "type": "game",
+      "game": "waterfall",
+      "next": "1.1"
+    },
     "1.1": {
       "type": "story",
       "image": "coast",
