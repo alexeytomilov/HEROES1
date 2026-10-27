@@ -87,10 +87,12 @@ currentUI.hero=(c,key)=>{
  currentUI.clip(c,8,23,188,138,()=>{
   line(name.text,102,24+top,'center');
   const ls=labels.text.split('\n').filter(Boolean),vs=values.text.split('\n').filter(Boolean);
-  ls.forEach((l,i)=>{line(l.replace(/:$/,'')+':',7+pad,43+top+i*step);line(vs[i]||'',197-pad,43+top+i*step,'right')});
+  // Stat values share the left edge of the caste and ability values.
+  const valueX=120+pad-5;
+  ls.forEach((l,i)=>{line(l.replace(/:$/,'')+':',7+pad,43+top+i*step);line(vs[i]||'',valueX,43+top+i*step)});
   const y=43+top+ls.length*step+3,a=ability.text.split('\n');
-  line(LT('heroes.casteLabel'),7+pad,y);line(a[0],120+pad-5,y);
-  line(LT('heroes.abilityLabel'),7+pad,y+step);line(a[1],120+pad-5,y+step);
+  line(LT('heroes.casteLabel'),7+pad,y);line(a[0],valueX,y);
+  line(LT('heroes.abilityLabel'),7+pad,y+step);line(a[1],valueX,y+step);
  });
  currentUI.box(c,7,163,190,48,'#293640','narrator');
  currentUI.roleBlock(c,description.text.replace(/\s+/g,' '),8,164,188,46,'heroDescription');
