@@ -5,7 +5,7 @@ const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=(
 const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','2.4','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
 // Character selection idle: three native frames, played 1–2–3–2 at the title's wind tempo.
 currentUI.characterSheets={};
-// The first time a hero's screen opens, two other candidates flash by before the real hero.
+// The first time a hero's screen opens, the other candidates (characterAlts) flash by before the real hero.
 currentUI.HERO_ALT_SECONDS=.35;
 currentUI.characterAlts={};
 currentUI.characterIdle={
@@ -14,7 +14,7 @@ currentUI.characterIdle={
   if(key!==this.key){this.key=key;this.elapsed=0;this.phase=0;this.alt=key&&!this.seen.has(key)?1:0;if(key)this.seen.add(key);return !!key}
   if(!key||!playing)return false;
   this.elapsed+=Math.max(0,dt);
-  if(this.alt){const alt=Math.floor(this.elapsed/currentUI.HERO_ALT_SECONDS)+1;if(alt===this.alt)return false;this.alt=alt>2?0:alt;if(!this.alt)this.elapsed=0;return true}
+  if(this.alt){const alt=Math.floor(this.elapsed/currentUI.HERO_ALT_SECONDS+1e-6)+1,count=currentUI.characterAlts[key.replace('hero-','')]?.length||0;if(alt===this.alt)return false;this.alt=alt>count?0:alt;if(!this.alt)this.elapsed=0;return true}
   const next=[0,1,2,1][Math.floor(this.elapsed/.52)%4],changed=next!==this.phase;
   this.phase=next;return changed;
  },
@@ -29,7 +29,7 @@ currentUI.characterIdle={
 };
 currentUI.ready=Promise.all([
  ...['wanderer','mage','knight'].map(async name=>currentUI.characterSheets[name]=await uiLoad('assets/characters/idle/'+name+'.webp?r=wind3-v1')),
- ...['wanderer','mage','knight'].map(async name=>currentUI.characterAlts[name]=await Promise.all([1,2].map(i=>uiLoad('assets/portrait-'+name+'-alt'+i+'.png?v=alt-1')))),
+ ...['wanderer','mage','knight'].map(async name=>currentUI.characterAlts[name]=await Promise.all([1,2,3].map(i=>uiLoad('assets/portrait-'+name+'-alt'+i+'.png?v=alt-2')))),
  PeninsulaVictoryAnimation.ready,
  ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png?v=light-1')),
  ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
