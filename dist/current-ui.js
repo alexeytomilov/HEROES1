@@ -18,6 +18,8 @@ currentUI.characterIdle={
   const next=[0,1,2,1][Math.floor(this.elapsed/.52)%4],changed=next!==this.phase;
   this.phase=next;return changed;
  },
+ // Text key prefix for the portrait currently shown: 'knight' or, during the flash, 'knight_alt2'.
+ altKey(key){const name=key.replace('hero-','');return this.key===key&&this.alt&&currentUI.characterAlts[name]?.[this.alt-1]?name+'_alt'+this.alt:name},
  draw(c,key){
   const name=key.replace('hero-',''),alt=this.key===key&&this.alt?currentUI.characterAlts[name]?.[this.alt-1]:null,im=currentUI.characterSheets[name];
   if(alt){currentUI.clip(c,200,23,113,158,()=>c.drawImage(alt,199,22));return}
@@ -55,7 +57,7 @@ currentUI.resource=(c,label,value)=>{currentUI.box(c,198,161,115,14,'#11171c','p
 // What each hero carries on the character creation screen: four items in the four slots under the portrait.
 currentUI.heroItems=[['compass','flask','map','rope'],['socks','book','crystal','thermos'],['shield','whetstone','pot','rusks']];
 currentUI.heroItemImages={};for(const n of currentUI.heroItems.flat())uiLoad('assets/hero-item-'+n+'.png?v=items-1').then(im=>{currentUI.heroItemImages[n]=im;if(typeof render==='function')try{render()}catch{}});
-currentUI.drawHeroItems=(c,hero)=>{(currentUI.heroItems[hero]||[]).forEach((n,i)=>{const im=currentUI.heroItemImages[n];if(im)c.drawImage(im,199+i*29+2,183+2)})};
+currentUI.drawHeroItems=(c,hero)=>{const tk=currentUI.characterIdle.altKey(['hero-wanderer','hero-mage','hero-knight'][hero]||''),items=tk.includes('_alt')?LT('heroes.'+tk+'_items').split(/\s*,\s*/):currentUI.heroItems[hero];(items||[]).forEach((n,i)=>{const im=currentUI.heroItemImages[n];if(im)c.drawImage(im,199+i*29+2,183+2)})};
 currentUI.slots=c=>{for(let i=0;i<8;i++)currentUI.box(c,198+i%4*29,176+Math.floor(i/4)*29,28,28,'#18242b','inventory')};
 currentUI.patterns={left:['00100','01100','11111','01100','00100'],up:['00100','01110','11111','00100','00100'],right:['00100','00110','11111','00110','00100'],down:['00100','00100','11111','01110','00100'],sword:['000001','000011','000110','001100','111000','010000'],eye:['0011100','0100010','1001001','0100010','0011100']};
 currentUI.controls=c=>{for(const [kind,x,y]of [['left',118,161],['up',145,161],['right',172,161],['sword',118,183],['down',145,183],['eye',172,183]]){currentUI.box(c,x,y,x===172?25:26,21,['eye','sword'].includes(kind)?'#655848':'#293640','buttons');const rows=currentUI.patterns[kind],left=Math.round(x+(26-rows[0].length*2)/2),top=Math.round(y+(21-rows.length*2)/2);c.fillStyle=currentUI.settings.textColor;rows.forEach((r,yy)=>[...r].forEach((v,xx)=>{if(v==='1')c.fillRect(left+xx*2,top+yy*2,2,2)}))}};
@@ -79,7 +81,8 @@ currentUI.hero=(c,key)=>{
  currentUI.characterIdle.draw(c,key);
  const texts=currentUI.layouts.find(s=>s.key===key).items.filter(n=>n.type==='TEXT'&&n.text),get=s=>texts.find(n=>n.id.endsWith(s));
  // Hero texts come from the level text catalog (heroes.*), keyed by the layout's hero name.
- const hk=key.replace('hero-',''),name={text:LT('heroes.'+hk+'_name')},labels={text:LT('heroes.statLabels')},values={text:LT('heroes.'+hk+'_stats')},ability={text:LT('heroes.'+hk+'_caste')+'\n'+LT('heroes.'+hk+'_ability')},description={text:LT('heroes.'+hk+'_description')};
+ // While a candidate flashes by, its own texts (heroes.<hero>_altN_*) replace the hero's; the caste stays.
+ const hk=key.replace('hero-',''),tk=currentUI.characterIdle.altKey(key),name={text:LT('heroes.'+tk+'_name')},labels={text:LT('heroes.statLabels')},values={text:LT('heroes.'+tk+'_stats')},ability={text:LT('heroes.'+hk+'_caste')+'\n'+LT('heroes.'+tk+'_ability')},description={text:LT('heroes.'+tk+'_description')};
  // Character stats use their own text type; padding, size, color and line spacing come from its preset.
  const st=PeninsulaText.metrics('stats',currentUI.fonts),pad=st.s.padding,step=st.step,top=st.s.offset,line=(t,x,y,align='left')=>PeninsulaText.line(c,t,x,y,'stats',currentUI.fonts,align);
  currentUI.header(c,LT('heroes.header'));
