@@ -5,17 +5,23 @@ const uiLoad=path=>new Promise((resolve,reject)=>{const im=new Image;im.onload=(
 const uiKeys=['0','entry0','q0','1.1','drive1','1.2','camp1','1.3','sleep','1.4','win1','entry1','q1','2.1','bear2','2.2','2.3','ruin','2.4','house2','win2','entry2','q2','3.1','village3','3.2','shop3','win3','entry3','q3','4.1','fog4','4.2','exchange4','win4','entry4','q4','5.1','platform5','5.2','home','traffic5','win5','title','intro2','intro3','intro4','hero2','hero0','hero1','intro5','map'];
 // Character selection idle: three native frames, played 1–2–3–2 at the title's wind tempo.
 currentUI.characterSheets={};
+// The first time a hero's screen opens, two other candidates flash by before the real hero.
+currentUI.HERO_ALT_SECONDS=.35;
+currentUI.characterAlts={};
 currentUI.characterIdle={
- key:null,elapsed:0,phase:0,
+ key:null,elapsed:0,phase:0,alt:0,seen:new Set,
  tick(dt,key,playing=true){
-  if(key!==this.key){this.key=key;this.elapsed=0;this.phase=0;return !!key}
+  if(key!==this.key){this.key=key;this.elapsed=0;this.phase=0;this.alt=key&&!this.seen.has(key)?1:0;if(key)this.seen.add(key);return !!key}
   if(!key||!playing)return false;
   this.elapsed+=Math.max(0,dt);
+  if(this.alt){const alt=Math.floor(this.elapsed/currentUI.HERO_ALT_SECONDS)+1;if(alt===this.alt)return false;this.alt=alt>2?0:alt;if(!this.alt)this.elapsed=0;return true}
   const next=[0,1,2,1][Math.floor(this.elapsed/.52)%4],changed=next!==this.phase;
   this.phase=next;return changed;
  },
  draw(c,key){
-  const name=key.replace('hero-',''),im=currentUI.characterSheets[name];if(!im)return;
+  const name=key.replace('hero-',''),alt=this.key===key&&this.alt?currentUI.characterAlts[name]?.[this.alt-1]:null,im=currentUI.characterSheets[name];
+  if(alt){currentUI.clip(c,200,23,113,158,()=>c.drawImage(alt,199,22));return}
+  if(!im)return;
   const phase=this.key===key?this.phase:0;
   // Keep the existing 1px portrait border; source and destination use the same pixel grid.
   currentUI.clip(c,200,23,113,158,()=>c.drawImage(im,phase*115,0,115,160,199,22,115,160));
@@ -23,6 +29,7 @@ currentUI.characterIdle={
 };
 currentUI.ready=Promise.all([
  ...['wanderer','mage','knight'].map(async name=>currentUI.characterSheets[name]=await uiLoad('assets/characters/idle/'+name+'.webp?r=wind3-v1')),
+ ...['wanderer','mage','knight'].map(async name=>currentUI.characterAlts[name]=await Promise.all([1,2].map(i=>uiLoad('assets/portrait-'+name+'-alt'+i+'.png?v=alt-1')))),
  PeninsulaVictoryAnimation.ready,
  ...['knight','wanderer','mage'].map(async name=>currentUI.rpgPortraits[name]=await uiLoad('assets/rpg-portrait-'+name+'.png?v=light-1')),
  ...uiKeys.map(async k=>currentUI.images[k]=await uiLoad(PeninsulaScreenAssets.layout(k))),
