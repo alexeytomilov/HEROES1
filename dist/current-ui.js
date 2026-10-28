@@ -104,7 +104,10 @@ currentUI.base=(c,key)=>{c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);
  if(isStory){PeninsulaColors.box(c,1,1,318,152,'storyImage');if(background)currentUI.clip(c,2,2,316,150,()=>c.drawImage(PeninsulaColors.picture(currentUI.backgrounds[key],key),0,0));if(key==='win1')PeninsulaVictoryAnimation.draw(c);currentUI.box(c,1,152,318,87,'#11171c','narrator');
  // The picture's frame is drawn last, so the text field below never covers its bottom line.
  PeninsulaColors.outline(c,1,1,318,152,'storyImage');// Screen text comes from the journey script (dist/story.js); the Figma export is only a fallback.
- const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');currentUI.revealBlock(c,body,8,164,304,69,'narrator',key)}
+ const scripted=window.PENINSULA_STORY?.nodes?.[key]?.body,body=(scripted!=null&&scripted!==''?scripted:rows.filter(r=>r.y>=150&&r.w>280).map(r=>r.text).join('\n')).replace(/\n\s*\n/g,'\n');
+ // A victory's reward («+10 к …») is not part of the story text: it gets its own lit line one empty row lower.
+ const lines=body.split('\n'),bonus=lines.filter(l=>/^\s*\+/.test(l)),story=lines.filter(l=>!/^\s*\+/.test(l)).join('\n');
+ currentUI.revealBlock(c,story,8,164,304,69,'narrator',key);if(bonus.length)currentUI.bonusLine(c,bonus.join(' '),story,8,164,304,69,key)}
  for(const r of rows){if(isStory&&r.y>=150&&r.w>280)continue;if(r.y<22&&r.w>200){currentUI.header(c,r.text);continue}const align=(r.align||'LEFT').toLowerCase();currentUI.roleBlock(c,currentUI.case(r.text),Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.max(13,Math.round(r.h)),r.x>=198&&r.y>=161&&r.y<176?'data':r.x>=198&&r.y>=40&&r.y<160?'situation':r.y>=160?'dialogue':'technical')}
  PeninsulaColors.outline(c,0,0,320,240);
 };
@@ -120,5 +123,40 @@ currentUI.revealBlock=(c,s,x,y,w,h,role,key)=>{const now=performance.now();if(ke
  const t=window.PeninsulaTextEdit?.on?1e9:(now-revealStart)/1000,rows=PeninsulaText.block(c,s,x,y,w,h,role,currentUI.fonts,t);
  const R=PeninsulaText.reveal();if(t<rows*R.gap+R.fade&&!revealFrame)revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(revealKey===key&&typeof window.render==='function')try{window.render()}catch{}})};
 currentUI.resetReveal=()=>{revealKey=null};
+// Victory reward line: comes in one row after the story text (with one empty row between), flashes white,
+// settles into gold with a breathing pixel halo and a highlight running across it, and drops white and gold sparks.
+// Everything is a function of the time since the screen opened, so the game's virtual-clock recorder sees the same frames.
+currentUI.bonusColors={flash:'#ffffff',light:'#fff3c8',gold:'#ffd264',halo:'#d8902c'};
+const bonusMask=document.createElement('canvas'),bonusTint=document.createElement('canvas');bonusMask.width=bonusTint.width=320;bonusMask.height=bonusTint.height=24;
+const bonusHash=n=>{n=Math.imul(n^n>>>15,0x2c1b3c6d);n=Math.imul(n^n>>>12,0x297a2d39);return((n^n>>>15)>>>0)/4294967296};
+currentUI.bonusLine=(c,s,story,x,y,w,h,key)=>{
+ const T=PeninsulaText,F=currentUI.fonts,{s:st,step}=T.metrics('narrator',F),R=T.reveal(),C=currentUI.bonusColors;
+ const pad=Math.min(st.padding,Math.max(0,Math.floor((w-1)/2))),row=T.lines(T.text(story),w-pad*2,'narrator',F).length+1;
+ const text=T.format(T.text(s),'narrator'),tw=T.measure(text,'narrator',F,true),lx=st.align==='center'?x+w/2:x+pad;
+ const ox=Math.round(st.align==='center'?lx-tw/2:lx),oy=Math.round(y+st.offset+row*step);
+ T.record(c,s,ox,oy,tw,st.size,'narrator');
+ const t=(window.PeninsulaTextEdit?.on?1e9:(performance.now()-revealStart)/1000)-row*R.gap;
+ if(!revealFrame)revealFrame=requestAnimationFrame(()=>{revealFrame=0;if(revealKey===key&&typeof journeyNode!=='undefined'&&journeyNode===key&&typeof window.render==='function')try{window.render()}catch{}});
+ if(t<=0)return;
+ const m=bonusMask.getContext('2d');m.clearRect(0,0,320,24);T.line(m,text,lx,4,'narrator',F,undefined,true);
+ const tint=color=>{const g=bonusTint.getContext('2d');g.globalCompositeOperation='copy';g.drawImage(bonusMask,0,0);g.globalCompositeOperation='source-in';g.fillStyle=color;g.fillRect(0,0,320,24);g.globalCompositeOperation='source-over';return bonusTint};
+ const a=Math.min(1,t/R.fade),rise=Math.round((1-a)*R.rise),Y=oy-4+rise,alpha=c.globalAlpha;
+ c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.imageSmoothingEnabled=false;
+ // halo: four 1px offsets, wider and brighter right after the flash, then breathing
+ const lit=t-R.fade,breathe=.3+.2*Math.sin(t*Math.PI*2/1.6),burst=lit<0?0:Math.max(0,1-lit/.8);
+ c.globalAlpha=alpha*a*a*a*Math.min(.75,breathe+burst*.3);const halo=tint(C.halo);
+ for(const [dx,dy]of [[-1,0],[1,0],[0,-1],[0,1]])c.drawImage(halo,dx,Y+dy);
+ if(burst>0){c.globalAlpha=alpha*a*a*a*burst*.22;for(const [dx,dy]of [[-2,0],[2,0],[0,-2],[0,2]])c.drawImage(halo,dx,Y+dy)}
+ // the line itself: comes in white, flashes once it is fully there, then pale → gold
+ c.globalAlpha=alpha*a;c.drawImage(tint(lit<.15?C.flash:lit<.45?C.light:C.gold),0,Y);
+ // a highlight band sweeps across the letters every 2.4 s
+ const sweep=(lit-.6)%2.4/1.1;if(lit>.6&&sweep<1){const bx=Math.round(ox-6+(tw+12)*sweep);c.save();c.beginPath();c.rect(bx,Y,4,24);c.clip();c.globalAlpha=alpha*.9;c.drawImage(tint(C.light),0,Y);c.restore()}
+ // sparks: 16 one-pixel embers born on the letters' baseline, falling with a little drift and fading out
+ const N=16,P=1.5,base=oy+st.size-2;
+ for(let i=0;i<N;i++){const born=t-i*P/N;if(born<0)continue;const cycle=Math.floor(born/P),u=born%P/P,seed=i*7919+cycle*104729;
+  const sx=ox+bonusHash(seed)*tw,drift=(bonusHash(seed+1)-.5)*6,fall=3+bonusHash(seed+2)*18;
+  const px=Math.round(sx+drift*u),py=Math.round(base+bonusHash(seed+3)*3+fall*u*u+4*u);
+  c.globalAlpha=alpha*a*(1-u)*(u<.08?u/.08:1);c.fillStyle=bonusHash(seed+4)<.5?C.flash:C.gold;c.fillRect(px,py,1,1)}
+ c.restore();c.globalAlpha=alpha};
 currentUI.block=(c,s,x,y,w,h)=>currentUI.roleBlock(c,s,x,y,w,h,'narrator');
 currentUI.header=(c,title)=>{currentUI.box(c,0,0,320,22,currentUI.settings.headingBackground,'heading');currentUI.roleBlock(c,currentUI.case(title),1,2,318,20,'heading')};
