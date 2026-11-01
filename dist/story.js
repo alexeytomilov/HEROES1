@@ -15,7 +15,7 @@ window.PENINSULA_STORY = {
     "intro2": {
       "type": "story",
       "image": "intro2",
-      "body": "Древний зов заставляет\nгероев отправиться навстречу\nнеизвестному",
+      "body": "Три героя объединяются",
       "next": "intro3",
       "hold": 7000
     },
