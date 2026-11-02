@@ -4,6 +4,8 @@
 window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,drawText,announce,onExit,onComplete=null,level='khibiny'}){
  // The waterfall plays the Khibiny walk (MW keeps the Mario-style layout, off for now) in a taller picture: the world sits at its bottom, more sky above.
  const WF=level==='waterfall',MW=false,TX=WF?'waterfall':'platform5';
+ // The waterfall draws its own pictures (assets/waterfall) where it has them, the shared ones otherwise.
+ if(WF)images=new Proxy(images,{get:(all,k)=>all['waterfall_'+String(k)]||all[k]});
  const ctx=canvas.getContext('2d'),keys=new Set(),W=304,H=WF?174:136,OY=H-136;
  // Waterfall rooms are given in final coordinates: banks (wide ledges) and boulder steps (22 px wide) over the fall.
  // Waterfall = World 1-1 of Super Mario Bros., tile for tile: T px tiles, row 13 is the top of the ground (y GY).

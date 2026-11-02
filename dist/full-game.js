@@ -55,6 +55,8 @@ const chapterQuestions=[...window.PENINSULA_STORY.chapterQuestions];
 const rewards={},travelItems=new Set();
 const journeyNodes=JSON.parse(JSON.stringify(window.PENINSULA_STORY.nodes));
 for(const k of ['intro2','intro3','intro4','reward_fish','reward_niva','reward_room','reward_map']){names.push(k);assetFiles[k]=k.startsWith('intro')?PeninsulaScreenAssets.asset('legacy/'+k):k;}
+// The waterfall platformer has its own copies of the platformer pictures in assets/waterfall (same names), so it can be redrawn apart from the Khibiny.
+for(const k of ['platform_bg1','platform_bg2','platform_bg3','platform_bg4','walk_cliff_64','platform_ledge','platform_bridge','platform_lens','platform_lens_used',...[0,1,2,3,4,5,6,7].flatMap(i=>['platform_hero'+i,'platform_walk'+i])]){names.push('waterfall_'+k);assetFiles['waterfall_'+k]='waterfall/'+assetFiles[k];}
 // Screen 2.3: the phone flips through the photos of the PSD group "old" (tools/extract-screen23-photos.py).
 for(let i=1;i<=5;i++){names.push('photo23_'+i);assetFiles['photo23_'+i]=PeninsulaScreenAssets.asset('photos2-3/photo'+i);}
 let storyPhoto=0,storyPhotoNode=null;
