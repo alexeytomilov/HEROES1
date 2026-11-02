@@ -1,7 +1,11 @@
 // Pixel cursors at the game's own resolution: one cursor pixel is one game pixel at the current scale.
 // Sets --px-arrow, --px-hand, --px-wheel and --px-wait on the page; game CSS and levels use them as cursor values.
 (()=>{
- const colors={k:'#000000',w:'#ffffff',g:'#a8b0b8',d:'#3a3a3a',y:'#e8c060'};
+ const colors={k:'#1b1e23',w:'#ffffff',g:'#a8b0b8',d:'#3a3a3a',y:'#e8c060'};
+ // The light parts are brushed steel: light at the top of the cursor, darker towards the bottom, with a darker
+ // pixel on every seventh diagonal, the same look as the cursor in the film's recordings.
+ const STEEL=['#eef2f6','#d9dfe6','#c3cbd4','#aab4bf','#959fab','#828c98','#717a85'];
+ const steel=(x,y,h)=>{const i=Math.min(STEEL.length-1,Math.floor(y/h*STEEL.length));return STEEL[(x+y)%7===0?Math.max(0,i-2):i]};
  const art={
   arrow:{hot:[0,0],fallback:'default',rows:[
    'k.........',
@@ -75,7 +79,7 @@
  function value(kind,device,dpr){
   const a=art[kind],w=Math.max(...a.rows.map(r=>r.length)),h=a.rows.length,c=document.createElement('canvas');
   c.width=w*device;c.height=h*device;const g=c.getContext('2d');
-  a.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(colors[ch]){g.fillStyle=colors[ch];g.fillRect(x*device,y*device,device,device)}}));
+  a.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(colors[ch]){g.fillStyle=ch==='w'?steel(x,y,h):colors[ch];g.fillRect(x*device,y*device,device,device)}}));
   const url='url("'+c.toDataURL()+'")',hx=Math.round(a.hot[0]*device/dpr),hy=Math.round(a.hot[1]*device/dpr);
   // image-set keeps every cursor pixel on whole screen pixels on high-density displays.
   for(const v of ['image-set('+url+' '+dpr+'x) '+hx+' '+hy+', '+a.fallback,'-webkit-image-set('+url+' '+dpr+'x) '+hx+' '+hy+', '+a.fallback])if(window.CSS?.supports?.('cursor',v))return v;
