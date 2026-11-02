@@ -140,11 +140,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
   if(p.y>(MW?H-8:148)){state='fallen';clearInput();announce(WF?LT('waterfall.fallTitle'):LT('platform5.sayFall'));}
  }
- const spriteBounds={};for(let i=0;i<8;i++){const im=images['platform_hero'+i],c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const data=g.getImageData(0,0,im.width,im.height).data;let left=im.width,top=im.height,right=0,bottom=0;for(let y=0;y<im.height;y++)for(let x=0;x<im.width;x++)if(data[(y*im.width+x)*4+3]>128){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y)}spriteBounds[i]=[left,top,right-left+1,bottom-top+1];}
  function drawHero(){
-  // Walking: 8 frames (contact, down, passing, up for each leg), drawn at the idle sprite's scale so the body's bob stays visible.
-  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)],b=spriteBounds[0],s=height/b[3];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,0,0,im.width,im.height,-Math.round((b[0]+b[2]/2)*s),-Math.round((b[1]+b[3])*s),Math.round(im.width*s),Math.round(im.height*s));ctx.restore();return}
-  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);const bounds=spriteBounds[index],width=Math.round(height*bounds[2]/bounds[3]);ctx.drawImage(im,...bounds,-Math.round(width/2),-height,width,height);ctx.restore();}
+  // Every hero frame is drawn at 100%: the frames are already at their on-screen size (24 px tall, feet on the bottom row).
+  // Walking: 8 frames (contact, down, passing, up for each leg); the body's bob is in the frames, anchored like the idle frame.
+  const WALK_X=7;
+  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
+  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT(TX+'.heading'));
