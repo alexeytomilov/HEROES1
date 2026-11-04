@@ -196,9 +196,11 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     label(LT('waterfall.lives'),306,'right');big(String(lives),306,38,'right')}
    if(flash>0){ctx.fillStyle='rgba(255,255,255,'+(flash/.18*.8).toFixed(2)+')';ctx.fillRect(8,23,304,H)}
   });
-  if(WF){// one line on the left and one row of four slots; the lower strip stays plain
-   PeninsulaColors.fill(ctx,7,198,306,36);currentUI.box(ctx,7,199,190,34,'#11171c','dialogue');currentUI.roleBlock(ctx,LT('waterfall.line'),9,203,186,26,'dialogue');
-   for(let i=0;i<4;i++)currentUI.box(ctx,198+i*29,201,28,28,'#18242b','inventory');if(MW)finds.forEach((n,i)=>{const im=currentUI.heroItemImages[n];if(im)ctx.drawImage(im,198+i*29+2,203)});else photos.slice(-4).forEach((ph,i)=>ctx.drawImage(ph,198+i*29+2,203));
+  if(WF){// no radio line: the lower strip is only the photo prints, one window per photo block of the level,
+   // filled left to right as the photos are taken
+   const n=rooms.reduce((sum,r)=>sum+r.lenses.length,0),w=28,gap=Math.min(12,Math.floor((306-n*w)/(n+1))),x0=7+Math.round((306-n*w-(n-1)*gap)/2);
+   PeninsulaColors.fill(ctx,7,198,306,36);for(let i=0;i<n;i++)currentUI.box(ctx,x0+i*(w+gap),201,w,w,'#18242b','inventory');
+   if(MW)finds.forEach((f,i)=>{const im=currentUI.heroItemImages[f];if(im&&i<n)ctx.drawImage(im,x0+i*(w+gap)+2,203)});else photos.slice(0,n).forEach((ph,i)=>ctx.drawImage(ph,x0+i*(w+gap)+2,203));
   }else{
   currentUI.box(ctx,7,161,190,72,'#11171c','dialogue');
   // The line types out and the mage's portrait shows in the corner of the picture (dialogue-fx.js).
