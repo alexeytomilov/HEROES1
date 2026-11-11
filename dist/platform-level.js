@@ -16,13 +16,15 @@
  const tab=document.createElement('button');tab.type='button';tab.dataset.editorTab='platform';tab.textContent='Платформер';tabs.append(tab);
  const host=document.createElement('section');host.id='platform-editor';host.setAttribute('aria-label','Редактор платформера');host.hidden=true;
  host.style.cssText='border:1px solid #425873;background:#101924;padding:12px;font:12px monospace;color:#b8c7d9';
- const TOOLS=[['move','Двигать'],['ground','Земля'],['bridge','Мостик'],['lens','Блок с фото'],['coin','Монета'],['tourist','Турист'],['start','Старт'],['erase','Стереть']];
+ const TOOLS=[['move','Двигать'],['ground','Земля'],['bridge','Мостик'],['lens','Блок с фото'],['coin','Монета'],['tourist','Турист'],['stand','Турист стоит'],['prize','Супер-приз'],['start','Старт'],['erase','Стереть']];
  const HINTS={move:'Тяни предмет мышкой. У земли и мостика за левый или правый край меняется ширина. Delete — удалить выбранное.',
   ground:'Проведи мышкой слева направо: верх куска земли на высоте, где нажал. Промежутки между кусками — провалы с водопадом.',
   bridge:'Проведи мышкой слева направо: мостик на высоте, где нажал. Под мостиком можно оставить провал.',
   lens:'Щёлкни: блок с фото, по нему бьют головой снизу. Ставь на высоте прыжка над землёй или мостиком.',
   coin:'Щёлкни: монета. Герой берёт её, задев. «Монеты по всей комнате» расставит ряды монет сам.',
-  tourist:'Щёлкни над землёй: турист ходит туда-сюда по этому куску земли. Врезался в него — героя отбрасывает, теряет до 5 монет.',start:'Щёлкни: откуда герой начинает комнату (встаёт на землю под точкой).',erase:'Щёлкни по предмету, чтобы убрать его.'};
+  tourist:'Щёлкни над землёй: турист ходит туда-сюда по этому куску земли. Врезаться в туриста — смерть, как падение в воду.',
+  stand:'Щёлкни над землёй: турист стоит на месте, его надо перепрыгнуть.',
+  prize:'Щёлкни: супер-приз (кубок), 5000 очков и 10 монет. Ставь куда трудно добраться.',start:'Щёлкни: откуда герой начинает комнату (встаёт на землю под точкой).',erase:'Щёлкни по предмету, чтобы убрать его.'};
  const btn=(t,a)=>'<button type="button" '+a+' style="padding:5px 6px;margin:0 3px 3px 0;font:12px monospace;color:#b8c7d9;background:#172231;border:1px solid #425873">'+t+'</button>';
  host.innerHTML='<h2 style="font:600 15px monospace;margin:0 0 10px;color:#fff">Платформер · Водопад</h2>'+
   '<div data-pe-rooms>Комната: '+[1,2,3,4].map(n=>btn(n,'data-pe-room="'+(n-1)+'"')).join('')+'</div>'+
@@ -39,13 +41,14 @@
  let made=null;const maker=()=>made||(made=window.createKhibinyPlatform({canvas:document.createElement('canvas'),inputSurface:document.createElement('div'),images,drawPanel(){},drawText(){},announce(){},onExit(){},level:LEVEL}));
  function builtIn(){try{return JSON.parse(JSON.stringify(maker().builtIn))}catch(e){console.warn(e);return null}}
  // rooms saved before tourists existed get the game's own tourists, so the editor shows what the game plays
- function load(){rooms=window.PeninsulaPlatformLevels.get(LEVEL)||builtIn();if(rooms)rooms.forEach((r,i)=>{r.coins=r.coins||[];if(!r.tourists){try{r.tourists=maker().auto(r,i).tourists}catch{r.tourists=[]}}})}
+ function load(){rooms=window.PeninsulaPlatformLevels.get(LEVEL)||builtIn();if(rooms)rooms.forEach((r,i)=>{r.coins=r.coins||[];if(!r.prizes){try{r.prizes=maker().builtIn[i].prizes}catch{r.prizes=[]}}if(!r.tourists){try{r.tourists=maker().auto(r,i).tourists}catch{r.tourists=[]}}})}
  const playing=()=>typeof platformGame!=='undefined'&&platformGame&&platformGame.level===LEVEL&&typeof screen!=='undefined'&&screen==='platform';
  function commit(){window.PeninsulaPlatformLevels.set(LEVEL,rooms);if(playing())platformGame.setRooms(rooms);draw()}
 
  // items of the room with their boxes (world coordinates), topmost first
  function items(){const r=rooms[room],out=[];
   r.coins.forEach((c,i)=>out.push({kind:'coin',i,box:[c.x-5,c.y-6,10,12]}));
+  r.prizes.forEach((q,i)=>out.push({kind:'prize',i,box:[q.x-8,q.y-9,16,15]}));
   r.tourists.forEach((t,i)=>out.push({kind:'tourist',i,box:[t.x-5,t.y-21,10,21]}));
   r.lenses.forEach((l,i)=>out.push({kind:'lens',i,box:[l.x,l.y,LENS,LENS]}));
   r.bridges.forEach((b,i)=>out.push({kind:'bridge',i,box:[b.x,b.y-3,b.w,15]}));
@@ -53,7 +56,7 @@
   r.ledges.forEach((l,i)=>out.push({kind:'ground',i,box:[l.x,l.y-3,l.w,140-l.y]}));
   return out}
  const hit=(x,y)=>items().find(({box:[a,b,w,h]})=>x>=a&&x<a+w&&y>=b&&y<b+h)||null;
- const list=kind=>({coin:rooms[room].coins,tourist:rooms[room].tourists,lens:rooms[room].lenses,bridge:rooms[room].bridges,ground:rooms[room].ledges})[kind];
+ const list=kind=>({coin:rooms[room].coins,tourist:rooms[room].tourists,prize:rooms[room].prizes,lens:rooms[room].lenses,bridge:rooms[room].bridges,ground:rooms[room].ledges})[kind];
  const groundBelow=(x,y)=>rooms[room].ledges.filter(l=>x>=l.x&&x<=l.x+l.w&&l.y>=y-2).sort((a,b)=>a.y-b.y)[0];
 
  function draw(){
@@ -68,11 +71,12 @@
   for(const b of r.bridges){g.fillStyle='#7a6a55';g.fillRect(b.x,b.y+OY-3,b.w,12);g.fillStyle='#a8957a';g.fillRect(b.x,b.y+OY-3,b.w,2)}
   for(const l of r.lenses){g.fillStyle='#1d2a3a';g.fillRect(l.x,l.y+OY,LENS,LENS);g.fillStyle='#4f8fd0';g.fillRect(l.x+3,l.y+OY+3,LENS-6,LENS-6)}
   for(const c of r.coins){g.fillStyle='#7a4e10';g.fillRect(c.x-4,c.y+OY-5,8,10);g.fillStyle='#f2c14e';g.fillRect(c.x-3,c.y+OY-4,6,8)}
-  for(const t of r.tourists){g.fillStyle='#2a1414';g.fillRect(t.x-4,t.y+OY-21,8,21);g.fillStyle='#c8452f';g.fillRect(t.x-3,t.y+OY-14,6,8);g.fillStyle='#2f5d8a';g.fillRect(t.x-3,t.y+OY-21,6,3)}
+  for(const q of r.prizes){g.fillStyle='#5a3a08';g.fillRect(q.x-7,q.y+OY-9,14,15);g.fillStyle='#f2c14e';g.fillRect(q.x-5,q.y+OY-7,10,7)}
+  for(const t of r.tourists){g.fillStyle=t.stand?'#ffffff':'#2a1414';g.fillRect(t.x-4,t.y+OY-21,8,21);g.fillStyle='#c8452f';g.fillRect(t.x-3,t.y+OY-14,6,8);g.fillStyle='#2f5d8a';g.fillRect(t.x-3,t.y+OY-21,6,3)}
   g.fillStyle='#2e7d32';g.fillRect(r.start.x-4,r.start.y+OY-24,8,24);g.fillStyle='#fff';g.fillRect(r.start.x-1,r.start.y+OY-20,2,2);
   if(sel){const it=items().find(i=>i.kind===sel.kind&&i.i===sel.i);if(it){const [a,b,w,h]=it.box;g.strokeStyle='#ff4fd8';g.lineWidth=1;g.strokeRect(a-.5,b+OY-.5,w+1,Math.min(h,40)+1)}}
   if(drag?.draft){const d=drag.draft;g.fillStyle=drag.kind==='bridge'?'rgba(168,149,122,.8)':'rgba(138,164,58,.8)';g.fillRect(d.x,d.y+OY-3,d.w,6)}
-  info.textContent='Комната '+(room+1)+': земли '+r.ledges.length+', мостиков '+r.bridges.length+', блоков с фото '+r.lenses.length+', монет '+r.coins.length+', туристов '+r.tourists.length+'. Всего блоков с фото: '+rooms.reduce((n,q)=>n+q.lenses.length,0)+'.';
+  info.textContent='Комната '+(room+1)+': земли '+r.ledges.length+', мостиков '+r.bridges.length+', блоков с фото '+r.lenses.length+', монет '+r.coins.length+', туристов '+r.tourists.length+', супер-призов '+r.prizes.length+'. Всего блоков с фото: '+rooms.reduce((n,q)=>n+q.lenses.length,0)+'.';
   for(const b of host.querySelectorAll('[data-pe-room]'))b.style.background=+b.dataset.peRoom===room?'#2b4059':'#172231';
   for(const b of host.querySelectorAll('[data-pe-tool]'))b.style.background=b.dataset.peTool===tool?'#2b4059':'#172231';
   hint.textContent=HINTS[tool];
@@ -82,7 +86,8 @@
   if(tool==='ground'||tool==='bridge'){drag={kind:tool,x0:x,y,draft:{x,y,w:1}};draw();return}
   if(tool==='lens'){r.lenses.push({x:x-7,y:y-7});sel={kind:'lens',i:r.lenses.length-1};commit();return}
   if(tool==='coin'){r.coins.push({x,y});sel={kind:'coin',i:r.coins.length-1};commit();return}
-  if(tool==='tourist'){const l=groundBelow(x,y);if(l){r.tourists.push({x,y:l.y});sel={kind:'tourist',i:r.tourists.length-1};commit()}return}
+  if(tool==='prize'){r.prizes.push({x,y});sel={kind:'prize',i:r.prizes.length-1};commit();return}
+  if(tool==='tourist'||tool==='stand'){const l=groundBelow(x,y);if(l){r.tourists.push(tool==='stand'?{x,y:l.y,stand:true}:{x,y:l.y});sel={kind:'tourist',i:r.tourists.length-1};commit()}return}
   if(tool==='start'){const l=groundBelow(x,y);r.start={x,y:l?l.y:y};commit();return}
   const it=hit(x,y);if(tool==='erase'){if(it&&it.kind!=='start'){list(it.kind).splice(it.i,1);sel=null;commit()}return}
   sel=it?{kind:it.kind,i:it.i}:null;if(!it){draw();return}
