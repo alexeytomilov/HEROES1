@@ -26,7 +26,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   {name:LT('platform5.room3'),start:{x:18,y:134},exitY:132,ledges:[{x:0,y:134,w:82},{x:110,y:152,w:78},{x:220,y:132,w:100}]},
   {name:LT('platform5.room4'),start:{x:18,y:132},exitY:132,ledges:[{x:0,y:132,w:148}]}
  ];
- let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],pressedHit=null,finalAsked=false;
+ let active=false,room=0,p={x:36,y:116,vx:0,vy:0,face:1,ground:true,hang:null},state='play',last=0,acc=0,frame=0,time=0,jumpBuffer=0,coyote=0,grabCooldown=0,choice=0,hits=[],pressedHit=null,finalAsked=false,hurt=0,knockT=0,knock=0;
  if(!MW)for(const r of rooms){r.start.x=Math.round(r.start.x*.95);r.start.y=Math.round((r.start.y-23)*.65);r.exitY=Math.round((r.exitY-23)*.65);for(const l of r.ledges){l.x=Math.round(l.x*.95);l.w=Math.round(l.w*.95);l.y=Math.round((l.y-23)*.65)}}
  // Rooms are twice as wide as the view: stretches with ledges get longer, the gaps between ledges keep their size.
  const ROOM_W=W*2;
@@ -62,11 +62,24 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  });
  // Falls are the gaps between pieces of ground; worked out again whenever the level editor changes a room.
  const fallsOf=r=>{const cover=[...r.ledges].sort((a,b)=>a.x-b.x),out=[];if(!cover.length)return out;let x=0,lastY=cover[0].y;for(const l of cover){if(l.x>x+1)out.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}return out};
- for(const r of rooms)r.coins=r.coins||[];
+ // Waterfall coins, Mario-style: rows of four over every piece of ground, a row along each bridge and an arc over
+ // each gap short enough to jump; nothing past the end of the last room's walk.
+ const autoCoins=(r,i)=>{const out=[],end=i===LAST?finalStop-8:(r.width||ROOM_W);const add=(x,y)=>{if(x>12&&x<end)out.push({x:Math.round(x),y:Math.round(y)})};
+  for(const l of r.ledges)for(let gx=l.x+24;gx+36<=l.x+l.w-20;gx+=84)for(let k=0;k<4;k++)add(gx+k*12,l.y-10);
+  for(const b of r.bridges)for(let x=b.x+16;x<=b.x+b.w-16;x+=16)add(x,b.y-10);
+  for(const f of fallsOf(r))if(f.w<=64&&f.x>0)for(let k=0;k<4;k++){const u=(k+.5)/4;add(f.x+f.w*u,f.y-14-Math.sin(u*Math.PI)*22)}
+  return out};
+ // Waterfall tourists: one on each of the two longest pieces of ground (away from the start), strolling back and forth.
+ const autoTourists=(r,i)=>[...r.ledges].filter(l=>l.w>=110).sort((a,b)=>b.w-a.w).slice(0,i===0?1:2).map(l=>({x:Math.round(l.x+l.w*.65),y:l.y}));
+ // On entering a room each tourist gets the stretch of ground under it to walk, kept clear of the hero's start.
+ function prepTourists(r){r.walkers=(r.tourists||[]).map(t=>{const l=r.ledges.filter(l=>t.x>=l.x&&t.x<=l.x+l.w&&l.y>=t.y-4).sort((a,b)=>a.y-b.y)[0];if(!l)return null;
+  let a=l.x+10,b=l.x+l.w-10;if(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
+  return b-a<16?null:{x:Math.max(a,Math.min(b,t.x)),y:l.y,dir:-1,a,b}}).filter(Boolean)}
+ for(const [i,r] of rooms.entries()){r.coins=r.coins||(WF?autoCoins(r,i):[]);r.tourists=WF?autoTourists(r,i):[]}
  // The rooms as built in (final coordinates), and the level editor's rooms (platform-level.js) put in their place:
- // the start, pieces of ground, bridges, photo blocks and coins of each room.
- const builtIn=JSON.parse(JSON.stringify(rooms.map(r=>({start:r.start,ledges:r.ledges.map(({x,y,w})=>({x,y,w})),bridges:r.bridges.map(({x,y,w})=>({x,y,w})),lenses:r.lenses.map(({x,y})=>({x,y})),coins:[]}))));
- function setRooms(data){if(!Array.isArray(data))return;data.forEach((d,i)=>{const r=rooms[i];if(!r||!d)return;r.start={x:d.start.x,y:d.start.y};r.ledges=d.ledges.map(({x,y,w})=>({x,y,w}));r.bridges=d.bridges.map(({x,y,w})=>({x,y,w}));r.lenses=d.lenses.map(({x,y})=>({x,y,used:false,bump:0}));r.coins=(d.coins||[]).map(({x,y})=>({x,y,taken:false}));r.falls=fallsOf(r)})}
+ // the start, pieces of ground, bridges, photo blocks, coins and tourists of each room.
+ const builtIn=JSON.parse(JSON.stringify(rooms.map(r=>({start:r.start,ledges:r.ledges.map(({x,y,w})=>({x,y,w})),bridges:r.bridges.map(({x,y,w})=>({x,y,w})),lenses:r.lenses.map(({x,y})=>({x,y})),coins:r.coins.map(({x,y})=>({x,y})),tourists:r.tourists}))));
+ function setRooms(data){if(!Array.isArray(data))return;data.forEach((d,i)=>{const r=rooms[i];if(!r||!d)return;r.start={x:d.start.x,y:d.start.y};r.ledges=d.ledges.map(({x,y,w})=>({x,y,w}));r.bridges=d.bridges.map(({x,y,w})=>({x,y,w}));r.lenses=d.lenses.map(({x,y})=>({x,y,used:false,bump:0}));r.coins=(d.coins||[]).map(({x,y})=>({x,y,taken:false}));r.tourists=d.tourists?d.tourists.map(({x,y})=>({x,y})):WF?autoTourists(r,i):[];r.falls=fallsOf(r);if(i===room)prepTourists(r)})}
  if(WF)setRooms(window.PeninsulaPlatformLevels?.get('waterfall'));
  // A seamless 32x64 tile of falling water, scrolled downwards every frame.
  const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
@@ -77,7 +90,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
- const speed=WF?103:82,walkSpeed=WF?48:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:24;  // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
+ // Waterfall: Shift runs (half as fast again), like holding the run button in a console platformer; elsewhere it walks.
+ const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:24;  // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
@@ -113,7 +127,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function text(s,x,y,c='#dce5ed',align='left'){drawText(s,x,y,8,c,align)}
  function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hits.push({x,y,w,h,fn});}
  function clearInput(){keys.clear();jumpBuffer=0;}
- function spawn(index=room){room=index;const s=rooms[room].start;p={x:s.x,y:s.y,vx:0,vy:0,face:1,ground:true,hang:null};state='play';finalAsked=false;choice=0;grabCooldown=0;clearInput();announce(rooms[room].name);}
+ function spawn(index=room){room=index;const s=rooms[room].start;p={x:s.x,y:s.y,vx:0,vy:0,face:1,ground:true,hang:null};prepTourists(rooms[room]);hurt=0;knockT=0;state='play';finalAsked=false;choice=0;grabCooldown=0;clearInput();announce(rooms[room].name);}
  function retry(){spawn(room);render()}
  function home(){if(onComplete){clearInput();onComplete();return;}state='home';clearInput();announce(LT('platform5.sayHome'));render()}
  function keepWalking(){state='play';finalAsked=true;clearInput();announce(LT('platform5.sayStay'));render()}
@@ -123,9 +137,13 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   time+=dt;if(MW||WF){clock=Math.max(0,clock-dt*2.5);for(const q of pops)q.t+=dt;pops=pops.filter(q=>q.t<1.2)}flash=Math.max(0,flash-dt);for(const l of rooms[room].lenses)l.bump=Math.max(0,l.bump-dt);if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
   for(const c of rooms[room].coins)if(!c.taken&&Math.abs(c.x-p.x)<radius+4&&c.y>p.y-height-5&&c.y<p.y+5){c.taken=true;coins++;score+=200;pops.push({x:c.x,y:c.y+8,t:0,pts:'200'})}
   jumpBuffer=Math.max(0,jumpBuffer-dt);coyote=p.ground?.1:Math.max(0,coyote-dt);
+  // tourists stroll; bumping into one knocks the hero back with a hop, he blinks for a moment and drops up to 5 coins
+  hurt=Math.max(0,hurt-dt);knockT=Math.max(0,knockT-dt);
+  for(const t of rooms[room].walkers||[]){t.x+=t.dir*16*dt;if(t.x<t.a){t.x=t.a;t.dir=1}if(t.x>t.b){t.x=t.b;t.dir=-1}
+   if(!hurt&&!p.hang&&Math.abs(t.x-p.x)<radius+4&&p.y>t.y-20&&p.y-height<t.y){hurt=1.2;knockT=.3;knock=p.x<t.x?-1:1;p.vy=-150;p.ground=false;const lost=Math.min(coins,5);coins-=lost;if(lost)pops.push({x:p.x,y:p.y-height+10,t:0,pts:'-'+lost})}}
   const direction=(keys.has('right')?1:0)-(keys.has('left')?1:0);
   if(p.hang){if(keys.has('down')){p.hang=null;p.vy=30;grabCooldown=.4;}else if(keys.has('up')||jumpBuffer>0){const ledge=p.hang;p.x=ledge.side>0?ledge.x+radius+1:ledge.x+ledge.w-radius-1;p.y=ledge.y;p.vy=0;p.ground=true;p.hang=null;jumpBuffer=0;}return;}
-  p.vx=direction*(keys.has('shift')?walkSpeed:speed);if(direction)p.face=direction;
+  p.vx=knockT>0?knock*90:direction*(keys.has('shift')?walkSpeed:speed);if(direction&&!knockT)p.face=direction;
   if(jumpBuffer>0&&coyote>0){p.vy=-jumpSpeed;p.ground=false;coyote=0;jumpBuffer=0;}
   const oldX=p.x,oldY=p.y;let nx=p.x+p.vx*dt;p.vy+=gravity*dt;let ny=p.y+p.vy*dt;p.ground=false;
   const ledges=rooms[room].ledges;
@@ -155,8 +173,19 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   // Every hero frame is drawn at 100%: the frames are already at their on-screen size (24 px tall, feet on the bottom row).
   // Walking: 8 frames (contact, down, passing, up for each leg); the body's bob is in the frames, anchored like the idle frame.
   const WALK_X=7;
+  if(hurt>0&&Math.floor(hurt*16)%2)return;
   if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
   let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
+ // a tourist, 20 px tall, drawn in code for now: red windbreaker, blue cap, green backpack, a trekking pole; legs swap as he walks
+ function drawTourist(t){const step=Math.floor(t.x/4)%2;ctx.save();ctx.translate(Math.round(t.x),Math.round(t.y));ctx.scale(t.dir,1);
+  const r=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
+  r(-3,-6,2,6-step,'#3a3f4a');r(1,-6,2,5+step,'#3a3f4a');r(-4,-1+(step?-1:0),3,1,'#2a1d14');r(1,-1-(step?0:1)+1,3,1,'#2a1d14');
+  r(-7,-16,4,9,'#2c2a24');r(-6,-15,3,8,'#4c6a3a');r(-6,-17,3,2,'#8a7a52');
+  r(-3,-14,7,8,'#2a1414');r(-2,-14,5,8,'#c8452f');r(-2,-14,1,8,'#e2704f');
+  r(-2,-19,5,5,'#2a1d14');r(-1,-19,4,4,'#e0b48c');r(2,-17,1,1,'#2a1d14');
+  r(-2,-21,5,2,'#2f5d8a');r(3,-20,2,1,'#2f5d8a');
+  r(4,-10,1,10,'#9aa4ad');r(3,-10,2,1,'#e0b48c');
+  ctx.restore()}
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT(TX+'.heading'));
@@ -193,6 +222,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    for(const c of rooms[room].coins){if(c.taken||c.x<camX-8||c.x>camX+W+8)continue;const w=[8,6,2,6][Math.floor(time*8)%4],x=Math.round(c.x-w/2),y=Math.round(c.y-5);ctx.fillStyle='#7a4e10';ctx.fillRect(x,y,w,10);if(w>2){ctx.fillStyle='#f2c14e';ctx.fillRect(x+1,y+1,w-2,8);ctx.fillStyle='#fff2b0';ctx.fillRect(x+1,y+2,1,6)}}
    // a find hops out of its block, its points float higher
    for(const q of pops){const im=currentUI.heroItemImages[q.name],u=Math.min(1,q.t/.5),hop=Math.round(Math.sin(u*Math.PI)*18+u*4);if(im&&q.t<.6)ctx.drawImage(im,Math.round(q.x-8),Math.round(q.y-14-hop),16,16);drawText(q.pts||'100',Math.round(q.x),Math.round(q.y-26-q.t*22),8,'#fff4c2','center')}
+   for(const t of rooms[room].walkers||[])if(t.x>camX-10&&t.x<camX+W+10)drawTourist(t);
    drawHero();ctx.restore();
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
    if(photoPending){photoPending=false;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.fillStyle='#e8e4d8';g.fillRect(0,0,24,24);g.imageSmoothingEnabled=true;g.drawImage(canvas,8,23,304,136,2,2,20,15);photos.push(c)}
@@ -235,5 +265,5 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  window.addEventListener('keydown',e=>{if(!active)return;if(e.key==='r'||e.key==='R'){e.preventDefault();retry();return;}const k=keyMap[e.key];if(!k)return;e.preventDefault();if(!e.repeat)press(k);keys.add(k);});
  window.addEventListener('keyup',e=>{if(active)keys.delete(keyMap[e.key]);});window.addEventListener('blur',()=>{if(active)clearInput()});
  inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();if(pressedHit)return;pressedHit=h;render();setTimeout(()=>{pressedHit=null;h.fn();render()},170)}});
- return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives,coins,clock}),setRooms(data){setRooms(data);render()},goRoom(i){spawn(i);render()},builtIn,update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;clock=WF?300:400;lives=3;coins=0;for(const r of rooms){for(const l of r.lenses){l.used=false;l.bump=0}for(const c of r.coins)c.taken=false}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
+ return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives,coins,clock}),setRooms(data){setRooms(data);render()},goRoom(i){spawn(i);render()},builtIn,auto:(d,i)=>({coins:autoCoins(d,i),tourists:autoTourists(d,i)}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;clock=WF?300:400;lives=3;coins=0;for(const r of rooms){for(const l of r.lenses){l.used=false;l.bump=0}for(const c of r.coins)c.taken=false}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
 };
