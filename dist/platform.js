@@ -66,21 +66,24 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const fallsOf=r=>{const cover=[...r.ledges].sort((a,b)=>a.x-b.x),out=[];if(!cover.length)return out;let x=0,lastY=cover[0].y;for(const l of cover){if(l.x>x+1)out.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}return out};
  // Waterfall coins, Mario-style: rows of three over the ground (one row per 168 px), every other spot along each bridge
  // and an arc of three over each gap short enough to jump; nothing past the end of the last room's walk.
+ // The open parts of a piece of ground: where no higher piece covers it. Under a higher piece the ground is inside
+ // the rock and cannot be reached, so coins and tourists go only on the open parts.
+ const openParts=(r,l)=>{let parts=[{x:l.x,w:l.w}];for(const h of r.ledges){if(h===l||h.y>=l.y-1)continue;parts=parts.flatMap(q=>h.x>=q.x+q.w||h.x+h.w<=q.x?[q]:[...(h.x>q.x?[{x:q.x,w:h.x-q.x}]:[]),...(h.x+h.w<q.x+q.w?[{x:h.x+h.w,w:q.x+q.w-h.x-h.w}]:[])])}return parts.map(q=>({...q,y:l.y}))};
  const autoCoins=(r,i)=>{const out=[],end=i===LAST?finalStop-8:(r.width||ROOM_W);const add=(x,y)=>{if(x>12&&x<end)out.push({x:Math.round(x),y:Math.round(y)})};
-  for(const l of r.ledges)for(let gx=l.x+24;gx+24<=l.x+l.w-20;gx+=168)for(let k=0;k<3;k++)add(gx+k*12,l.y-10);
+  for(const l of r.ledges.flatMap(l=>openParts(r,l)))for(let gx=l.x+24;gx+24<=l.x+l.w-20;gx+=168)for(let k=0;k<3;k++)add(gx+k*12,l.y-10);
   for(const b of r.bridges)for(let x=b.x+16;x<=b.x+b.w-16;x+=32)add(x,b.y-10);
   for(const f of fallsOf(r))if(f.w<=64&&f.x>0)for(let k=0;k<3;k++){const u=(k+.5)/3;add(f.x+f.w*u,f.y-14-Math.sin(u*Math.PI)*22)}
   return out};
  // Waterfall tourists: one strolling on each of the two longest pieces of ground (away from the start), plus the ones
  // that just stand where they are (STANDING, per room). Bumping into any of them ends the try, like a fall.
  const STANDING=[[{x:404,y:109}],[],[],[]];
- const autoTourists=(r,i)=>[...[...r.ledges].filter(l=>l.w>=110).sort((a,b)=>b.w-a.w).slice(0,i===0?1:2).map(l=>({x:Math.round(l.x+l.w*.65),y:l.y})),...(STANDING[i]||[]).map(t=>({...t,stand:true}))];
+ const autoTourists=(r,i)=>[...r.ledges.flatMap(l=>openParts(r,l)).filter(l=>l.w>=90&&(!(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6)||l.x+l.w-r.start.x>=300)).sort((a,b)=>b.w-a.w).slice(0,i===0?1:2).map(l=>({x:Math.round(l.x+l.w*.65),y:l.y})),...(STANDING[i]||[]).map(t=>({...t,stand:true}))];
  // the super prize: a big gold cup above the high photo block of the first room
  const PRIZES=[[{x:464,y:8}],[],[],[]];
  // On entering a room each tourist gets the stretch of ground under it to walk, kept clear of the hero's start.
  function prepTourists(r){r.walkers=(r.tourists||[]).map(t=>{const l=r.ledges.filter(l=>t.x>=l.x&&t.x<=l.x+l.w&&l.y>=t.y-4).sort((a,b)=>a.y-b.y)[0];if(!l)return null;
   if(t.stand)return {x:t.x,y:l.y,dir:-1,a:t.x,b:t.x,stand:true};
-  let a=l.x+10,b=l.x+l.w-10;if(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
+  const o=openParts(r,l).sort((m,n)=>Math.abs(m.x+m.w/2-t.x)-Math.abs(n.x+n.w/2-t.x))[0];if(!o)return null;let a=o.x+10,b=o.x+o.w-10;if(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
   return b-a<16?null:{x:Math.max(a,Math.min(b,t.x)),y:l.y,dir:-1,a,b}}).filter(Boolean)}
  for(const [i,r] of rooms.entries()){r.coins=r.coins||(WF?autoCoins(r,i):[]);r.tourists=WF?autoTourists(r,i):[];r.prizes=WF?(PRIZES[i]||[]).map(q=>({...q})):[]}
  // The rooms as built in (final coordinates), and the level editor's rooms (platform-level.js) put in their place:
