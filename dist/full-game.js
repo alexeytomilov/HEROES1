@@ -57,7 +57,8 @@ const journeyNodes=JSON.parse(JSON.stringify(window.PENINSULA_STORY.nodes));
 for(const k of ['intro2','intro3','intro4','reward_fish','reward_niva','reward_room','reward_map']){names.push(k);assetFiles[k]=k.startsWith('intro')?PeninsulaScreenAssets.asset('legacy/'+k):k;}
 // The waterfall platformer has its own copies of the platformer pictures in assets/waterfall (same names), so it can be redrawn apart from the Khibiny.
 for(const k of ['platform_bg1','platform_bg2','platform_bg3','platform_bg4','walk_cliff_64','platform_ledge','platform_bridge','platform_lens','platform_lens_used',...[0,1,2,3,4,5,6,7].flatMap(i=>['platform_hero'+i,'platform_walk'+i])]){names.push('waterfall_'+k);assetFiles['waterfall_'+k]='waterfall/'+assetFiles[k];}
-names.push('waterfall_platform_step');assetFiles.waterfall_platform_step='waterfall/platform-step';  // one stone for the short steps
+names.push('waterfall_platform_step');assetFiles.waterfall_platform_step='waterfall/platform-step';
+for(const k of ['platform_foam','deco_birch1','deco_birch2','deco_bush1','deco_bush2','deco_rock_big','deco_rock_mid','deco_rock_small']){names.push('waterfall_'+k);assetFiles['waterfall_'+k]='waterfall/'+k.replace(/_/g,'-');}  // foam at the foot of the falls, birches, bushes and boulders on the ground  // one stone for the short steps
 // Screen 2.3: the phone flips through the photos of the PSD group "old" (tools/extract-screen23-photos.py).
 for(let i=1;i<=5;i++){names.push('photo23_'+i);assetFiles['photo23_'+i]=PeninsulaScreenAssets.asset('photos2-3/photo'+i);}
 let storyPhoto=0,storyPhotoNode=null;
@@ -105,4 +106,4 @@ function drawExchange(){currentUI.base(ctx,'exchange4');const cats=[LT('exchange
 const requestedGame=new URLSearchParams(location.search).get('game');
 const oldSetScreen=setScreen;
 
-Promise.all([currentUI.ready,...names.map(n=>new Promise((resolve,reject)=>{let im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(n));im.src='assets/'+assetFiles[n]+'.png?v=20261112-v9b'}))]).then(()=>{if(requestedGame==='1-1'){journeyStarted=true;journeyActive=true;journeyNode='drive1';launchFogRace('sredny')}else if(requestedGame==='0-1'){journeyStarted=true;journeyActive=true;showNode('platform0')}else setScreen('title')}).catch(e=>{document.querySelector('#status').textContent='Не удалось загрузить графику. Обновите страницу.'});
+Promise.all([currentUI.ready,...names.map(n=>new Promise((resolve,reject)=>{let im=new Image;im.onload=()=>{images[n]=im;resolve()};im.onerror=()=>reject(Error(n));im.src='assets/'+assetFiles[n]+'.png?v=20261112-l1'}))]).then(()=>{if(requestedGame==='1-1'){journeyStarted=true;journeyActive=true;journeyNode='drive1';launchFogRace('sredny')}else if(requestedGame==='0-1'){journeyStarted=true;journeyActive=true;showNode('platform0')}else setScreen('title')}).catch(e=>{document.querySelector('#status').textContent='Не удалось загрузить графику. Обновите страницу.'});

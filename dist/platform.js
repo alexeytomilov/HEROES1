@@ -40,7 +40,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   for(const l of r.ledges){const e=r.map(l.x+l.w);l.x=r.map(l.x);l.w=e-l.x}
   r.start.x=r.map(r.start.x);r.width=ROOM_W;
  }
- const LAST=rooms.length-1,finalAsk=MW?0:rooms[3].map(106),finalStop=MW?0:rooms[3].map(134);
+ const LAST=rooms.length-1;let finalAsk=MW?0:rooms[3].map(106),finalStop=MW?0:rooms[3].map(134);
  // Mario-style props: stone bridges hang above the ground, lens blocks are hit with the head to take a photo.
  // Every lens hangs within a jump of the ground or of a bridge below it; bridges are 36 px above the ground.
  // Under each bridge the ground opens into a chasm wider than a jump, with a waterfall: the bridge is the only way over.
@@ -62,6 +62,23 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   const cover=[...r.ledges].sort((a,b)=>a.x-b.x);r.falls=[];let x=0,lastY=cover[0].y;
   for(const l of cover){if(l.x>x+1)r.falls.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}
  });
+ // The waterfall's own layout (2026-11-12, after the approved GPT frame): each room a small scene with height changes.
+ // Room 1 as the frame: a high granite ledge, a drop to a pillar between two falls, a row of boulders over the stream,
+ // a lower bank with a tourist. Room 2 climbs the slope in granite steps to the gold cup. Room 3 is the long rapids:
+ // jump from boulder to boulder. Room 4 is the calm shore with birches and the question home.
+ // y is the top of the ground (the hero's feet), x across the 608 px room; boulders (thin) are stood on, jumped through.
+ if(WF){const L=(x,y,w)=>({x,y,w}),B=(x,y,w,thin)=>thin?{x,y,w,thin:true}:{x,y,w},S=(x,y)=>({x,y,w:30,thin:true});
+  const WFR=[
+   {start:{x:40,y:60},exitY:109,ledges:[L(0,60,190),L(232,90,58),L(402,100,68),L(512,109,96)],bridges:[B(296,86,100)],lenses:[{x:110,y:14},{x:336,y:26},{x:548,y:40}],
+    decor:[['birch1',150,60],['bush2',60,60],['rock_small',258,90],['bush1',440,100],['birch2',590,109],['rock_mid',530,109]]},
+   {start:{x:30,y:109},exitY:80,ledges:[L(0,109,140),L(140,88,60),L(200,67,62),L(304,60,118),L(470,80,138)],bridges:[S(346,28)],lenses:[{x:160,y:30},{x:520,y:16}],
+    decor:[['bush1',60,109],['rock_big',110,109],['birch2',400,60],['bush2',580,80],['birch1',500,80]]},
+   {start:{x:30,y:80},exitY:80,ledges:[L(0,80,84),L(560,80,48)],bridges:[S(140,86),S(228,80),S(316,88),S(404,80),S(492,86)],lenses:[{x:222,y:24},{x:398,y:24}],  /* photo blocks over the near end of a stone, clear of the take-off; one jump (about 77 px) apart */
+    decor:[['bush2',40,80],['rock_mid',590,80]]},
+   {start:{x:30,y:80},exitY:71,ledges:[L(0,80,200),L(232,71,376)],bridges:[],lenses:[{x:120,y:24},{x:330,y:14}],
+    decor:[['birch1',90,80],['bush1',170,80],['birch2',280,71],['bush2',470,71],['birch1',560,71],['rock_big',520,71]]}];
+  WFR.forEach((d,i)=>{const r=rooms[i];r.start=d.start;r.exitY=d.exitY;r.width=ROOM_W;r.ledges=d.ledges;r.bridges=d.bridges;r.lenses=d.lenses.map(l=>({...l,used:false,bump:0}));r.decor=d.decor.map(([k,x,y])=>({k,x,y}))});
+  finalAsk=430;finalStop=470}
  // Falls are the gaps between pieces of ground; worked out again whenever the level editor changes a room.
  const fallsOf=r=>{const cover=[...r.ledges].sort((a,b)=>a.x-b.x),out=[];if(!cover.length)return out;let x=0,lastY=cover[0].y;for(const l of cover){if(l.x>x+1)out.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}return out};
  // Waterfall coins, Mario-style: rows of three over the ground (one row per 168 px), every other spot along each bridge
@@ -76,15 +93,16 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   return out};
  // Waterfall tourists: one strolling on each of the two longest pieces of ground (away from the start), plus the ones
  // that just stand where they are (STANDING, per room). Bumping into any of them ends the try, like a fall.
- const STANDING=[[{x:404,y:109}],[],[],[]];
- const autoTourists=(r,i)=>[...r.ledges.flatMap(l=>openParts(r,l)).filter(l=>l.w>=90&&(!(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6)||l.x+l.w-r.start.x>=300)).sort((a,b)=>b.w-a.w).slice(0,i===0?1:2).map(l=>({x:Math.round(l.x+l.w*.65),y:l.y})),...(STANDING[i]||[]).map(t=>({...t,stand:true}))];
+ const STANDING=[[{x:455,y:100}],[],[],[]];
+ const autoTourists=(r,i)=>[...r.ledges.flatMap(l=>openParts(r,l)).filter(l=>l.w>=90&&(!(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6)||l.x+l.w-r.start.x>=300)).sort((a,b)=>b.w-a.w).slice(0,i===0?0:i===1?1:2)  /* room 1 has only its standing tourist, room 2 one on the lower bank */.map(l=>({x:Math.round(l.x+l.w*.65),y:l.y})),...(STANDING[i]||[]).map(t=>({...t,stand:true}))];
  // the super prize: a big gold cup above the high photo block of the first room
- const PRIZES=[[{x:464,y:8}],[],[],[]];
+ const PRIZES=[[],[{x:446,y:6}],[],[]];
  // On entering a room each tourist gets the stretch of ground under it to walk, kept clear of the hero's start.
  function prepTourists(r){r.walkers=(r.tourists||[]).map(t=>{const l=r.ledges.filter(l=>t.x>=l.x&&t.x<=l.x+l.w&&l.y>=t.y-4).sort((a,b)=>a.y-b.y)[0];if(!l)return null;
   if(t.stand)return {x:t.x,y:l.y,dir:-1,a:t.x,b:t.x,stand:true};
-  const o=openParts(r,l).sort((m,n)=>Math.abs(m.x+m.w/2-t.x)-Math.abs(n.x+n.w/2-t.x))[0];if(!o)return null;let a=o.x+10,b=o.x+o.w-10;if(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
+  const o=openParts(r,l).sort((m,n)=>Math.abs(m.x+m.w/2-t.x)-Math.abs(n.x+n.w/2-t.x))[0];if(!o)return null;let a=o.x+40,b=o.x+o.w-10;  // the hero arrives from the left: keep the landing clearif(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
   return b-a<16?null:{x:Math.max(a,Math.min(b,t.x)),y:l.y,dir:-1,a,b}}).filter(Boolean)}
+ for(const r of rooms){r.falls=fallsOf(r);r.decor=r.decor||[]}
  for(const [i,r] of rooms.entries()){r.coins=r.coins||(WF?autoCoins(r,i):[]);r.tourists=WF?autoTourists(r,i):[];r.prizes=WF?(PRIZES[i]||[]).map(q=>({...q})):[]}
  // The rooms as built in (final coordinates), and the level editor's rooms (platform-level.js) put in their place:
  // the start, pieces of ground, bridges, photo blocks, coins and tourists of each room.
@@ -218,7 +236,9 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     const wx=f.x,ww=f.w;  // the water fills the whole gap from edge to edge
     currentUI.clip(ctx,wx,f.y,ww,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=wx;tx<wx+ww;tx+=32)ctx.drawImage(fallTile,tx,ty);
     
-    ctx.fillStyle='#e4f0f4';for(let x=wx;x<wx+ww;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}});
+    ctx.fillStyle='#e4f0f4';for(let x=wx;x<wx+ww;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}
+    // foam where the water lands (waterfall picture set), every other piece mirrored, bobbing a pixel
+    const FM=images.platform_foam;if(WF&&FM)for(let fx=wx,i=0;fx<wx+ww;fx+=FM.width,i++)mirrorDraw(FM,fx,136-FM.height+(Math.floor(time*4+i)%2),i%2===1,false)});
     currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(f.x,136-20+i*5,f.w,5)}})}
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
    if(MW){const vis=(x,w)=>x+w>=camX-4&&x<=camX+W+4;
@@ -235,7 +255,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
    // ground: the rock body tiles below, the ledge strip on top; each picture repeats at its own size, and the ledge's
    // walkable line is LEDGE_TOP px below its top edge (5 for the 64x32 ledge, the strip's own value otherwise)
-   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1,j=0;sy<136;sy+=CL.height,j++)for(let sx=l.x,i=0;sx<l.x+l.w;sx+=CL.width,i++)mirrorDraw(CL,sx,sy,WF&&i%2===1,false);for(let sx=l.x,i=0;sx<l.x+l.w;sx+=LG.width,i++)mirrorDraw(LG,sx,l.y-top,WF&&i%2===1,false)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
+   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1,j=0;sy<136;sy+=CL.height,j++)for(let sx=l.x,i=0;sx<l.x+l.w;sx+=CL.width,i++)mirrorDraw(CL,sx,sy,WF&&i%2===1,WF&&j%2===1);for(let sx=l.x,i=0;sx<l.x+l.w;sx+=LG.width,i++)mirrorDraw(LG,sx,l.y-top,WF&&i%2===1,false)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
    if(!MW)for(const b of rooms[room].bridges)if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
@@ -250,6 +270,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     const g=Math.floor(time*6)%12;if(g<5)R(-5+g*2,-7,1,6,'#ffffff')}
    // a find hops out of its block, its points float higher
    for(const q of pops){const im=currentUI.heroItemImages[q.name],u=Math.min(1,q.t/.5),hop=Math.round(Math.sin(u*Math.PI)*18+u*4);if(im&&q.t<.6)ctx.drawImage(im,Math.round(q.x-8),Math.round(q.y-14-hop),16,16);drawText(q.pts||'100',Math.round(q.x),Math.round(q.y-26-q.t*22),8,'#fff4c2','center')}
+   // birches, bushes and boulders standing on the ground, behind the hero and the tourists
+   for(const d of rooms[room].decor||[]){const im=images['deco_'+d.k];if(im&&d.x+im.width>camX&&d.x-im.width<camX+W)ctx.drawImage(im,Math.round(d.x-im.width/2),d.y-im.height+2)}
    for(const t of rooms[room].walkers||[])if(t.x>camX-10&&t.x<camX+W+10)drawTourist(t);
    drawHero();ctx.restore();
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
