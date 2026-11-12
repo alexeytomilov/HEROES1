@@ -245,7 +245,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    else if(!MW)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((H-ih)/2),iw,ih);
    ctx.translate(-camX,MW?0:OY);
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
-   if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const FS=SCENE&&images['fall_'+f.w];if(FS){ctx.drawImage(FS,f.x,f.y+1);continue}const g=ctx.createLinearGradient(0,f.y,0,136);g.addColorStop(0,'#2a3034');g.addColorStop(1,'#0c1012');ctx.fillStyle=g;ctx.fillRect(f.x,f.y+4,f.w,132-f.y);
+   if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const FS=SCENE&&images['fall_'+f.w];if(FS){
+     // the painted fall runs: its water (all but the bottom 9 px of foam) scrolls down and wraps, the foam bobs a pixel
+     const fy=f.y+1,foam=9,wh=FS.height-foam,off=Math.floor(time*48)%wh;
+     currentUI.clip(ctx,f.x,fy,f.w,wh,()=>{ctx.drawImage(FS,0,0,FS.width,wh,f.x,fy+off,f.w,wh);ctx.drawImage(FS,0,0,FS.width,wh,f.x,fy+off-wh,f.w,wh)});
+     ctx.drawImage(FS,0,wh,FS.width,foam,f.x,fy+wh-(Math.floor(time*5)%2),f.w,foam);
+     ctx.fillStyle='#e4f0f4';for(let x=f.x;x<f.x+f.w;x++)ctx.fillRect(x,fy,1,1+((x*7+Math.floor(time*12))%3));continue}const g=ctx.createLinearGradient(0,f.y,0,136);g.addColorStop(0,'#2a3034');g.addColorStop(1,'#0c1012');ctx.fillStyle=g;ctx.fillRect(f.x,f.y+4,f.w,132-f.y);
     // the water is narrower than the chasm, so the dark rock shows on both sides and it reads as a fall, not a wall
     const wx=f.x,ww=f.w;  // the water fills the whole gap from edge to edge
     currentUI.clip(ctx,wx,f.y,ww,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=wx;tx<wx+ww;tx+=32)ctx.drawImage(fallTile,tx,ty);
