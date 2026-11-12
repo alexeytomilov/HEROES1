@@ -86,6 +86,9 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  if(SCENE){rooms.splice(1);LAST=0;const r=rooms[0],GY=109;
   r.start={x:30,y:GY};r.exitY=GY;r.width=912;r.bridges=[];r.lenses=[];r.decor=[];
   r.ledges=[[0,105],[140,196],[296,420],[460,560],[616,700],[740,912]].map(([a,b],i)=>({x:a,y:GY,w:b-a,slab:i+1}));
+  // stone blocks over the falls and the lenses come from the PSD (scene-layout.js, written by the PSD watcher)
+  const SL=window.WATERFALL_SCENE||{};r.bridges=(SL.blocks||[]).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1}));
+  r.sceneCoins=(SL.coins||[]).map(c=>({x:c.x,y:c.y}));
   finalAsk=850;finalStop=890}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
  // Falls are the gaps between pieces of ground; worked out again whenever the level editor changes a room.
@@ -112,7 +115,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   const o=openParts(r,l).sort((m,n)=>Math.abs(m.x+m.w/2-t.x)-Math.abs(n.x+n.w/2-t.x))[0];if(!o)return null;let a=o.x+40,b=o.x+o.w-10;  // the hero arrives from the left: keep the landing clearif(r.start.x>=l.x&&r.start.x<=l.x+l.w&&Math.abs(r.start.y-l.y)<6){if(t.x>r.start.x)a=Math.max(a,r.start.x+56);else b=Math.min(b,r.start.x-56)}
   return b-a<16?null:{x:Math.max(a,Math.min(b,t.x)),y:l.y,dir:-1,a,b}}).filter(Boolean)}
  for(const r of rooms){r.falls=fallsOf(r);r.decor=r.decor||[]}
- if(SCENE)for(const r of rooms){r.coins=[];r.prizes=[]}
+ if(SCENE)for(const r of rooms){r.coins=(r.sceneCoins||[]).map(c=>({...c,taken:false}));r.prizes=[]}
  for(const [i,r] of rooms.entries()){r.coins=r.coins||(WF?autoCoins(r,i):[]);r.tourists=WF&&!SCENE?autoTourists(r,i):[];r.prizes=WF&&!SCENE?(PRIZES[i]||[]).map(q=>({...q})):[]}
  // The rooms as built in (final coordinates), and the level editor's rooms (platform-level.js) put in their place:
  // the start, pieces of ground, bridges, photo blocks, coins and tourists of each room.
@@ -122,7 +125,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // A seamless 32x64 tile of falling water, scrolled downwards every frame.
  const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
   for(let x=0;x<32;x++){const phase=(x*37)%64,len=10+(x*13)%14,edge=x%8===0;for(let y=0;y<64;y++){const v=(y+phase)%64;let k=v<len?(v<3?4:3):v<len+8?2:1;if(edge)k=Math.max(0,k-2);g.fillStyle=cols[k];g.fillRect(x,y,1,1)}}return c})();
- const solids=()=>[...rooms[room].bridges.map(b=>({...b,h:BRIDGE_H})),...rooms[room].lenses.map(l=>({x:l.x,y:l.y,w:LENS,h:LENS,lens:l}))];
+ const solids=()=>[...rooms[room].bridges.map(b=>({...b,h:b.h||BRIDGE_H})),...rooms[room].lenses.map(l=>({x:l.x,y:l.y,w:LENS,h:LENS,lens:l}))];
  let photos=[],photoPending=false,flash=0;
  function snap(lens){lens.used=true;lens.bump=.15;if(MW){find(lens);return}if(WF){score+=1000;pops.push({x:lens.x+LENS/2,y:lens.y,t:0,pts:'1000'})}flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
@@ -268,7 +271,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    // walkable line is LEDGE_TOP px below its top edge (5 for the 64x32 ledge, the strip's own value otherwise)
    else if(SCENE)for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const sl=images['slab'+l.slab];if(sl)ctx.drawImage(sl,l.x,l.y)}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1,j=0;sy<136;sy+=CL.height,j++)for(let sx=l.x,i=0;sx<l.x+l.w;sx+=CL.width,i++)mirrorDraw(CL,sx,sy,WF&&i%2===1,WF&&j%2===1);for(let sx=l.x,i=0;sx<l.x+l.w;sx+=LG.width,i++)mirrorDraw(LG,sx,l.y-top,WF&&i%2===1,false)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
-   if(!MW)for(const b of rooms[room].bridges)if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
+   if(!MW)for(const b of rooms[room].bridges)if(SCENE&&b.block&&images['block'+b.block])ctx.drawImage(images['block'+b.block],b.x,b.y);else if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
    // that blinks now and then (each lens at its own moment)
