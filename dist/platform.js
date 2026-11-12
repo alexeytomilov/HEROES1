@@ -101,7 +101,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
  // Waterfall: Shift runs (half as fast again), like holding the run button in a console platformer; elsewhere it walks.
- const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:WF?34:24,HS=WF?34/24:1;  // the waterfall hero is 34 px tall: the 24 px frames drawn at 34/24 until frames of his own size are drawn
+ const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:WF?29:24,HS=WF?29/24:1;  // the waterfall hero is 29 px tall: the 24 px frames drawn at 29/24 until frames of his own size are drawn
    // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
