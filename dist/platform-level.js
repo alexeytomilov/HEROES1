@@ -16,12 +16,12 @@
  const tab=document.createElement('button');tab.type='button';tab.dataset.editorTab='platform';tab.textContent='Платформер';tabs.append(tab);
  const host=document.createElement('section');host.id='platform-editor';host.setAttribute('aria-label','Редактор платформера');host.hidden=true;
  host.style.cssText='border:1px solid #425873;background:#101924;padding:12px;font:12px monospace;color:#b8c7d9';
- const TOOLS=[['move','Двигать'],['ground','Земля'],['bridge','Мостик'],['lens','Блок с фото'],['coin','Монета'],['tourist','Турист'],['stand','Турист стоит'],['prize','Супер-приз'],['start','Старт'],['erase','Стереть']];
+ const TOOLS=[['move','Двигать'],['ground','Земля'],['bridge','Мостик'],['lens','Блок с фото'],['coin','Объектив'],['tourist','Турист'],['stand','Турист стоит'],['prize','Супер-приз'],['start','Старт'],['erase','Стереть']];
  const HINTS={move:'Тяни предмет мышкой. У земли и мостика за левый или правый край меняется ширина. Delete — удалить выбранное.',
   ground:'Проведи мышкой слева направо: верх куска земли на высоте, где нажал. Промежутки между кусками — провалы с водопадом.',
   bridge:'Проведи мышкой слева направо: мостик на высоте, где нажал. Под мостиком можно оставить провал.',
   lens:'Щёлкни: блок с фото, по нему бьют головой снизу. Ставь на высоте прыжка над землёй или мостиком.',
-  coin:'Щёлкни: монета. Герой берёт её, задев. «Монеты по всей комнате» расставит ряды монет сам.',
+  coin:'Щёлкни: маленький объектив (вместо монеты). Герой берёт его, задев. «Монеты по всей комнате» расставит ряды сам.',
   tourist:'Щёлкни над землёй: турист ходит туда-сюда по этому куску земли. Врезаться в туриста — смерть, как падение в воду.',
   stand:'Щёлкни над землёй: турист стоит на месте, его надо перепрыгнуть.',
   prize:'Щёлкни: супер-приз (кубок), 5000 очков и 10 монет. Ставь куда трудно добраться.',start:'Щёлкни: откуда герой начинает комнату (встаёт на землю под точкой).',erase:'Щёлкни по предмету, чтобы убрать его.'};
@@ -70,7 +70,7 @@
   for(const l of r.ledges){g.fillStyle='#5b5650';g.fillRect(l.x,l.y+OY,l.w,H);g.fillStyle='#8aa43a';g.fillRect(l.x,l.y+OY-2,l.w,4)}
   for(const b of r.bridges){g.fillStyle='#7a6a55';g.fillRect(b.x,b.y+OY-3,b.w,12);g.fillStyle='#a8957a';g.fillRect(b.x,b.y+OY-3,b.w,2)}
   for(const l of r.lenses){g.fillStyle='#1d2a3a';g.fillRect(l.x,l.y+OY,LENS,LENS);g.fillStyle='#4f8fd0';g.fillRect(l.x+3,l.y+OY+3,LENS-6,LENS-6)}
-  for(const c of r.coins){g.fillStyle='#7a4e10';g.fillRect(c.x-4,c.y+OY-5,8,10);g.fillStyle='#f2c14e';g.fillRect(c.x-3,c.y+OY-4,6,8)}
+  for(const c of r.coins){g.fillStyle='#8b97a3';g.fillRect(c.x-3,c.y+OY-4,7,9);g.fillRect(c.x-4,c.y+OY-3,9,7);g.fillStyle='#3b82c4';g.fillRect(c.x-2,c.y+OY-2,5,5)}
   for(const q of r.prizes){g.fillStyle='#5a3a08';g.fillRect(q.x-7,q.y+OY-9,14,15);g.fillStyle='#f2c14e';g.fillRect(q.x-5,q.y+OY-7,10,7)}
   for(const t of r.tourists){g.fillStyle=t.stand?'#ffffff':'#2a1414';g.fillRect(t.x-4,t.y+OY-21,8,21);g.fillStyle='#c8452f';g.fillRect(t.x-3,t.y+OY-14,6,8);g.fillStyle='#2f5d8a';g.fillRect(t.x-3,t.y+OY-21,6,3)}
   g.fillStyle='#2e7d32';g.fillRect(r.start.x-4,r.start.y+OY-24,8,24);g.fillStyle='#fff';g.fillRect(r.start.x-1,r.start.y+OY-20,2,2);

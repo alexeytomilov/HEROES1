@@ -101,7 +101,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
  // Waterfall: Shift runs (half as fast again), like holding the run button in a console platformer; elsewhere it walks.
- const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:24;  // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
+ const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:WF?34:24,HS=WF?34/24:1;  // the waterfall hero is 34 px tall: the 24 px frames drawn at 34/24 until frames of his own size are drawn
+   // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
  // The camera keeps the hero near the middle; the far background scrolls at PARALLAX of the ground's speed.
@@ -185,9 +186,11 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   // Every hero frame is drawn at 100%: the frames are already at their on-screen size (24 px tall, feet on the bottom row).
   // Walking: 8 frames (contact, down, passing, up for each leg); the body's bob is in the frames, anchored like the idle frame.
   const WALK_X=7;
-  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
-  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face,1);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
+  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*HS,HS);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
+  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*HS,HS);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
  // a tourist, 20 px tall, drawn in code for now: red windbreaker, blue cap, green backpack, a trekking pole; legs swap as he walks
+ const LENS_COIN=['..rrrrr..','.rmmmmmr.','rmgwgggmr','rmgdddgmr','rmgdkdgmr','rmgdddgmr','rmgggggmr','.rmmmmmr.','..rrrrr..'];
+ const LENS_COLORS={w:'#bfe3ff',r:'#15181d',m:'#8b97a3',g:'#3b82c4',d:'#1f4f8f',k:'#0b1a33'};
  function drawTourist(t){const step=t.stand?0:Math.floor(t.x/4)%2;ctx.save();ctx.translate(Math.round(t.x),Math.round(t.y));ctx.scale(t.dir,1);
   const r=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
   r(-3,-6,2,6-step,'#3a3f4a');r(1,-6,2,5+step,'#3a3f4a');r(-4,-1+(step?-1:0),3,1,'#2a1d14');r(1,-1-(step?0:1)+1,3,1,'#2a1d14');
@@ -229,8 +232,11 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff_64,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}if(!MW)for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
-   // coins turn: 8, 6, 2, 6 px wide; dark rim, gold face, a light stripe
-   for(const c of rooms[room].coins){if(c.taken||c.x<camX-8||c.x>camX+W+8)continue;const w=[8,6,2,6][Math.floor(time*8)%4],x=Math.round(c.x-w/2),y=Math.round(c.y-5);ctx.fillStyle='#7a4e10';ctx.fillRect(x,y,w,10);if(w>2){ctx.fillStyle='#f2c14e';ctx.fillRect(x+1,y+1,w-2,8);ctx.fillStyle='#fff2b0';ctx.fillRect(x+1,y+2,1,6)}}
+   // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
+   // that blinks now and then (each lens at its own moment)
+   for(const c of rooms[room].coins){if(c.taken||c.x<camX-8||c.x>camX+W+8)continue;const x=Math.round(c.x-4),y=Math.round(c.y-4);
+    LENS_COIN.forEach((row,yy)=>{for(let xx=0;xx<9;xx++){const k=row[xx];if(k!=='.'){ctx.fillStyle=LENS_COLORS[k];ctx.fillRect(x+xx,y+yy,1,1)}}});
+    if((Math.floor(time*3+c.x*.37)%7)===0){ctx.fillStyle='#ffffff';ctx.fillRect(x+3,y+2,1,1);ctx.fillRect(x+2,y+3,1,1)}}
    // the super prize: a gold cup on a little stand, bobbing, with a glint running over it
    for(const q of rooms[room].prizes||[]){if(q.taken)continue;const x=Math.round(q.x),y=Math.round(q.y+Math.sin(time*4)*1.5);const R=(a,b,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+a,y+b,w,h)};
     R(-7,-8,14,1,'#5a3a08');R(-6,-8,12,8,'#5a3a08');R(-5,-7,10,7,'#f2c14e');R(-5,-7,2,6,'#fff2b0');R(-9,-6,3,4,'#5a3a08');R(6,-6,3,4,'#5a3a08');R(-8,-5,2,2,'#f2c14e');R(6,-5,2,2,'#f2c14e');
