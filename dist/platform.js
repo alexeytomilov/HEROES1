@@ -138,7 +138,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function text(s,x,y,c='#dce5ed',align='left'){drawText(s,x,y,8,c,align)}
  function button(label,x,y,w,h,fn,selected=false){drawPanel(x,y,w,h,'ui_button');currentUI.roleBlock(ctx,label,x,y,w,h,'buttons');hits.push({x,y,w,h,fn});}
  function clearInput(){keys.clear();jumpBuffer=0;}
- function spawn(index=room){room=index;const s=rooms[room].start;p={x:s.x,y:s.y,vx:0,vy:0,face:1,ground:true,hang:null};prepTourists(rooms[room]);state='play';finalAsked=false;choice=0;grabCooldown=0;clearInput();announce(rooms[room].name);}
+ function spawn(index=room){room=index;const s=rooms[room].start;p={x:s.x,y:s.y,vx:0,vy:0,face:1,ground:true,hang:null};prepTourists(rooms[room]);pops=[];state='play';finalAsked=false;choice=0;grabCooldown=0;clearInput();announce(rooms[room].name);}
  function retry(){spawn(room);render()}
  function home(){if(onComplete){clearInput();onComplete();return;}state='home';clearInput();announce(LT('platform5.sayHome'));render()}
  function keepWalking(){state='play';finalAsked=true;clearInput();announce(LT('platform5.sayStay'));render()}
@@ -186,8 +186,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   // Every hero frame is drawn at 100%: the frames are already at their on-screen size (24 px tall, feet on the bottom row).
   // Walking: 8 frames (contact, down, passing, up for each leg); the body's bob is in the frames, anchored like the idle frame.
   const WALK_X=7;
-  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*HS,HS);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
-  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*HS,HS);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
+  if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%8)];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height/im.height);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
+  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height/im.height);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
  // a tourist, 20 px tall, drawn in code for now: red windbreaker, blue cap, green backpack, a trekking pole; legs swap as he walks
  const LENS_COIN=['..rrrrr..','.rmmmmmr.','rmgwgggmr','rmgdddgmr','rmgdkdgmr','rmgdddgmr','rmgggggmr','.rmmmmmr.','..rrrrr..'];
  const LENS_COLORS={w:'#bfe3ff',r:'#15181d',m:'#8b97a3',g:'#3b82c4',d:'#1f4f8f',k:'#0b1a33'};
@@ -213,8 +213,9 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
    if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const g=ctx.createLinearGradient(0,f.y,0,136);g.addColorStop(0,'#2a3034');g.addColorStop(1,'#0c1012');ctx.fillStyle=g;ctx.fillRect(f.x,f.y+4,f.w,132-f.y);
     // the water is narrower than the chasm, so the dark rock shows on both sides and it reads as a fall, not a wall
-    const wx=f.x+Math.min(8,Math.floor(f.w*.15)),ww=f.w-2*(wx-f.x);currentUI.clip(ctx,wx,f.y,ww,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=wx;tx<wx+ww;tx+=32)ctx.drawImage(fallTile,tx,ty);
-    ctx.fillStyle='rgba(12,16,18,.35)';ctx.fillRect(wx,f.y,2,136-f.y);ctx.fillRect(wx+ww-2,f.y,2,136-f.y);
+    const wx=f.x,ww=f.w;  // the water fills the whole gap from edge to edge
+    currentUI.clip(ctx,wx,f.y,ww,136-f.y,()=>{const off=Math.floor(time*90)%64;for(let ty=f.y-64+off;ty<136;ty+=64)for(let tx=wx;tx<wx+ww;tx+=32)ctx.drawImage(fallTile,tx,ty);
+    
     ctx.fillStyle='#e4f0f4';for(let x=wx;x<wx+ww;x++){const h=1+((x*7+Math.floor(time*12))%3);ctx.fillRect(x,f.y,1,h)}});
     currentUI.clip(ctx,f.x,f.y,f.w,136-f.y,()=>{for(let i=0;i<4;i++){ctx.fillStyle='rgba(220,236,242,'+(.10+i*.07)+')';ctx.fillRect(f.x,136-20+i*5,f.w,5)}})}
    // The ledge picture's walkable grass starts 5 px below its top edge, so it is drawn 5 px higher.
@@ -230,7 +231,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
      else for(let sy=l.y;sy<GY;sy+=T)stoneTile(l.x,sy,'stair')}
     for(const b of rooms[room].bridges)if(vis(b.x,T))stoneTile(b.x,b.y,'brick');
     if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
-   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;currentUI.clip(ctx,l.x,l.y-5,l.w,141-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=64)for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.walk_cliff_64,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=64)ctx.drawImage(images.platform_ledge,sx,l.y-5,64,32)});}if(!MW)for(const b of rooms[room].bridges)currentUI.clip(ctx,b.x,b.y-3,b.w,BRIDGE_H+3,()=>{for(let sx=b.x;sx<b.x+b.w;sx+=48)ctx.drawImage(images.platform_bridge,sx,b.y-3)});
+   // ground: the rock body tiles below, the ledge strip on top; each picture repeats at its own size, and the ledge's
+   // walkable line is LEDGE_TOP px below its top edge (5 for the 64x32 ledge, the strip's own value otherwise)
+   else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1;sy<136;sy+=CL.height)for(let sx=l.x;sx<l.x+l.w;sx+=CL.width)ctx.drawImage(CL,sx,sy);for(let sx=l.x;sx<l.x+l.w;sx+=LG.width)ctx.drawImage(LG,sx,l.y-top)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
+   if(!MW)for(const b of rooms[room].bridges)if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
    // that blinks now and then (each lens at its own moment)
