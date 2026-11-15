@@ -131,22 +131,21 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
   for(let x=0;x<32;x++){const phase=(x*37)%64,len=10+(x*13)%14,edge=x%8===0;for(let y=0;y<64;y++){const v=(y+phase)%64;let k=v<len?(v<3?4:3):v<len+8?2:1;if(edge)k=Math.max(0,k-2);g.fillStyle=cols[k];g.fillRect(x,y,1,1)}}return c})();
  const solids=()=>[...rooms[room].bridges.map(b=>({...b,h:b.h||BRIDGE_H})),...rooms[room].lenses.map(l=>({x:l.x,y:l.y,w:LENS,h:LENS,lens:l}))];
- let photos=[],photoPending=false,flash=0,hearts=[],likesShown=0,nextLike=1;
+ let photos=[],posts=[],photoPending=false,flash=0,hearts=[],likesShown=0,nextLike=1;
  // a heart rising from the post in feed window i (0 = the newest, on the left)
  const heartFrom=i=>hearts.push({x:18+i*24+3+Math.random()*10,y:205+Math.random()*12,vx:Math.random()*24-12,vy:-(55+Math.random()*70),t:0,ph:Math.random()*6,s:Math.random()<.25?2:1});
  // Waterfall scene: every lens is a story. Flash, a vertical shot of the view joins the feed at the bottom (newest first),
- // hearts fly up from it and from the hero across the whole screen, and the likes counter runs up.
+ // later its likes come in (see story).
  const HEART=['.##.##.','#+#####','#######','.#####.','..###..','...#...'];
- function story(c){flash=.12;photoPending=true;const gain=150+Math.floor(Math.random()*351);score+=gain;announce('+'+gain);
-  const hx=8+Math.round(p.x-camX),hy=23+OY+Math.round(p.y)-height;
-  for(let i=0;i<3;i++){const fromHero=false;  // likes come from the story, not from the hero
-  hearts.push({x:fromHero?hx+Math.random()*10-5:18+Math.random()*16,y:fromHero?hy:205+Math.random()*16,vx:Math.random()*30-15,vy:-(60+Math.random()*90),t:-(i%7)*.06,ph:Math.random()*6,s:Math.random()<.3?2:1})}}
+ // a post doesn't get likes at once: the shot is taken (flash, the story joins the feed), a moment later its likes start
+ // coming in: a short run of hearts from that post's window and the counter climbing by the post's likes.
+ function story(c){flash=.12;photoPending=true;posts.push({wait:1.1+Math.random()*.6,gain:150+Math.floor(Math.random()*351),run:0,next:0})}
  function snap(lens){lens.used=true;lens.bump=.15;if(MW){find(lens);return}if(WF){score+=1000;pops.push({x:lens.x+LENS/2,y:lens.y,t:0,pts:'1000'})}flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
  function find(lens){const name=FINDS[(score/100)%FINDS.length];score+=100;pops.push({x:lens.x+LENS/2,y:lens.y,name,t:0});if(finds.length<4)finds.push(name);announce('+100')}
  // Waterfall: Shift runs (half as fast again), like holding the run button in a console platformer; elsewhere it walks.
- const speed=WF?103:82,walkSpeed=WF?155:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:WF?29:24,HS=WF?29/24:1;  // the waterfall hero is 29 px tall: the 24 px frames drawn at 29/24 until frames of his own size are drawn
+ const speed=WF?98:82,walkSpeed=WF?147:38,gravity=WF?703:450,jumpSpeed=MW?356:WF?263:210,radius=MW?7:5,height=MW?36:WF?28:24,HS=WF?28/24:1;  // the waterfall hero is 28 px tall: the 24 px frames drawn at 29/24 until frames of his own size are drawn
    // the waterfall runs 25% faster than the Khibiny walk, jumps keep their shape
  // Legs change frame every STRIDE pixels walked, so holding Shift slows the steps as well as the hero.
  const STRIDE=5;let stride=0;
@@ -195,7 +194,9 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   time+=dt;if(MW||WF){clock=Math.max(0,clock-dt*2.5);for(const q of pops)q.t+=dt;pops=pops.filter(q=>q.t<1.2);
    for(const h of hearts){h.t+=dt;if(h.t<0)continue;h.x+=(h.vx+Math.sin(h.t*5+h.ph)*18)*dt;h.y+=h.vy*dt;h.vy-=12*dt}hearts=hearts.filter(h=>h.y>-14&&h.t<4);
    // older posts keep getting likes: now and then a random post in the feed sends a heart up and a few likes
-   if(SCENE&&photos.length&&state==='play'){nextLike-=dt;if(nextLike<=0){nextLike=.5+Math.random()*.7;heartFrom(Math.floor(Math.random()*Math.min(12,photos.length)));score+=10+Math.floor(Math.random()*31)}}
+   if(SCENE&&state==='play'){posts.forEach((q,k)=>{const slot=posts.length-1-k;if(q.wait>0){q.wait-=dt;return}if(q.run<1.4){q.run+=dt;const add=Math.min(q.gain,Math.round(q.gain*q.run/1.4))-(q.given||0);score+=add;q.given=(q.given||0)+add;q.next-=dt;if(q.next<=0&&slot<12){q.next=.12+Math.random()*.14;heartFrom(slot)}}});
+    const live=posts.map((q,k)=>[q,posts.length-1-k]).filter(([q,i])=>q.run>=1.4&&i<12);
+    if(live.length){nextLike-=dt;if(nextLike<=0){nextLike=.7+Math.random()*.9;heartFrom(live[Math.floor(Math.random()*live.length)][1]);score+=10+Math.floor(Math.random()*31)}}}
    if(likesShown<score)likesShown=Math.min(score,likesShown+Math.max(1,Math.ceil((score-likesShown)*dt*5)));else likesShown=score}flash=Math.max(0,flash-dt);for(const l of rooms[room].lenses)l.bump=Math.max(0,l.bump-dt);if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
   for(const c of rooms[room].coins)if(!c.taken&&Math.abs(c.x-p.x)<radius+4&&c.y>p.y-height-5&&c.y<p.y+5){c.taken=true;if(SCENE)story(c);else{coins++;score+=200}}
   jumpBuffer=Math.max(0,jumpBuffer-dt);coyote=p.ground?.1:Math.max(0,coyote-dt);
@@ -371,5 +372,5 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  window.addEventListener('keydown',e=>{if(!active)return;if(e.key==='r'||e.key==='R'){e.preventDefault();retry();return;}const k=keyMap[e.key];if(!k)return;e.preventDefault();if(!e.repeat)press(k);keys.add(k);});
  window.addEventListener('keyup',e=>{if(active)keys.delete(keyMap[e.key]);});window.addEventListener('blur',()=>{if(active)clearInput()});
  inputSurface.addEventListener('pointerdown',e=>{if(!active||e.button!==0)return;const b=inputSurface.getBoundingClientRect(),x=(e.clientX-b.left)*320/b.width,y=(e.clientY-b.top)*240/b.height,h=hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);if(h){e.preventDefault();if(pressedHit)return;pressedHit=h;render();setTimeout(()=>{pressedHit=null;h.fn();render()},170)}});
- return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives,coins,clock}),setRooms(data){setRooms(data);render()},goRoom(i){spawn(i);render()},builtIn,auto:(d,i)=>({coins:autoCoins(d,i),tourists:autoTourists(d,i)}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];finds=[];pops=[];score=0;likesShown=0;hearts=[];clock=WF?300:400;lives=3;coins=0;for(const r of rooms){for(const l of r.lenses){l.used=false;l.bump=0}for(const c of r.coins)c.taken=false;for(const q of r.prizes||[])q.taken=false}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
+ return{snapshot:()=>({room,state,player:{...p},rooms,photos:photos.length,score,finds:finds.length,lives,coins,clock}),setRooms(data){setRooms(data);render()},goRoom(i){spawn(i);render()},builtIn,auto:(d,i)=>({coins:autoCoins(d,i),tourists:autoTourists(d,i)}),update,press,start(){active=true;dialogueFx?.levelStart();photos=[];posts=[];finds=[];pops=[];score=0;likesShown=0;hearts=[];clock=WF?300:400;lives=3;coins=0;for(const r of rooms){for(const l of r.lenses){l.used=false;l.bump=0}for(const c of r.coins)c.taken=false;for(const q of r.prizes||[])q.taken=false}spawn(0);last=0;acc=0;render();frame=requestAnimationFrame(tick)},stop(){active=false;clearInput();cancelAnimationFrame(frame);inputSurface.style.cursor=''},render,setControl(k,down){if(!active)return;if(down){press(k);keys.add(k)}else keys.delete(k)}};
 };
