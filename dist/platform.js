@@ -94,7 +94,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   finalAsk=r.width-62;finalStop=r.width-22}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
  // Fog over the top of the waterfall background so the HUD letters stay readable: a dithered fade, solid at the top edge.
- const FOG='#e6eef2',FOG_H=58;let fogCv=null;
+ const FOG='#b2c5c4',FOG_H=58;let fogCv=null;
  const fogLayer=()=>{if(fogCv)return fogCv;const c=document.createElement('canvas');c.width=W;c.height=FOG_H;const x=c.getContext('2d'),B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];x.fillStyle=FOG;for(let y=0;y<FOG_H;y++){const a=Math.pow(1-y/FOG_H,1.3);for(let i=0;i<W;i++)if((B[(y&3)*4+(i&3)]+.5)/16<a)x.fillRect(i,y,1,1)}return fogCv=c};
  // Falls are the gaps between pieces of ground; worked out again whenever the level editor changes a room.
  const fallsOf=r=>{const cover=[...r.ledges].sort((a,b)=>a.x-b.x),out=[];if(!cover.length)return out;let x=0,lastY=cover[0].y;for(const l of cover){if(l.x>x+1)out.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}return out};
