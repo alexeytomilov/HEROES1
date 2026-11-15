@@ -84,13 +84,18 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // (bg_sky still, bg_clouds x0.2, bg_far x0.35, bg_near x0.6); nothing else on it for now.
  const SCENE=WF;
  if(SCENE){rooms.splice(1);LAST=0;const r=rooms[0],GY=109;
-  r.start={x:30,y:GY};r.exitY=GY;r.width=912;r.bridges=[];r.lenses=[];r.decor=[];
-  r.ledges=[[0,105],[140,196],[296,420],[460,560],[616,700],[740,912]].map(([a,b],i)=>({x:a,y:GY,w:b-a,slab:i+1}));
+  r.start={x:30,y:GY};r.exitY=GY;const HALF=912;r.width=HALF*2;r.bridges=[];r.lenses=[];r.decor=[];
+  // the level is the PSD's 912 px drawn twice in a row; the second half repeats the first unless the PSD itself goes past 912
+  const twice=a=>a.some(o=>o.x>=HALF)?a:[...a,...a.map(o=>({...o,x:o.x+HALF}))];
+  r.ledges=twice([[0,105],[140,196],[296,420],[460,560],[616,700],[740,912]].map(([a,b],i)=>({x:a,y:GY,w:b-a,slab:i+1})));
   // stone blocks over the falls and the lenses come from the PSD (scene-layout.js, written by the PSD watcher)
-  const SL=window.WATERFALL_SCENE||{};r.bridges=(SL.blocks||[]).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1}));
-  r.sceneCoins=(SL.coins||[]).map(c=>({x:c.x,y:c.y}));
-  finalAsk=850;finalStop=890}
+  const SL=window.WATERFALL_SCENE||{};r.bridges=twice(SL.blocks||[]).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1}));
+  r.sceneCoins=twice(SL.coins||[]).map(c=>({x:c.x,y:c.y}));
+  finalAsk=r.width-62;finalStop=r.width-22}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
+ // Fog over the top of the waterfall background so the HUD letters stay readable: a dithered fade, solid at the top edge.
+ const FOG='#e6eef2',FOG_H=58;let fogCv=null;
+ const fogLayer=()=>{if(fogCv)return fogCv;const c=document.createElement('canvas');c.width=W;c.height=FOG_H;const x=c.getContext('2d'),B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];x.fillStyle=FOG;for(let y=0;y<FOG_H;y++){const a=Math.pow(1-y/FOG_H,1.3);for(let i=0;i<W;i++)if((B[(y&3)*4+(i&3)]+.5)/16<a)x.fillRect(i,y,1,1)}return fogCv=c};
  // Falls are the gaps between pieces of ground; worked out again whenever the level editor changes a room.
  const fallsOf=r=>{const cover=[...r.ledges].sort((a,b)=>a.x-b.x),out=[];if(!cover.length)return out;let x=0,lastY=cover[0].y;for(const l of cover){if(l.x>x+1)out.push({x,w:l.x-x,y:Math.min(lastY,l.y)-2});if(l.x+l.w>x){x=l.x+l.w;lastY=l.y}}return out};
  // Waterfall coins, Mario-style: rows of three over the ground (one row per 168 px), every other spot along each bridge
@@ -120,7 +125,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // The rooms as built in (final coordinates), and the level editor's rooms (platform-level.js) put in their place:
  // the start, pieces of ground, bridges, photo blocks, coins and tourists of each room.
  const builtIn=JSON.parse(JSON.stringify(rooms.map(r=>({start:r.start,ledges:r.ledges.map(({x,y,w})=>({x,y,w})),bridges:r.bridges.map(({x,y,w,thin})=>thin?{x,y,w,thin:true}:{x,y,w}),lenses:r.lenses.map(({x,y})=>({x,y})),coins:r.coins.map(({x,y})=>({x,y})),tourists:r.tourists,prizes:r.prizes.map(({x,y})=>({x,y}))}))));
- function setRooms(data){if(!Array.isArray(data))return;data.forEach((d,i)=>{const r=rooms[i];if(!r||!d)return;r.start={x:d.start.x,y:d.start.y};r.ledges=d.ledges.map(({x,y,w})=>({x,y,w}));r.bridges=d.bridges.map(({x,y,w,thin})=>thin?{x,y,w,thin:true}:{x,y,w});r.lenses=d.lenses.map(({x,y})=>({x,y,used:false,bump:0}));r.coins=(d.coins||[]).map(({x,y})=>({x,y,taken:false}));r.tourists=d.tourists?d.tourists.map(({x,y,stand})=>stand?{x,y,stand:true}:{x,y}):WF?autoTourists(r,i):[];r.prizes=(d.prizes||(WF?PRIZES[i]||[]:[])).map(({x,y})=>({x,y,taken:false}));r.falls=fallsOf(r);if(i===room)prepTourists(r)})}
+ function setRooms(data){if(!Array.isArray(data))return;data.forEach((d,i)=>{const r=rooms[i];if(!r||!d)return;r.start={x:d.start.x,y:d.start.y};r.ledges=d.ledges.map(({x,y,w,slab})=>slab?{x,y,w,slab}:{x,y,w});r.bridges=d.bridges.map(({x,y,w,h,thin,block})=>block?{x,y,w,h,block}:thin?{x,y,w,thin:true}:{x,y,w});r.lenses=d.lenses.map(({x,y})=>({x,y,used:false,bump:0}));r.coins=(d.coins||[]).map(({x,y})=>({x,y,taken:false}));r.tourists=d.tourists?d.tourists.map(({x,y,stand})=>stand?{x,y,stand:true}:{x,y}):WF?autoTourists(r,i):[];r.prizes=(d.prizes||(WF?PRIZES[i]||[]:[])).map(({x,y})=>({x,y,taken:false}));r.falls=fallsOf(r);if(i===room)prepTourists(r)})}
  if(WF&&!SCENE)setRooms(window.PeninsulaPlatformLevels?.get('waterfall'));  // the one-scene layout ignores rooms saved by the old editor
  // A seamless 32x64 tile of falling water, scrolled downwards every frame.
  const fallTile=(()=>{const c=document.createElement('canvas');c.width=32;c.height=64;const g=c.getContext('2d');const cols=['#335577','#4f7c9e','#7fa9c4','#b6d3e0','#e4f0f4'];
@@ -210,7 +215,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
   if(MW&&p.x>WFL.flag*T+T/2){p.x=WFL.flag*T+T/2;if(!finalAsked){finalAsked=true;state='done';clearInput();if(onComplete)onComplete();return}}
-  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked)ask();}
+  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked){if(SCENE){finalAsked=true;home();return}ask();}}
   else if(p.x>rooms[room].width+radius){spawn(room+1);return;}
   if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
   if(p.y>(MW?H-8:148)){state='fallen';deathBy='fall';clearInput();announce(WF?LT('waterfall.fallTitle'):LT('platform5.sayFall'));}
@@ -241,7 +246,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     for(let k=Math.floor(hx/W);k*W<hx+W;k++){const x=k*W-hx;if(k%2){ctx.save();ctx.translate(x+W,HY);ctx.scale(-1,1);ctx.drawImage(images.platform_wf_hills,0,0);ctx.restore()}else ctx.drawImage(images.platform_wf_hills,x,HY)}}
    const im=MW?images.platform_wf_sky:images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,H/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
-   if(SCENE&&images.bg_sky){ctx.drawImage(images.bg_sky,0,0);for(const [k,f] of LAYERS)if(images[k])ctx.drawImage(images[k],-Math.round(camX*f),0)}
+   if(SCENE&&images.bg_sky){ctx.drawImage(images.bg_sky,0,0);for(const [k] of LAYERS){const L=images[k];if(L)ctx.drawImage(L,-Math.round(camX*Math.max(0,L.width-W)/Math.max(1,rw-W)),0)}ctx.drawImage(fogLayer(),0,0)}
    else if(!MW)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((H-ih)/2),iw,ih);
    ctx.translate(-camX,MW?0:OY);
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
