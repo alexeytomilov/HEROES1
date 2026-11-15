@@ -137,7 +137,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  const HEART=['.##.##.','#+#####','#######','.#####.','..###..','...#...'];
  function story(c){flash=.12;photoPending=true;const gain=150+Math.floor(Math.random()*351);score+=gain;announce('+'+gain);
   const hx=8+Math.round(p.x-camX),hy=23+OY+Math.round(p.y)-height;
-  for(let i=0;i<10;i++){const fromHero=i<4;hearts.push({x:fromHero?hx+Math.random()*10-5:18+Math.random()*16,y:fromHero?hy:205+Math.random()*16,vx:Math.random()*30-15,vy:-(60+Math.random()*90),t:-(i%7)*.06,ph:Math.random()*6,s:Math.random()<.3?2:1})}}
+  for(let i=0;i<10;i++){const fromHero=false;  // likes come from the story, not from the hero
+  hearts.push({x:fromHero?hx+Math.random()*10-5:18+Math.random()*16,y:fromHero?hy:205+Math.random()*16,vx:Math.random()*30-15,vy:-(60+Math.random()*90),t:-(i%7)*.06,ph:Math.random()*6,s:Math.random()<.3?2:1})}}
  function snap(lens){lens.used=true;lens.bump=.15;if(MW){find(lens);return}if(WF){score+=1000;pops.push({x:lens.x+LENS/2,y:lens.y,t:0,pts:'1000'})}flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
@@ -236,7 +237,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height/im.height);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
  // a tourist, 20 px tall, drawn in code for now: red windbreaker, blue cap, green backpack, a trekking pole; legs swap as he walks
  const LENS_COIN=['..rrrrr..','.rmmmmmr.','rmgwgggmr','rmgdddgmr','rmgdkdgmr','rmgdddgmr','rmgggggmr','.rmmmmmr.','..rrrrr..'];
- const LENS_COLORS={w:'#bfe3ff',r:'#15181d',m:'#8b97a3',g:'#3b82c4',d:'#1f4f8f',k:'#0b1a33'};
+ const LENS_COLORS=WF?{w:'#ffffff',r:'#0d1622',m:'#f1f4f7',g:'#2ec4ff',d:'#1478d8',k:'#082a5a'}:{w:'#bfe3ff',r:'#15181d',m:'#8b97a3',g:'#3b82c4',d:'#1f4f8f',k:'#0b1a33'};  // the waterfall's are brighter, to read on the new background
  function drawTourist(t){const step=t.stand?0:Math.floor(t.x/4)%2;ctx.save();ctx.translate(Math.round(t.x),Math.round(t.y));ctx.scale(t.dir,1);
   const r=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
   r(-3,-6,2,6-step,'#3a3f4a');r(1,-6,2,5+step,'#3a3f4a');r(-4,-1+(step?-1:0),3,1,'#2a1d14');r(1,-1-(step?0:1)+1,3,1,'#2a1d14');
@@ -293,7 +294,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
    // that blinks now and then (each lens at its own moment)
-   for(const c of rooms[room].coins){if(c.taken||c.x<camX-8||c.x>camX+W+8)continue;const x=Math.round(c.x-4),y=Math.round(c.y-4);
+   for(const c of rooms[room].coins){if(c.taken||c.x<camX-8||c.x>camX+W+8)continue;const x=Math.round(c.x-4),y=Math.round(c.y-4+(WF?Math.sin(time*3+c.x*.3):0));
     LENS_COIN.forEach((row,yy)=>{for(let xx=0;xx<9;xx++){const k=row[xx];if(k!=='.'){ctx.fillStyle=LENS_COLORS[k];ctx.fillRect(x+xx,y+yy,1,1)}}});
     if((Math.floor(time*3+c.x*.37)%7)===0){ctx.fillStyle='#ffffff';ctx.fillRect(x+3,y+2,1,1);ctx.fillRect(x+2,y+3,1,1)}}
    // the super prize: a gold cup on a little stand, bobbing, with a glint running over it
