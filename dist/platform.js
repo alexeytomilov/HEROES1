@@ -313,8 +313,14 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    for(const t of rooms[room].walkers||[])if(t.x>camX-10&&t.x<camX+W+10)drawTourist(t);
    drawHero();ctx.restore();
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
-   if(photoPending&&SCENE){photoPending=false;const c=document.createElement('canvas');c.width=18;c.height=30;const g=c.getContext('2d');g.fillStyle='#f2efe6';g.fillRect(0,0,18,30);g.imageSmoothingEnabled=true;
-    const sw=99,sx=Math.max(8,Math.min(312-sw,8+Math.round(p.x-camX)-50));g.drawImage(canvas,sx,23,sw,H,1,1,16,28);photos.push(c)}
+   if(photoPending&&SCENE){photoPending=false;const c=document.createElement('canvas');c.width=18;c.height=30;const g=c.getContext('2d');g.imageSmoothingEnabled=true;
+    const sh=H-24,sw=Math.round(sh*18/30),sx=Math.max(8,Math.min(312-sw,8+Math.round(p.x-camX)-Math.round(sw/2)));g.drawImage(canvas,sx,23+24,sw,sh,0,0,18,30);g.imageSmoothingEnabled=false;
+    g.fillStyle='rgba(0,0,0,.35)';g.fillRect(0,0,18,6);g.fillRect(0,25,18,5);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,6,18,1);g.fillRect(0,24,18,1);
+    // the story app in a couple of pixels: progress bar, avatar and name on top; reply field and a heart at the bottom
+    const px=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};const wt='rgba(255,255,255,.85)',dim='rgba(255,255,255,.45)';
+    px(1,1,7,1,wt);px(9,1,8,1,dim);px(1,3,2,2,wt);px(4,4,5,1,dim);
+    px(2,26,10,1,dim);px(2,28,10,1,dim);px(1,27,1,1,dim);px(12,27,1,1,dim);px(14,26,1,1,wt);px(16,26,1,1,wt);px(14,27,3,1,wt);px(15,28,1,1,wt);
+    photos.push(c)}
    if(photoPending){photoPending=false;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d');g.fillStyle='#e8e4d8';g.fillRect(0,0,24,24);g.imageSmoothingEnabled=true;g.drawImage(canvas,8,23,304,136,2,2,20,15);photos.push(c)}
    if(MW||WF){// the score line over the picture, like the top line of a console platformer
     // labels in the game's font, digits twice as large; a dark copy one pixel lower keeps them readable on water
