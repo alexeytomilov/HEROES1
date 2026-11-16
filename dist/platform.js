@@ -84,19 +84,23 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // (bg_sky still, bg_clouds x0.2, bg_far x0.35, bg_near x0.6); nothing else on it for now.
  const SCENE=WF;
  if(SCENE){rooms.splice(1);LAST=0;const r=rooms[0],GY=109;
-  r.start={x:30,y:GY};r.exitY=GY;const HALF=912;r.width=HALF*2;r.bridges=[];r.lenses=[];r.decor=[];
+  r.start={x:73,y:60};r.exitY=GY;const HALF=912;r.width=HALF*2;r.bridges=[];r.lenses=[];r.decor=[];
   // the level is the PSD's 912 px drawn twice in a row; the second half repeats the first unless the PSD itself goes past 912
   const twice=a=>a.some(o=>o.x>=HALF)?a:[...a,...a.map(o=>({...o,x:o.x+HALF}))];
   // ground pieces [from,to,slab,slab origin]: a slab cut by a stepping-stone crossing keeps its picture's origin;
   // the halves differ only in where the crossings are. Stepping stones: wet rocks low in the water between the pieces.
-  const half=(o,P)=>P.map(([a,b,k,ox])=>({x:a+o,y:GY,w:b-a,slab:k,ox:(ox??a)+o}));
-  r.ledges=[...half(0,[[0,105,1],[140,196,2],[296,326,3],[460,560,4],[616,700,5],[740,772,6],[880,912,6,740]]),
+  const half=(o,P)=>P.map(([a,b,k,ox,y])=>({x:a+o,y:y??GY,w:b-a,slab:k,ox:(ox??a)+o}));
+  // the start of the first half is blocked out after the 28.10 take: a high bank, a narrow fall, a bit of ground,
+  // then a wide fall with a bridge of stone blocks over it and a lens over the bridge
+  r.ledges=[...half(0,[[0,211,6,0,60],[211,320,3],[356,412,2],[516,700,4],[740,772,6],[880,912,6,740]]),
    ...half(HALF,[[0,105,1],[140,196,2],[296,420,3],[460,486,4],[616,700,5],[740,762,6],[862,912,6,740]])];
-  const STEPS=[[326,460],[772,880],[HALF+486,HALF+616],[HALF+762,HALF+862]];
+  const STEPS=[[772,880],[HALF+486,HALF+616],[HALF+762,HALF+862]];
   r.wet=STEPS.flatMap(([a,b])=>{const g=b-a,n=Math.max(1,Math.floor((g-10)/28));return Array.from({length:n},(_,i)=>{const x=Math.round(a+(i+1)*g/(n+1)-7);return{x,y:GY-6-((x*7)%4),w:14,thin:true,wet:true}})});
   // stone blocks over the falls and the lenses come from the PSD (scene-layout.js, written by the PSD watcher)
-  const SL=window.WATERFALL_SCENE||{};r.bridges=[...twice(SL.blocks||[]).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1})),...r.wet];
-  r.sceneCoins=twice(SL.coins||[]).filter(c=>c.y<90).map(c=>({x:c.x,y:c.y}));  // lenses only up on the stones, none over the ground
+  const SL=window.WATERFALL_SCENE||{},OWN=o=>o.x>=608;  // the PSD's blocks and lenses stay only past the blocked-out start
+  const BRIDGE=Array.from({length:8},(_,i)=>({x:400+i*16,y:73,w:16,h:12,block:1+i%2}));
+  r.bridges=[...BRIDGE,...twice(SL.blocks||[]).filter(OWN).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1})),...r.wet];
+  r.sceneCoins=[{x:269,y:68},{x:464,y:32},...twice(SL.coins||[]).filter(OWN).filter(c=>c.y<90).map(c=>({x:c.x,y:c.y}))];  // lenses only up on the stones, none over the ground
   finalAsk=r.width-62;finalStop=r.width-22}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
  // Wet stepping stone: a dark rounded rock with a wet sheen on its top and a glint sliding over it, ripples at the waterline.
@@ -318,7 +322,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
    // ground: the rock body tiles below, the ledge strip on top; each picture repeats at its own size, and the ledge's
    // walkable line is LEDGE_TOP px below its top edge (5 for the 64x32 ledge, the strip's own value otherwise)
-   else if(SCENE)for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const sl=images['slab'+l.slab];if(!sl)continue;const ox=l.ox??l.x;if(ox===l.x&&sl.width<=l.w+1)ctx.drawImage(sl,l.x,l.y);else currentUI.clip(ctx,l.x,l.y-8,l.w,sl.height+8,()=>ctx.drawImage(sl,ox,l.y))}
+   else if(SCENE)for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const sl=images['slab'+l.slab];if(!sl)continue;const ox=l.ox??l.x,deep=l.y<rooms[room].exitY-2?H-l.y:sl.height;  // a raised bank is solid stone down to the bottom
+    currentUI.clip(ctx,l.x,l.y-8,l.w,deep+8,()=>{for(let yy=l.y,row=0;yy<l.y+deep;yy+=row?sl.height-6:sl.height,row++)for(let sx=ox-Math.ceil((ox-l.x)/sl.width)*sl.width+(row%2)*37;sx<l.x+l.w;sx+=sl.width)row?ctx.drawImage(sl,0,6,sl.width,sl.height-6,sx,yy,sl.width,sl.height-6):ctx.drawImage(sl,sx,yy)})}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1,j=0;sy<136;sy+=CL.height,j++)for(let sx=l.x,i=0;sx<l.x+l.w;sx+=CL.width,i++)mirrorDraw(CL,sx,sy,WF&&i%2===1,WF&&j%2===1);for(let sx=l.x,i=0;sx<l.x+l.w;sx+=LG.width,i++)mirrorDraw(LG,sx,l.y-top,WF&&i%2===1,false)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
    if(!MW)for(const b of rooms[room].bridges)if(SCENE&&b.wet)wetStone(b);else if(SCENE&&b.block&&images['block'+b.block]){ctx.drawImage(images['block'+b.block],b.x,b.y);wetGlint(b.x,b.y,b.w)}else if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
