@@ -51,7 +51,7 @@ const oldFullRender=render;render=function(){oldFullRender();levelNext.disabled=
 {const fogBack=document.querySelector('#fog-back');if(fogBack)fogBack.onclick=()=>{stopGames();showNode('map')}}
 
 window.journey={select:reviewScreen,snapshot:()=>({screen,node:journeyNode,hero,selected,visited:[...visited],rewards:{...rewards},items:[...travelItems],embeddedMode,embeddedComplete,screens:selection.map(([id,name])=>({id,name}))})};
-const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!=='1-1'&&direct!=='0-1')currentUI.ready.then(()=>setTimeout(()=>reviewScreen(({'1-2':'camp1','2-1':'bear2','2-2':'house2','3-1':'village3','3-2':'shop3','4-1':'fog4','4-2':'exchange4','5-1':'platform5','5-2':'traffic5'})[direct]||direct),0));
+const direct=new URLSearchParams(location.search).get('game');if(direct&&direct!=='1-1'&&direct!=='0-1'&&direct!=='0-2'&&direct!=='0-3')currentUI.ready.then(()=>setTimeout(()=>reviewScreen(({'1-2':'camp1','2-1':'bear2','2-2':'house2','3-1':'village3','3-2':'shop3','4-1':'fog4','4-2':'exchange4','5-1':'platform5','5-2':'traffic5'})[direct]||direct),0));
 // The current screen owns its timer; changing screens cancels the old clock.
 let fullIntroMotions={},fullIntroKey=null,scenePanelKey=null,sceneLastTime=null;
 const sceneClock=PeninsulaScenes.clock(),sceneHost=document.querySelector('#scene-settings');

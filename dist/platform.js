@@ -3,7 +3,7 @@
 // finds and points like in Mario, a score line over the picture and a plain one-line panel below.
 window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,drawText,announce,onExit,onComplete=null,level='khibiny'}){
  // The waterfall plays the Khibiny walk (MW keeps the Mario-style layout, off for now) in a taller picture: the world sits at its bottom, more sky above.
- const WF=level==='waterfall',MW=false,TX=WF?'waterfall':'platform5';
+ const BL=level==='shore'||level==='mountains',WF=level==='waterfall'||BL,MW=false,TX=WF?'waterfall':'platform5';
  // The waterfall draws its own pictures (assets/waterfall) where it has them, the shared ones otherwise.
  if(WF)images=new Proxy(images,{get:(all,k)=>all['waterfall_'+String(k)]||all[k]});
  const ctx=canvas.getContext('2d'),keys=new Set(),W=304,H=WF?174:136,OY=H-136;
@@ -83,7 +83,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // ground in six pieces with five waterfalls between them; the back is painted in layers that scroll with parallax
  // (bg_sky still, bg_clouds x0.2, bg_far x0.35, bg_near x0.6); nothing else on it for now.
  const SCENE=WF;
- if(SCENE){rooms.splice(1);LAST=0;const r=rooms[0],GY=109;
+ if(SCENE&&!BL){rooms.splice(1);LAST=0;const r=rooms[0],GY=109;
   r.start={x:73,y:60};r.exitY=GY;const HALF=912;r.width=HALF*2;r.bridges=[];r.lenses=[];r.decor=[];
   // the level is the PSD's 912 px drawn twice in a row; the second half repeats the first unless the PSD itself goes past 912
   const twice=a=>a.some(o=>o.x>=HALF)?a:[...a,...a.map(o=>({...o,x:o.x+HALF}))];
@@ -102,6 +102,25 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   r.bridges=[...BRIDGE,...twice(SL.blocks||[]).filter(OWN).map(b=>({x:b.x,y:b.y,w:b.w||16,h:b.h||16,block:b.k||1})),...r.wet];
   r.sceneCoins=[{x:269,y:68},{x:464,y:32},...twice(SL.coins||[]).filter(OWN).filter(c=>c.y<90).map(c=>({x:c.x,y:c.y}))];  // lenses only up on the stones, none over the ground
   finalAsk=r.width-62;finalStop=r.width-22}
+
+ // Shore and mountains (2026-11-19): one scene each, three screens long (912 px), blocked out after the approved
+ // blocking (GAME/ONLINE/Screens/Gen/level_*_blocking_cl_v3.png). No art yet: flat colours drawn in code.
+ // World y = blocking y - 38 (the blocking strip is the 174 px view with the HUD band on top).
+ if(BL){rooms.splice(1);LAST=0;const r=rooms[0];r.width=912;r.decor=[];r.lenses=[];
+  if(level==='shore'){const GY=104;r.start={x:30,y:GY};r.exitY=GY;
+   r.ledges=[{x:0,y:GY,w:912}];
+   // three boulders to jump over, all in the first two screens; the third screen is the empty beach
+   r.bridges=[{x:120,y:GY-20,w:26,h:24,boulder:1},{x:330,y:GY-28,w:30,h:32,boulder:1},{x:470,y:GY-18,w:24,h:22,boulder:1}];
+   r.sceneCoins=[];r.find={x:846,y:GY};
+   r.front=[[40,70,40],[250,90,46],[520,80,38]];  // big dark boulders in front of the path, decoration only
+   finalAsk=826;finalStop=870}
+  else{const GY=112,Z=y=>Math.round(GY-(GY-y)*.62),Y=y=>Z(Math.round(46+(y-32)*(126-46)/(126-32))-38);r.start={x:30,y:GY};r.exitY=GY;
+   r.ledges=[[0,120],[150,260],[300,420],[470,600],[650,760],[800,912]].map(([a,b])=>({x:a,y:GY,w:b-a}));
+   // ledges of different sizes, big - small - big, smaller the higher; the last ones stand above the ridge
+   r.bridges=[[60,126,70],[160,110,18],[200,96,64],[300,84,16],[340,72,58],[432,64,14],[470,54,46],[550,46,12],[590,40,10],
+    [630,34,10],[672,38,8],[712,32,10],[752,36,8],[796,32,116]].map(([x,y,w])=>({x,y:Y(y),w,h:6,thin:true,ledge:1}));
+   r.sceneCoins=[{x:97,y:Z(79)},{x:367,y:Z(33)},{x:601,y:Z(7)}];
+   r.summitY=Y(32);finalAsk=860;finalStop=900}}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
  // Wet stepping stone: a dark rounded rock with a wet sheen on its top and a glint sliding over it, ripples at the waterline.
  const WET=['....kkkkkk....','..kkhhssshhk..','.khsddddddshk.','kdddddmmddddmk','kddmmmmmmmdddk','kdmmmmmmmmmdkk','.kkdmmmmmmdkk.','..kkkkkkkkkk..'];
@@ -165,7 +184,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  // half, where there is a signal: there everything is posted, and only then do the likes come in, post after post.
  function story(c){flash=.12;photoPending=true;posts.push({posted:false,wait:0,gain:150+Math.floor(Math.random()*351),run:0,next:0})}
  // the spot with a signal in each half of the scene: its highest stone (block or bridge)
- function nets(){const r=rooms[room];if(!r._nets){r._nets=[0,1].map(h=>r.bridges.filter(b=>(b.x>=912*h)&&(b.x<912*(h+1))).sort((a,b)=>a.y-b.y||b.x-a.x)[0]).filter(Boolean)}return r._nets}
+ function nets(){const r=rooms[room];if(level==='shore')return [];if(!r._nets){r._nets=[0,1].map(h=>r.bridges.filter(b=>(b.x>=912*h)&&(b.x<912*(h+1))).sort((a,b)=>a.y-b.y||b.x-a.x)[0]).filter(Boolean)}return r._nets}
  function snap(lens){lens.used=true;lens.bump=.15;if(MW){find(lens);return}if(WF){score+=1000;pops.push({x:lens.x+LENS/2,y:lens.y,t:0,pts:'1000'})}flash=.18;photoPending=true;announce(LT('platform5.photo'))}
  // Waterfall: each block gives the next find of the list; it hops out, its points float up, the find goes into a slot.
  const FINDS=['rusks','thermos','compass','map','flask','rope','pot'];let finds=[],pops=[],score=0,clock=400,lives=3,coins=0;
@@ -257,7 +276,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
   if(MW&&p.x>WFL.flag*T+T/2){p.x=WFL.flag*T+T/2;if(!finalAsked){finalAsked=true;state='done';clearInput();if(onComplete)onComplete();return}}
-  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked){if(SCENE){finalAsked=true;home();return}ask();}}
+  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked&&!(level==='mountains'&&p.y>rooms[room].summitY+2)){if(SCENE){finalAsked=true;home();return}ask();}}
   else if(p.x>rooms[room].width+radius){spawn(room+1);return;}
   if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
   if(p.y>(MW?H-8:148)){state='fallen';deathBy='fall';clearInput();announce(WF?LT('waterfall.fallTitle'):LT('platform5.sayFall'));}
@@ -280,19 +299,50 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   r(-2,-21,5,2,'#2f5d8a');r(3,-20,2,1,'#2f5d8a');
   r(4,-10,1,10,'#9aa4ad');r(3,-10,2,1,'#e0b48c');
   ctx.restore()}
+
+ // the blocking-look backgrounds of the new levels, painted once as wide as the scene and scrolled with the ground
+ let blBackCv=null;
+ function blBack(){if(!blBackCv){const c=document.createElement('canvas');c.width=912;c.height=H;const g=c.getContext('2d'),R=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
+   if(level==='shore'){const HOR=66,GY=142;  // screen y: low horizon, the sea fills the middle and the far plane
+    for(let y=0;y<HOR;y++){const v=Math.round(196+y*.25);R(0,y,912,1,'rgb('+(v-6)+','+(v-2)+','+v+')')}
+    g.fillStyle='#848c86';g.beginPath();g.moveTo(560,HOR);g.lineTo(600,HOR-6);g.lineTo(700,HOR-8);g.lineTo(780,HOR-5);g.lineTo(800,HOR);g.fill();
+    for(let y=HOR;y<GY;y++){const t=(y-HOR)/(GY-HOR);R(0,y,912,1,'rgb('+Math.round(176-40*t)+','+Math.round(188-36*t)+','+Math.round(194-30*t)+')')}}
+   else{for(let y=0;y<H;y++){const v=Math.round(178+y*.2);R(0,y,912,1,'rgb('+(v-6)+','+(v-2)+','+v+')')}
+    // one big massif with a ragged sharp ridge, rising from the left, standing on the ground
+    let seed=5;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const top=[];
+    for(let x=0;x<=912;x+=8){const base=150-42*Math.min(1,x/560)+10*Math.max(0,(x-700)/212);top.push([x,Math.round(base+Math.floor(rnd()*13)-6-(rnd()<.15?10:0))])}
+    g.fillStyle='#767c7a';g.beginPath();g.moveTo(0,H);for(const [x,y] of top)g.lineTo(x,y);g.lineTo(912,H);g.fill();
+    g.strokeStyle='#646a68';for(let i=0;i<top.length;i+=3){const [x,y]=top[i];g.beginPath();g.moveTo(x+.5,y+4);g.lineTo(x+10.5,y+30);g.stroke()}
+    g.strokeStyle='#969c9a';g.beginPath();top.forEach(([x,y],i)=>i?g.lineTo(x,y+.5):g.moveTo(x,y+.5));g.stroke()}
+   blBackCv=c}
+  ctx.drawImage(blBackCv,-camX,0)}
+ // the new levels' ground, chasms, boulders and rock ledges in flat colours
+ function blGround(l){if(level==='shore'){rect(l.x,l.y,l.w,H-l.y,'#9e927a');rect(l.x,l.y-4,l.w,4,'#969892');rect(l.x,l.y,l.w,1,'#c4b898');
+   for(let x=l.x;x<l.x+l.w;x+=6)rect(x,l.y+6+((x*7919)%24),1,1,'#766a58')}
+  else{rect(l.x,l.y,l.w,H-l.y,'#60645c');rect(l.x,l.y,l.w,3,'#6c844e');for(let x=l.x+3;x<l.x+l.w-3;x+=7)rect(x,l.y+8+(x%4)*4,4,1,'#50544e')}}
+ function blChasm(f){rect(f.x,f.y+6,f.w,H,'#222426')}
+ function blBoulder(b){ctx.fillStyle='#3a3c3e';ctx.beginPath();ctx.ellipse(b.x+b.w/2,b.y+b.h/2,b.w/2,b.h/2,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#5c5f62';ctx.beginPath();ctx.ellipse(b.x+b.w/2,b.y+b.h/2+1,b.w/2-1,b.h/2-1,0,0,Math.PI*2);ctx.fill();rect(Math.round(b.x+b.w*.3),b.y+3,Math.round(b.w*.3),2,'#7c8084')}
+ function blLedge(b){rect(b.x,b.y,b.w,b.h,'#42443e');rect(b.x+1,b.y+1,b.w-2,b.h-2,'#80827a');rect(b.x+1,b.y+1,b.w-2,1,'#a0a29a');
+  ctx.fillStyle='#64665e';ctx.beginPath();ctx.moveTo(b.x+1,b.y+b.h);ctx.lineTo(b.x+b.w-1,b.y+b.h);ctx.lineTo(b.x+b.w/2,b.y+b.h+Math.min(14,b.w/2+4));ctx.fill()}
+ // the find on the shore: a little heap that glints
+ function blFind(q){const x=q.x,y=q.y;ctx.fillStyle='#46463c';ctx.beginPath();ctx.ellipse(x,y-5,10,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#50504a';ctx.beginPath();ctx.ellipse(x,y-11,7,5,0,0,Math.PI*2);ctx.fill();
+  const t=Math.floor(time*6)%8;ctx.fillStyle='#ffe07a';for(let a=0;a<8;a++){if((a+t)%2)continue;const r=a*Math.PI/4;ctx.fillRect(Math.round(x+Math.cos(r)*13),Math.round(y-9+Math.sin(r)*11),1,1)}}
+ function blFront(){for(const [x,w,h] of rooms[room].front||[]){if(x+w<camX||x>camX+W)continue;ctx.fillStyle='#1e2022';ctx.beginPath();ctx.ellipse(x+w/2,H-OY,w/2,h,0,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#34363a';ctx.beginPath();ctx.ellipse(x+w/2,H-OY+1,w/2-1,h-1,0,0,Math.PI*2);ctx.fill()}}
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
-  if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,LT(TX+'.heading'));
+  if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,BL?(level==='shore'?'Берег':'Горы'):LT(TX+'.heading'));
   currentUI.clip(ctx,8,23,304,H,()=>{ctx.save();ctx.translate(8,23);
    if(MW){ctx.drawImage(images.platform_wf_sky,0,0);const hx=Math.round(Math.max(0,Math.min(rooms[room].width-W,Math.round(p.x-W/2)))*HILLS);
     for(let k=Math.floor(hx/W);k*W<hx+W;k++){const x=k*W-hx;if(k%2){ctx.save();ctx.translate(x+W,HY);ctx.scale(-1,1);ctx.drawImage(images.platform_wf_hills,0,0);ctx.restore()}else ctx.drawImage(images.platform_wf_hills,x,HY)}}
    const im=MW?images.platform_wf_sky:images['platform_bg'+(room+1)],rw=rooms[room].width;camX=Math.max(0,Math.min(rw-W,Math.round(p.x-W/2)));
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,H/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
-   if(SCENE&&images.bg_sky){ctx.drawImage(images.bg_sky,0,0);for(const [k] of LAYERS){const L=images[k];if(L){const ox=-Math.round(camX*Math.max(0,L.width-W)/Math.max(1,rw-W));ctx.drawImage(L,ox,0);if(k==='bg_near')drawFallPixels(L,ox)}}ctx.drawImage(fogLayer(),0,0)}
+   if(BL){blBack();ctx.drawImage(fogLayer(),0,0)}else if(SCENE&&images.bg_sky){ctx.drawImage(images.bg_sky,0,0);for(const [k] of LAYERS){const L=images[k];if(L){const ox=-Math.round(camX*Math.max(0,L.width-W)/Math.max(1,rw-W));ctx.drawImage(L,ox,0);if(k==='bg_near')drawFallPixels(L,ox)}}ctx.drawImage(fogLayer(),0,0)}
    else if(!MW)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((H-ih)/2),iw,ih);
    ctx.translate(-camX,MW?0:OY);
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
-   if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;const FS=SCENE&&(images['fall_'+f.w]||images.fall_100);if(FS){
+   if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;if(BL){blChasm(f);continue}const FS=SCENE&&(images['fall_'+f.w]||images.fall_100);if(FS){
      // the painted fall runs: its water (all but the bottom 9 px of foam) scrolls down and wraps, the foam bobs a pixel
      const fy=f.y+1,foam=9,wh=FS.height-foam,off=Math.floor(time*48)%wh;
      const n=Math.ceil(f.w/FS.width),fx=f.x+Math.round((f.w-n*FS.width)/2);  // a wider gap repeats the painted fall side by side
@@ -322,10 +372,10 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     if(vis(WFL.flag*T-8,24))drawFlag(WFL.flag*T+T/2)}
    // ground: the rock body tiles below, the ledge strip on top; each picture repeats at its own size, and the ledge's
    // walkable line is LEDGE_TOP px below its top edge (5 for the 64x32 ledge, the strip's own value otherwise)
-   else if(SCENE)for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const sl=images['slab'+l.slab];if(!sl)continue;const ox=l.ox??l.x,deep=l.y<rooms[room].exitY-2?H-l.y:sl.height;  // a raised bank is solid stone down to the bottom
+   else if(SCENE)for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;if(BL){blGround(l);continue}const sl=images['slab'+l.slab];if(!sl)continue;const ox=l.ox??l.x,deep=l.y<rooms[room].exitY-2?H-l.y:sl.height;  // a raised bank is solid stone down to the bottom
     currentUI.clip(ctx,l.x,l.y-8,l.w,deep+8,()=>{for(let yy=l.y,row=0;yy<l.y+deep;yy+=row?sl.height-6:sl.height,row++)for(let sx=ox-Math.ceil((ox-l.x)/sl.width)*sl.width+(row%2)*37;sx<l.x+l.w;sx+=sl.width)row?ctx.drawImage(sl,0,6,sl.width,sl.height-6,sx,yy,sl.width,sl.height-6):ctx.drawImage(sl,sx,yy)})}
    else for(const l of rooms[room].ledges){if(l.x+l.w<camX||l.x>camX+W)continue;const LG=images.platform_ledge,CL=images.walk_cliff_64,top=LG.ledgeTop??(WF?8:5);currentUI.clip(ctx,l.x,l.y-top,l.w,136+top-l.y,()=>{for(let sy=l.y+1,j=0;sy<136;sy+=CL.height,j++)for(let sx=l.x,i=0;sx<l.x+l.w;sx+=CL.width,i++)mirrorDraw(CL,sx,sy,WF&&i%2===1,WF&&j%2===1);for(let sx=l.x,i=0;sx<l.x+l.w;sx+=LG.width,i++)mirrorDraw(LG,sx,l.y-top,WF&&i%2===1,false)});}// a short step is one whole stone (platform_step) when that picture exists, centred on the step
-   if(!MW)for(const b of rooms[room].bridges)if(SCENE&&b.wet)wetStone(b);else if(SCENE&&b.block&&images['block'+b.block]){ctx.drawImage(images['block'+b.block],b.x,b.y);wetGlint(b.x,b.y,b.w)}else if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
+   if(!MW)for(const b of rooms[room].bridges)if(b.boulder)blBoulder(b);else if(b.ledge)blLedge(b);else if(SCENE&&b.wet)wetStone(b);else if(SCENE&&b.block&&images['block'+b.block]){ctx.drawImage(images['block'+b.block],b.x,b.y);wetGlint(b.x,b.y,b.w)}else if(b.w<=32&&images.platform_step){const st=images.platform_step;ctx.drawImage(st,Math.round(b.x+b.w/2-st.width/2),b.y-(st.stepTop??1))}else currentUI.clip(ctx,b.x,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)),b.w,images.platform_bridge.height,()=>{for(let sx=b.x,bw=images.platform_bridge.width;sx<b.x+b.w&&(sx===b.x||sx+bw<=b.x+b.w+8);sx+=bw)ctx.drawImage(images.platform_bridge,sx,b.y-(images.platform_bridge.bridgeTop??(WF?1:3)))});
    for(const l of rooms[room].lenses){const dy=-Math.round(Math.sin(l.bump/.15*Math.PI)*3);if(MW)drawBlock(l.x,l.y+dy,l.used);else ctx.drawImage(images[l.used?'platform_lens_used':'platform_lens'],l.x,l.y+dy)}
    // coins are little round camera lenses, 9 px: dark rim, steel ring, blue glass deepening to the middle, a white glint
    // that blinks now and then (each lens at its own moment)
@@ -346,7 +396,8 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    // birches, bushes and boulders standing on the ground, behind the hero and the tourists
    for(const d of rooms[room].decor||[]){const im=images['deco_'+d.k];if(im&&d.x+im.width>camX&&d.x-im.width<camX+W)ctx.drawImage(im,Math.round(d.x-im.width/2),d.y-im.height+2)}
    for(const t of rooms[room].walkers||[])if(t.x>camX-10&&t.x<camX+W+10)drawTourist(t);
-   drawHero();ctx.restore();
+   if(rooms[room].find)blFind(rooms[room].find);
+   drawHero();if(BL)blFront();ctx.restore();
    // A photo is the view at the moment of the hit, before the flash, on a small white print.
    if(photoPending&&SCENE){photoPending=false;const c=document.createElement('canvas');c.width=18;c.height=30;const g=c.getContext('2d');g.imageSmoothingEnabled=true;
     const sh=H-24,sw=Math.round(sh*18/30),sx=Math.max(8,Math.min(312-sw,8+Math.round(p.x-camX)-Math.round(sw/2)));g.drawImage(canvas,sx,23+24,sw,sh,0,0,18,30);g.imageSmoothingEnabled=false;
