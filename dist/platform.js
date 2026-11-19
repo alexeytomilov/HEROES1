@@ -111,16 +111,17 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    r.ledges=[{x:0,y:GY,w:912}];
    // three boulders to jump over, all in the first two screens; the third screen is the empty beach
    r.bridges=[{x:120,y:GY-20,w:26,h:24,boulder:1},{x:330,y:GY-28,w:30,h:32,boulder:1},{x:470,y:GY-18,w:24,h:22,boulder:1}];
-   r.sceneCoins=[];r.find={x:846,y:GY};
+   r.sceneCoins=[];r.find={x:852,y:GY};
    r.front=[[40,70,40],[250,90,46],[520,80,38]];  // big dark boulders in front of the path, decoration only
    finalAsk=826;finalStop=870}
-  else{const GY=112,Z=y=>Math.round(GY-(GY-y)*.62),Y=y=>Z(Math.round(46+(y-32)*(126-46)/(126-32))-38);r.start={x:30,y:GY};r.exitY=GY;
-   r.ledges=[[0,120],[150,260],[300,420],[470,600],[650,760],[800,912]].map(([a,b])=>({x:a,y:GY,w:b-a}));
-   // ledges of different sizes, big - small - big, smaller the higher; the last ones stand above the ridge
-   r.bridges=[[60,126,70],[160,110,18],[200,96,64],[300,84,16],[340,72,58],[432,64,14],[470,54,46],[550,46,12],[590,40,10],
-    [630,34,10],[672,38,8],[712,32,10],[752,36,8],[796,32,116]].map(([x,y,w])=>({x,y:Y(y),w,h:6,thin:true,ledge:1}));
-   r.sceneCoins=[{x:97,y:Z(79)},{x:367,y:Z(33)},{x:601,y:Z(7)}];
-   r.summitY=Y(32);finalAsk=860;finalStop=900}}
+  else{const GY=112;r.start={x:30,y:GY};r.exitY=GY;
+   r.ledges=[{x:0,y:GY,w:912}];  // one ground, no ravines (2026-11-19)
+   // ledges of different sizes, big - small - big, smaller the higher; they climb well above the ridge,
+   // the view rises with the hero (camY)
+   r.bridges=[[60,92,70],[160,78,18],[200,66,64],[300,54,16],[340,44,58],[432,34,14],[470,24,46],[550,14,12],[590,4,10],
+    [630,-6,10],[672,-16,8],[712,-24,10],[752,-32,8],[796,-40,116]].map(([x,y,w])=>({x,y,w,h:6,thin:true,ledge:1}));
+   r.sceneCoins=[{x:95,y:70},{x:369,y:22},{x:595,y:-18}];
+   r.summitY=-40;finalAsk=860;finalStop=900}}
  const LAYERS=[['bg_clouds',.2],['bg_far',.35],['bg_near',.6]];
  // Wet stepping stone: a dark rounded rock with a wet sheen on its top and a glint sliding over it, ripples at the waterline.
  const WET=['....kkkkkk....','..kkhhssshhk..','.khsddddddshk.','kdddddmmddddmk','kddmmmmmmmdddk','kdmmmmmmmmmdkk','.kkdmmmmmmdkk.','..kkkkkkkkkk..'];
@@ -235,7 +236,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function keepWalking(){state='play';finalAsked=true;clearInput();announce(LT('platform5.sayStay'));render()}
  function ask(){p.vx=0;state='question';choice=0;clearInput();announce(LT('platform5.sayAsk'));render()}
  function jump(){jumpBuffer=.14}
- function update(dt){
+ function update(dt){if(level==='mountains'){const want=Math.max(0,32-p.y);camY+=(want-camY)*Math.min(1,dt*6)}
   time+=dt;if(MW||WF){clock=Math.max(0,clock-dt*2.5);for(const q of pops)q.t+=dt;pops=pops.filter(q=>q.t<1.2);
    for(const h of hearts){h.t+=dt;if(h.t<0)continue;h.x+=(h.vx+Math.sin(h.t*5+h.ph)*18)*dt;h.y+=h.vy*dt;h.vy-=12*dt}hearts=hearts.filter(h=>h.y>-14&&h.t<4);
    // older posts keep getting likes: now and then a random post in the feed sends a heart up and a few likes
@@ -244,7 +245,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
     posts.forEach((q,k)=>{const slot=posts.length-1-k;if(!q.posted)return;if(q.wait>0){q.wait-=dt;return}if(q.run<1.4){q.run+=dt;const add=Math.min(q.gain,Math.round(q.gain*q.run/1.4))-(q.given||0);score+=add;q.given=(q.given||0)+add;q.next-=dt;if(q.next<=0&&slot<12){q.next=.12+Math.random()*.14;heartFrom(slot)}}});
     const live=posts.map((q,k)=>[q,posts.length-1-k]).filter(([q,i])=>q.run>=1.4&&i<12);
     if(live.length){nextLike-=dt;if(nextLike<=0){nextLike=.7+Math.random()*.9;heartFrom(live[Math.floor(Math.random()*live.length)][1]);score+=10+Math.floor(Math.random()*31)}}}
-   if(likesShown<score)likesShown=Math.min(score,likesShown+Math.max(1,Math.ceil((score-likesShown)*dt*5)));else likesShown=score}flash=Math.max(0,flash-dt);for(const l of rooms[room].lenses)l.bump=Math.max(0,l.bump-dt);if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
+   if(likesShown<score)likesShown=Math.min(score,likesShown+Math.max(1,Math.ceil((score-likesShown)*dt*5)));else likesShown=score}flash=Math.max(0,flash-dt);for(const l of rooms[room].lenses)l.bump=Math.max(0,l.bump-dt);if(state==='crouch'){crouchT+=dt;if(crouchT>2.4){state='play';home()}return}if(state!=='play')return;grabCooldown=Math.max(0,grabCooldown-dt);
   for(const c of rooms[room].coins)if(!c.taken&&Math.abs(c.x-p.x)<radius+4&&c.y>p.y-height-5&&c.y<p.y+5){c.taken=true;if(SCENE)story(c);else{coins++;score+=200}}
   jumpBuffer=Math.max(0,jumpBuffer-dt);coyote=p.ground?.1:Math.max(0,coyote-dt);
   // tourists stroll (or stand); bumping into one ends the try, like a fall into the water
@@ -276,7 +277,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   p.x=nx;p.y=ny;
   if(room===0&&p.x<radius)p.x=radius;
   if(MW&&p.x>WFL.flag*T+T/2){p.x=WFL.flag*T+T/2;if(!finalAsked){finalAsked=true;state='done';clearInput();if(onComplete)onComplete();return}}
-  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked&&!(level==='mountains'&&p.y>rooms[room].summitY+2)){if(SCENE){finalAsked=true;home();return}ask();}}
+  else if(!MW&&room===LAST){p.x=Math.max(radius,Math.min(finalStop,p.x));if(p.ground&&p.x>=finalAsk&&!finalAsked&&!(level==='mountains'&&p.y>rooms[room].summitY+2)){if(level==='shore'){finalAsked=true;state='crouch';crouchT=0;p.vx=0;clearInput();return}if(SCENE){finalAsked=true;home();return}ask();}}
   else if(p.x>rooms[room].width+radius){spawn(room+1);return;}
   if(p.x<-radius&&room>0){const previous=room-1;spawn(previous);p.x=rooms[previous].width-13;p.y=rooms[previous].exitY;p.face=-1;}
   if(p.y>(MW?H-8:148)){state='fallen';deathBy='fall';clearInput();announce(WF?LT('waterfall.fallTitle'):LT('platform5.sayFall'));}
@@ -286,7 +287,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   // Walking: 8 frames (contact, down, passing, up for each leg); the body's bob is in the frames, anchored like the idle frame.
   const WALK_X=WF?10:7;
   if(p.ground&&!p.hang&&Math.abs(p.vx)>1){const im=images['platform_walk'+(Math.floor(stride/STRIDE)%(WF?6:8))]  /* the waterfall run cycle has 6 frames */;ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height/im.height);ctx.drawImage(im,-WALK_X,-im.height);ctx.restore();return}
-  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index];ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height/im.height);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
+  let index=0;if(p.hang)index=6;else if(!p.ground)index=5;const im=images['platform_hero'+index],cq=state==='crouch'?Math.max(.68,1-crouchT*1.6):1;ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.scale(p.face*height/im.height,height*cq/im.height);ctx.drawImage(im,-Math.round(im.width/2),-im.height);ctx.restore();}
  // a tourist, 20 px tall, drawn in code for now: red windbreaker, blue cap, green backpack, a trekking pole; legs swap as he walks
  const LENS_COIN=['..rrrrr..','.rmmmmmr.','rmgwgggmr','rmgdddgmr','rmgdkdgmr','rmgdddgmr','rmgggggmr','.rmmmmmr.','..rrrrr..'];
  const LENS_COLORS=WF?{w:'#ffffff',r:'#0d1622',m:'#f1f4f7',g:'#2ec4ff',d:'#1478d8',k:'#082a5a'}:{w:'#bfe3ff',r:'#15181d',m:'#8b97a3',g:'#3b82c4',d:'#1f4f8f',k:'#0b1a33'};  // the waterfall's are brighter, to read on the new background
@@ -310,12 +311,12 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    else{for(let y=0;y<H;y++){const v=Math.round(178+y*.2);R(0,y,912,1,'rgb('+(v-6)+','+(v-2)+','+v+')')}
     // one big massif with a ragged sharp ridge, rising from the left, standing on the ground
     let seed=5;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;const top=[];
-    for(let x=0;x<=912;x+=8){const base=150-42*Math.min(1,x/560)+10*Math.max(0,(x-700)/212);top.push([x,Math.round(base+Math.floor(rnd()*13)-6-(rnd()<.15?10:0))])}
+    for(let x=0;x<=912;x+=8){const base=118-56*Math.min(1,x/560)+6*Math.max(0,(x-700)/212);top.push([x,Math.round(base+Math.floor(rnd()*13)-6-(rnd()<.15?10:0))])}
     g.fillStyle='#767c7a';g.beginPath();g.moveTo(0,H);for(const [x,y] of top)g.lineTo(x,y);g.lineTo(912,H);g.fill();
     g.strokeStyle='#646a68';for(let i=0;i<top.length;i+=3){const [x,y]=top[i];g.beginPath();g.moveTo(x+.5,y+4);g.lineTo(x+10.5,y+30);g.stroke()}
     g.strokeStyle='#969c9a';g.beginPath();top.forEach(([x,y],i)=>i?g.lineTo(x,y+.5):g.moveTo(x,y+.5));g.stroke()}
    blBackCv=c}
-  ctx.drawImage(blBackCv,-camX,0)}
+  if(camY>0){ctx.fillStyle='#aeb2b4';ctx.fillRect(0,0,W,H)}ctx.drawImage(blBackCv,-camX,Math.round(camY*.5))}
  // the new levels' ground, chasms, boulders and rock ledges in flat colours
  function blGround(l){if(level==='shore'){rect(l.x,l.y,l.w,H-l.y,'#9e927a');rect(l.x,l.y-4,l.w,4,'#969892');rect(l.x,l.y,l.w,1,'#c4b898');
    for(let x=l.x;x<l.x+l.w;x+=6)rect(x,l.y+6+((x*7919)%24),1,1,'#766a58')}
@@ -326,10 +327,16 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
  function blLedge(b){rect(b.x,b.y,b.w,b.h,'#42443e');rect(b.x+1,b.y+1,b.w-2,b.h-2,'#80827a');rect(b.x+1,b.y+1,b.w-2,1,'#a0a29a');
   ctx.fillStyle='#64665e';ctx.beginPath();ctx.moveTo(b.x+1,b.y+b.h);ctx.lineTo(b.x+b.w-1,b.y+b.h);ctx.lineTo(b.x+b.w/2,b.y+b.h+Math.min(14,b.w/2+4));ctx.fill()}
  // the find on the shore: a little heap that glints
- function blFind(q){const x=q.x,y=q.y;ctx.fillStyle='#46463c';ctx.beginPath();ctx.ellipse(x,y-5,10,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#50504a';ctx.beginPath();ctx.ellipse(x,y-11,7,5,0,0,Math.PI*2);ctx.fill();
-  const t=Math.floor(time*6)%8;ctx.fillStyle='#ffe07a';for(let a=0;a<8;a++){if((a+t)%2)continue;const r=a*Math.PI/4;ctx.fillRect(Math.round(x+Math.cos(r)*13),Math.round(y-9+Math.sin(r)*11),1,1)}}
+ function blFind(q){const x=q.x,y=q.y-2,pulse=.5+.5*Math.sin(time*5),len=2+Math.round(pulse*6);
+  // a sun glint on the wet sand: a four-pointed star that breathes, a soft glow, and a few sparks that blink around it
+  ctx.fillStyle='rgba(255,246,200,'+(.25+pulse*.25).toFixed(2)+')';ctx.fillRect(x-3,y-3,7,7);
+  ctx.fillStyle='#fff6c8';ctx.fillRect(x-len,y,len*2+1,1);ctx.fillRect(x,y-len,1,len*2+1);
+  ctx.fillStyle='#ffffff';ctx.fillRect(x-1,y-1,3,3);
+  const d=Math.round(1+pulse*2);ctx.fillStyle='rgba(255,236,150,.8)';ctx.fillRect(x-d,y-d,1,1);ctx.fillRect(x+d,y-d,1,1);ctx.fillRect(x-d,y+d,1,1);ctx.fillRect(x+d,y+d,1,1);
+  for(let k=0;k<4;k++){if(Math.floor(time*4+k*1.7)%3)continue;const a=k*1.9+Math.floor(time)%3;ctx.fillStyle='#fff8d8';ctx.fillRect(Math.round(x+Math.cos(a)*11),Math.round(y+Math.sin(a)*6),1,1)}}
  function blFront(){for(const [x,w,h] of rooms[room].front||[]){if(x+w<camX||x>camX+W)continue;ctx.fillStyle='#1e2022';ctx.beginPath();ctx.ellipse(x+w/2,H-OY,w/2,h,0,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#34363a';ctx.beginPath();ctx.ellipse(x+w/2,H-OY+1,w/2-1,h-1,0,0,Math.PI*2);ctx.fill()}}
+ let camY=0,crouchT=0;
  let dialogueFx=null;
  function render(){PeninsulaPopup.visible=false;
   if(!active)return;hits=[];ctx.imageSmoothingEnabled=false;currentUI.base(ctx,'platform5');currentUI.header(ctx,BL?(level==='shore'?'Берег':'Горы'):LT(TX+'.heading'));
@@ -340,7 +347,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
    const scale=Math.max((W+(rw-W)*PARALLAX)/im.width,H/im.height),iw=Math.round(im.width*scale),ih=Math.round(im.height*scale);
    if(BL){blBack();ctx.drawImage(fogLayer(),0,0)}else if(SCENE&&images.bg_sky){ctx.drawImage(images.bg_sky,0,0);for(const [k] of LAYERS){const L=images[k];if(L){const ox=-Math.round(camX*Math.max(0,L.width-W)/Math.max(1,rw-W));ctx.drawImage(L,ox,0);if(k==='bg_near')drawFallPixels(L,ox)}}ctx.drawImage(fogLayer(),0,0)}
    else if(!MW)ctx.drawImage(window.PeninsulaColors?PeninsulaColors.picture(im,'platform-bg'+(room+1)):im,-Math.round(camX*PARALLAX),Math.round((H-ih)/2),iw,ih);
-   ctx.translate(-camX,MW?0:OY);
+   ctx.translate(-camX,(MW?0:OY)+Math.round(camY));
    // waterfalls behind the ledges: scrolling water, foam where it pours over, mist at the bottom
    if(!MW)for(const f of rooms[room].falls){if(f.x+f.w<camX||f.x>camX+W)continue;if(BL){blChasm(f);continue}const FS=SCENE&&(images['fall_'+f.w]||images.fall_100);if(FS){
      // the painted fall runs: its water (all but the bottom 9 px of foam) scrolls down and wraps, the foam bobs a pixel
@@ -447,7 +454,7 @@ window.createKhibinyPlatform=function({canvas,inputSurface,images,drawPanel,draw
   for(const h of hearts){if(h.t<0)continue;const a=Math.min(1,(h.y+14)/60);ctx.globalAlpha=a;HEART.forEach((row,ry)=>{for(let rx=0;rx<row.length;rx++){const ch=row[rx];if(ch==='.')continue;ctx.fillStyle=ch==='+'?'#ffc2cc':'#e8384f';ctx.fillRect(Math.round(h.x)+rx*h.s,Math.round(h.y)+ry*h.s,h.s,h.s)}})}ctx.globalAlpha=1;
   if(state==='question'){
    PeninsulaPopup.draw(ctx,{body:LT('platform5.askHome'),labels:[LT('platform5.yes'),LT('platform5.no')],choice}).forEach((b,i)=>hits.push({...b,fn:i?keepWalking:home}));
-  }else if(state!=='play'&&state!=='done'){const b=currentUI.modal(ctx,state==='fallen'?LT(TX+(deathBy==='tourist'?'.touristTitle':'.fallTitle')):LT('platform5.homeTitle'),state==='fallen'?LT(TX+(deathBy==='tourist'?'.touristBody':'.fallBody')):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}
+  }else if(state!=='play'&&state!=='done'&&state!=='crouch'){const b=currentUI.modal(ctx,state==='fallen'?LT(TX+(deathBy==='tourist'?'.touristTitle':'.fallTitle')):LT('platform5.homeTitle'),state==='fallen'?LT(TX+(deathBy==='tourist'?'.touristBody':'.fallBody')):LT('platform5.homeBody'));hits.push({...b,fn:()=>press('enter')})}
   // a pressed button sinks a pixel and darkens for a moment before it acts
   if(pressedHit){const b=pressedHit;ctx.drawImage(canvas,b.x,b.y,b.w-1,b.h-1,b.x+1,b.y+1,b.w-1,b.h-1);ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(b.x,b.y,b.w,1);ctx.fillRect(b.x,b.y,1,b.h)}
   drawGameBorder(ctx);
