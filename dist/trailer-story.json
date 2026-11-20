@@ -1,0 +1,79 @@
+[
+  {
+    "id": "01_intro",
+    "title": "Интро · молния и камень с названием",
+    "image": "assets/trailer-story/01_intro.png",
+    "body": "Ролевая игра-путешествие\nСерия 1",
+    "reward": ""
+  },
+  {
+    "id": "02_2-1_medvedi",
+    "title": "2.1 · Медведи",
+    "image": "assets/trailer-story/02_2-1_medvedi.png",
+    "body": "В этих местах обитают медведи. Найди средства обезопасить себя и товарищей.",
+    "reward": ""
+  },
+  {
+    "id": "03_4-2_strannik",
+    "title": "4.2 · Странник",
+    "image": "assets/trailer-story/03_4-2_strannik.png",
+    "body": "Вы встретили странника.",
+    "reward": ""
+  },
+  {
+    "id": "04_win1_kakashechki",
+    "title": "Победа 1 · Рыбные какашечки",
+    "game": "win1",
+    "body": "Вы нашли рыбные какашечки.",
+    "reward": "+10 к ловкости каждого персонажа."
+  },
+  {
+    "id": "05_2-4_dom",
+    "title": "2.4 · Заброшенный дом",
+    "image": "assets/trailer-story/05_2-4_dom.png",
+    "body": "Странник решил заглянуть в заброшенный дом. Что ждёт его внутри?",
+    "reward": ""
+  },
+  {
+    "id": "06_klyuchi",
+    "title": "Победа · Ключи от машины",
+    "image": "assets/trailer-story/06_klyuchi.png",
+    "body": "Вы нашли ключи от машины.",
+    "reward": "+10 к ловкости каждого персонажа."
+  },
+  {
+    "id": "07_win2_niva",
+    "title": "Победа 2 · Старая нива",
+    "game": "win2",
+    "body": "Вы нашли старую ниву.",
+    "reward": "+10 к скорости каждого персонажа."
+  },
+  {
+    "id": "08_nyryalshchik",
+    "title": "Ныряльщик с ножом",
+    "image": "assets/trailer-story/08_nyryalshchik.png",
+    "body": "",
+    "reward": ""
+  },
+  {
+    "id": "09_3-1_suvenir",
+    "title": "3.1 · Сувенир",
+    "image": "assets/trailer-story/09_3-1_suvenir.png",
+    "body": "Вам обязательно нужно найти особенный местный сувенир. Поищите в этой лавке у таинственного торговца.",
+    "reward": ""
+  },
+  {
+    "id": "10_3-2_lavka",
+    "title": "3.2 · Лавка торговца",
+    "image": "assets/trailer-story/10_3-2_lavka.png",
+    "body": "Вы нашли лавку таинственного торговца.",
+    "reward": ""
+  },
+  {
+    "id": "11_win3_leviafan",
+    "title": "Победа 3 · Сахарный левиафан",
+    "game": "win3",
+    "body": "Вы купили сахарного левиафана.",
+    "reward": "+10 к насмотренности."
+  }
+]

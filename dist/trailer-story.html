@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кадры истории для трейлера</title>
+<style>
+ :root{color-scheme:dark}
+ body{margin:0;background:#0b1116;color:#e4e6e8;font:13px/1.4 monospace;display:flex;gap:16px;padding:16px;box-sizing:border-box;min-height:100vh;flex-wrap:wrap}
+ #stage{display:flex;flex-direction:column;gap:8px}
+ #frame{width:960px;height:720px;image-rendering:pixelated;background:#000;display:block;max-width:calc(100vw - 32px);height:auto;aspect-ratio:4/3}
+ #nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+ button{font:inherit;padding:4px 10px;background:#293640;color:#e4e6e8;border:1px solid #91a1ad;cursor:pointer}
+ button:hover{background:#3a4a56}
+ #side{flex:1;min-width:300px;max-width:520px;display:flex;flex-direction:column;gap:10px}
+ #list{display:flex;flex-direction:column;border:1px solid #4b5a66}
+ #list button{text-align:left;border:0;border-bottom:1px solid #1b252d;background:#11171c}
+ #list button.on{background:#655848}
+ label{display:flex;flex-direction:column;gap:3px;color:#91a1ad}
+ input,textarea{background:#1b252d;color:#e4e6e8;border:1px solid #4b5a66;font:inherit;padding:6px}
+ textarea{min-height:96px;resize:vertical}
+ #status{color:#91a1ad;min-height:1.4em}
+ #status.dirty{color:#ffd264}
+ .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+ small{color:#91a1ad}
+</style>
+<script src="project-config.js?v=1"></script>
+<script src="undo.js?v=undo-1"></script>
+<script src="color-presets.js?v=story-1"></script>
+<script src="text-presets.js?v=story-1"></script>
+<script src="level-texts.js?v=editor-1"></script>
+<script src="screen-assets.js?v=screens-1"></script>
+<script src="victory-animation.js?v=screens-1"></script>
+<script src="current-ui.js?v=victory-bonus-1"></script>
+<script src="story.js?v=intro-texts-1"></script>
+</head>
+<body>
+<div id="stage">
+ <canvas id="frame" width="320" height="240"></canvas>
+ <div id="nav">
+  <button id="prev">← Назад</button>
+  <span id="count"></span>
+  <button id="next">Дальше →</button>
+  <button id="replay">Показать снова</button>
+  <label class="row" style="flex-direction:row"><input type="checkbox" id="auto"> листать само</label>
+  <label class="row" style="flex-direction:row"><input type="checkbox" id="instant"> текст сразу</label>
+ </div>
+</div>
+<div id="side">
+ <div id="list"></div>
+ <label>Название кадра (в игре не видно, для AE)<input id="title"></label>
+ <label>Текст экрана (перенос строки — Enter)<textarea id="body"></textarea></label>
+ <label>Награда (оранжевая строка, пусто — нет)<input id="reward"></label>
+ <div class="row">
+  <button id="save">Сохранить в файл</button>
+  <button id="download">Скачать JSON</button>
+  <button id="load">Взять из JSON</button>
+  <input type="file" id="pick" accept=".json,application/json" hidden>
+ </div>
+ <div id="status"></div>
+ <small>Тексты лежат в dist/trailer-story.json. «Сохранить в файл» пишет его прямо в папку игры (только с локального сервера npm start); на сайте файл скачивается.</small>
+</div>
+<script>
+// Trailer story frames: only the story screens for the film's trailer, in the game's story layout
+// (picture 318×152 above, narrator plate below). Texts live in trailer-story.json, which After Effects reads.
+(()=>{
+ const c=document.getElementById('frame').getContext('2d'),$=id=>document.getElementById(id);
+ let screens=[],index=0,dirty=false,images={},autoTimer=0,shownAt=performance.now();
+ // The reveal and reward line read this flag: on — the whole text is shown at once.
+ window.PeninsulaTextEdit={on:false};
+ const load=src=>new Promise(ok=>{const im=new Image;im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src});
+ const status=(text,isDirty=dirty)=>{$('status').textContent=text;$('status').classList.toggle('dirty',isDirty)};
+ const setDirty=v=>{dirty=v;status(v?'Есть несохранённые правки':'Всё сохранено в файл',v)};
+ function draw(){
+  const s=screens[index];if(!s)return;
+  c.imageSmoothingEnabled=false;c.clearRect(0,0,320,240);PeninsulaColors.fill(c,0,0,320,240);
+  PeninsulaColors.box(c,1,1,318,152,'storyImage');
+  if(s.game){const bg=currentUI.backgrounds?.[s.game];if(bg)currentUI.clip(c,2,2,316,150,()=>c.drawImage(PeninsulaColors.picture(bg,s.game),0,0));if(s.game==='win1')PeninsulaVictoryAnimation.draw(c)}
+  else if(images[s.image])currentUI.clip(c,2,2,316,150,()=>c.drawImage(images[s.image],1,1));
+  currentUI.box(c,1,152,318,87,'#11171c','narrator');
+  PeninsulaColors.outline(c,1,1,318,152,'storyImage');
+  const body=String(s.body||'').replace(/\n\s*\n/g,'\n');
+  currentUI.revealBlock(c,body,8,164,304,69,'narrator','trailer:'+s.id);
+  if(s.reward)currentUI.bonusLine(c,s.reward,body,8,164,304,69,'trailer:'+s.id);
+  PeninsulaColors.outline(c,0,0,320,240);
+ }
+ window.render=draw;
+ const loop=()=>{draw();if($('auto').checked&&performance.now()-shownAt>7000)go(index+1,true);requestAnimationFrame(loop)};
+ function fillList(){
+  $('list').replaceChildren(...screens.map((s,i)=>{const b=document.createElement('button');b.textContent=String(i+1).padStart(2,'0')+'  '+(s.title||s.id);b.onclick=()=>go(i);if(i===index)b.className='on';return b}));
+  $('count').textContent=(index+1)+' / '+screens.length;
+ }
+ function go(i,wrap){
+  if(!screens.length)return;index=wrap?(i+screens.length)%screens.length:Math.max(0,Math.min(screens.length-1,i));
+  const s=screens[index];$('title').value=s.title||'';$('body').value=s.body||'';$('reward').value=s.reward||'';
+  currentUI.resetReveal();shownAt=performance.now();fillList();
+ }
+ for(const k of ['title','body','reward'])$(k).addEventListener('input',()=>{const s=screens[index];s[k]=$(k).value;if(k==='title')fillList();else{currentUI.resetReveal();shownAt=performance.now()}setDirty(true)});
+ $('prev').onclick=()=>go(index-1);$('next').onclick=()=>go(index+1);
+ $('replay').onclick=()=>{currentUI.resetReveal();shownAt=performance.now()};
+ $('instant').onchange=()=>{window.PeninsulaTextEdit.on=$('instant').checked};
+ document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement?.tagName)&&document.activeElement.type!=='checkbox')return;if(e.key==='ArrowRight')go(index+1);if(e.key==='ArrowLeft')go(index-1)});
+ const text=()=>JSON.stringify(screens,null,2)+'\n';
+ const download=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text()],{type:'application/json'}));a.download='trailer-story.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+ $('download').onclick=download;
+ $('save').onclick=async()=>{
+  const local=/^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+  if(local){try{const r=await fetch('trailer-story.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:text()});if(r.ok){setDirty(false);return}}catch{}}
+  download();status('Файл скачан: положите его в dist/trailer-story.json',true);
+ };
+ $('load').onclick=()=>$('pick').click();
+ $('pick').onchange=async()=>{const f=$('pick').files[0];$('pick').value='';if(!f)return;
+  try{const list=JSON.parse(await f.text());if(!Array.isArray(list))throw Error('нужен список кадров');screens=list;await pictures();go(0);setDirty(true)}catch(e){alert('Не получилось взять файл: '+e.message)}};
+ addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+ const pictures=()=>Promise.all(screens.filter(s=>s.image&&!images[s.image]).map(async s=>images[s.image]=await load(s.image)));
+ (async()=>{
+  screens=await fetch('trailer-story.json',{cache:'no-store'}).then(r=>r.json());
+  await Promise.all([currentUI.ready,pictures()]);
+  // The victory pictures come prepared by the game's own screen drawing (line tint, colour filter).
+  const scratch=document.createElement('canvas');scratch.width=320;scratch.height=240;
+  for(const s of screens)if(s.game)try{currentUI.base(scratch.getContext('2d'),s.game)}catch{}
+  go(0);setDirty(false);loop();
+ })();
+})();
+</script>
+</body>
+</html>
