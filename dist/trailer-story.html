@@ -116,6 +116,9 @@
  (async()=>{
   screens=await fetch('trailer-story.json',{cache:'no-store'}).then(r=>r.json());
   await Promise.all([currentUI.ready,pictures()]);
+  // Story text look of the film (as in the 27.10 game recording used in the edit): Cozette, upper case, centred,
+  // 1 px letter spacing, dark grey, 15 px line step. Set here so every recording of these frames looks the same.
+  {const st=JSON.parse(JSON.stringify(PeninsulaText.state));Object.assign(st.presets[st.assignments.narrator],{size:13,align:'center',offset:0,uppercase:true,color:'#545a65',letterSpacing:1,lineSpacing:2});PeninsulaText.update(st)}
   // The victory pictures come prepared by the game's own screen drawing (line tint, colour filter).
   const scratch=document.createElement('canvas');scratch.width=320;scratch.height=240;
   for(const s of screens)if(s.game)try{currentUI.base(scratch.getContext('2d'),s.game)}catch{}
